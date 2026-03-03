@@ -16,5 +16,6 @@ urlpatterns = [
     path('pricing/', include('pricing.urls', namespace='pricing')),
     path('audit/', include('audit.urls', namespace='audit')),
     path('reports/', include('reports.urls', namespace='reports')),
+    path('admin/', admin.site.urls),
     path('data-explorer/', include('data_explorer.urls', namespace='data_explorer')),
 ]
