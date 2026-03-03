@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'noor-foods-secret-key-change-in-production-2024')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'False'
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '*').split(',')
 
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Optimized for Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -81,10 +82,10 @@ else:
         }
     }
 
-# Session engine using database (no contrib.auth, using custom session)
+# Session engine using database
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-# Authentication Configuration (Minimal to support Django Admin)
+# Authentication Configuration
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -97,13 +98,13 @@ TIME_ZONE = 'Africa/Lagos'
 USE_I18N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Serve static files with WhiteNoise if installed
-if not DEBUG:
-    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+# WhiteNoise storage to serve compressed files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Production Security
 if not DEBUG:
@@ -118,9 +119,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Custom session user — we use our own auth, not django.contrib.auth
-# So we store user_id in session manually
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -133,7 +131,7 @@ LOGGING = {
     },
 }
 
-# Noor Foods system constants (can be overridden per material via ProductionThreshold model)
+# Noor Foods system constants
 NOOR_STANDARD_BAG_WEIGHT_KG = 100
 NOOR_DEFAULT_EXPECTED_LOSS_PCT = 20.0
 NOOR_NORMAL_MAX_LOSS_PCT = 13.0
