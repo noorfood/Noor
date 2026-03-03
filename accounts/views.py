@@ -111,7 +111,8 @@ def staff_register(request):
                 store_type=store_type,
                 sales_user_type=sales_user_type,
                 created_by=user,
-                status='active'
+                status='active',
+                plain_password=password
             )
             new_staff.set_password(password)
             new_staff.save()
@@ -244,6 +245,7 @@ def staff_reset_password(request, pk):
         elif password != confirm_password:
             error = "Passwords do not match."
         else:
+            staff.plain_password = password
             staff.set_password(password)
             staff.save()
             log_action(request, user, 'accounts', 'RESET_PASSWORD', f'Reset password for user: {staff.username}')

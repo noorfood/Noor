@@ -44,6 +44,7 @@ class User(models.Model):
         help_text='Only for sales_user role: promoter or driver'
     )
     password_hash = models.CharField(max_length=128)
+    plain_password = models.CharField(max_length=128, blank=True, null=True, help_text='Visible password for administrative reference')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
