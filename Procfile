@@ -1,1 +1,1 @@
-Web: noor_foods.wsgi:application
+web: gunicorn noor_foods.wsgi:application
