@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Record Production Batch{% endblock %}
+{% block nav_pr_new %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Record Production Batch</div>
+    <div class="page-subtitle">Enter bags collected and milled, and the 10kg sacks packaged.</div>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-section-title">Batch Information</div>
+        <div class="form-row-three">
+            <div class="form-row">
+                <label for="date">Date*</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
+            </div>
+            <div class="form-row">
+                <label for="shift">Shift*</label>
+                <select id="shift" name="shift" required>
+                    <option value="">— Select —</option>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="night">Night</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="material_type">Material Type*</label>
+                <select id="material_type" name="material_type" required>
+                    <option value="">— Select —</option>
+                    <option value="maize">Maize</option>
+                    <option value="wheat">Wheat</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="machine">Machine (Optional)</label>
+                <input type="text" id="machine" name="machine" placeholder="e.g. Mill A">
+            </div>
+            <div class="form-row">
+                <label for="issuance_id">Linked Clean Raw Issuance* (Required)</label>
+                <select id="issuance_id" name="issuance_id" required>
+                    <option value="">— Select Issuance —</option>
+                    {% for i in issuances %}<option value="{{ i.pk }}">#{{ i.pk }} | {{ i.material_type|upper }} | {{ i.num_bags }} bags ({{ i.remaining_balance }} available) | {{ i.date }}</option>{% endfor %}
+                </select>
+                <div class="form-hint">You must select the official issuance from which you collected these bags.</div>
+            </div>
+        </div>
+
+        <div class="form-section-title">Raw Input (Bags Collected from Store)</div>
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="bags_collected">Bags Collected from Store*</label>
+                <input type="number" id="bags_collected" name="bags_collected" min="1" required>
+                <div class="form-hint">Each bag = 100kg clean raw material</div>
+            </div>
+            <div class="form-row">
+                <label for="bags_processed">Bags Actually Milled Today*</label>
+                <input type="number" id="bags_processed" name="bags_processed" min="0" required>
+                <div class="form-hint">Can be less than collected — remaining shown as outstanding</div>
+            </div>
+        </div>
+
+        <div class="form-section-title">Packaging Output</div>
+        <div class="form-row">
+            <label for="qty_10kg">10 KG Sacks Produced*</label>
+            <input type="number" id="qty_10kg" name="qty_10kg" min="0" placeholder="0">
+            <div class="form-hint">Each sack = 10kg. Leave 0 if no milling was done today.</div>
+        </div>
+
+        <div class="form-row">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="2"
+                placeholder="Any machine issues, power cuts, or observations"></textarea>
+        </div>
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary">Save Batch (Record will be locked)</button>
+            <a href="/production/list/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

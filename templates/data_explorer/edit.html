@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Edit Record &mdash; Data Explorer{% endblock %}
+{% block nav_de %}active{% endblock %}
+{% block content %}
+<style>
+  .form-hero {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border-radius: 14px; padding: 2.5rem;
+    margin-bottom: 2.5rem; border: 1px solid #334155;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .form-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 1rem; }
+  .form-hero-title span { color: #f59e0b; font-size: .85rem; letter-spacing: 1px; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; }
+  .form-hero-sub { font-size: .95rem; color: #94a3b8; margin-top: .75rem; max-width: 600px; }
+
+  .edit-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    max-width: 900px;
+  }
+  .warning-belt {
+    background: #fffbeb; border-left: 4px solid #f59e0b; padding: 1.25rem 1.5rem;
+    border-radius: 8px; margin-bottom: 2.5rem; display: flex; align-items: flex-start; gap: 1rem;
+  }
+  .warning-belt strong { color: #92400e; display: block; margin-bottom: .25rem; font-size: .95rem; }
+  .warning-belt p { margin: 0; color: #b45309; font-size: .85rem; line-height: 1.4; }
+
+  .god-form label { font-size: .85rem; font-weight: 700; color: #475569; margin-bottom: .5rem; display: block; text-transform: uppercase; letter-spacing: .5px; }
+  .god-form input, .god-form select, .god-form textarea {
+    width: 100%; padding: .85rem 1rem; border-radius: 10px; border: 1.5px solid #e2e8f0;
+    transition: all .2s; font-size: .95rem; background: #f8fafc; margin-bottom: .25rem;
+  }
+  .god-form input:focus, .god-form select:focus, .god-form textarea:focus {
+    outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,.1);
+  }
+  
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+  @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+  
+  .form-help { font-size: .8rem; color: #94a3b8; margin-bottom: 1.5rem; }
+  
+  .btn-god-save { padding: .9rem 2.5rem; font-weight: 800; border-radius: 10px; background: #f59e0b; border-color: #d97706; color: #fff; }
+  .btn-god-save:hover { background: #d97706; }
+
+  .breadcrumb-nav { margin-bottom: 1rem; font-size: .85rem; color: #64748b; font-weight: 500; }
+  .breadcrumb-nav a { text-decoration: none; color: #3b82f6; font-weight: 700; }
+</style>
+
+<div class="breadcrumb-nav">
+  <a href="/data-explorer/">🗄 All Datasets</a> &nbsp;›&nbsp; 
+  <a href="{% url 'data_explorer:model' model_name %}">{{ model_name|title|cut:"-" }}</a> &nbsp;›&nbsp;
+  Edit #{{ instance.pk }}
+</div>
+
+<div class="form-hero">
+  <h1 class="form-hero-title">✍️ Manual Data Entry <span>GOD MODE</span></h1>
+  <p class="form-hero-sub">You are overriding a record in the <strong>{{ model_name }}</strong> ledger. Use this exclusively for administrative corrections.</p>
+</div>
+
+<div class="edit-card">
+  <div class="warning-belt">
+    <div style="font-size: 1.5rem;">⚠️</div>
+    <div>
+      <strong>SENSITIVE OPERATION</strong>
+      <p>Modifying this record will automatically cascade through system balances. All changes are tagged with your identity in the audit trail.</p>
+    </div>
+  </div>
+
+  <form method="post" class="god-form">
+    {% csrf_token %}
+    <div class="form-grid">
+      {% for field in form %}
+      <div>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-help">{{ field.help_text }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 2rem; margin-top: 1.5rem;">
+      <a href="{% url 'data_explorer:model' model_name %}" class="btn btn-secondary" style="padding: .8rem 2rem;">Discard Changes</a>
+      <button type="submit" class="btn btn-primary btn-god-save">Update Record Permanently</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

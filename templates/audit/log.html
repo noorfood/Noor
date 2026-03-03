@@ -1,0 +1,77 @@
+﻿{% extends 'base.html' %}
+{% block title %}Immutable Audit Ledger — Noor Foods{% endblock %}
+{% block nav_audit %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Immutable Audit Ledger</div>
+    <div class="page-subtitle">Every write action performed by every user, recorded automatically and permanently. Cannot be edited or deleted. This is the single source of truth for all system activity.</div>
+</div>
+
+{# Filters #}
+<div style="background:white;padding:1rem 1.5rem;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:1.5rem;">
+    <form method="get" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+        <div class="form-row" style="flex:1;min-width:130px;">
+            <label>Module</label>
+            <input type="text" name="module" value="{{ f_module }}" placeholder="e.g. production">
+        </div>
+        <div class="form-row" style="flex:1;min-width:130px;">
+            <label>User</label>
+            <input type="text" name="user" value="{{ f_user }}" placeholder="Full name">
+        </div>
+        <div class="form-row" style="flex:1;min-width:130px;">
+            <label>Action</label>
+            <input type="text" name="action" value="{{ f_action }}" placeholder="e.g. RECORD_SALE">
+        </div>
+        <div class="form-row" style="flex:1;min-width:120px;">
+            <label>From Date</label>
+            <input type="date" name="date_from" value="{{ f_date_from }}">
+        </div>
+        <div class="form-row" style="flex:1;min-width:120px;">
+            <label>To Date</label>
+            <input type="date" name="date_to" value="{{ f_date_to }}">
+        </div>
+        <div style="margin-top:1.5rem;display:flex;gap:0.5rem;">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="?" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="action-bar">
+    <span class="action-bar-title">Log Entries ({{ logs|length }}{% if logs|length >= 200 %}+{% endif %})</span>
+    <span style="font-size:0.8rem;color:#94a3b8;">Read-only · Cannot be modified</span>
+</div>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th style="white-space:nowrap;">Timestamp</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Module</th>
+                <th>Action</th>
+                <th>Record</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td style="font-family:monospace;color:#94a3b8;font-size:0.75rem;">{{ forloop.counter }}</td>
+                <td style="white-space:nowrap;font-size:0.75rem;font-family:monospace;color:#64748b;">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td><strong>{{ log.user_name }}</strong></td>
+                <td><span class="badge badge-draft" style="font-size:0.7rem;">{{ log.user_role|upper }}</span></td>
+                <td style="color:#3b82f6;font-weight:500;">{{ log.module }}</td>
+                <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.75rem;color:#4338ca;">{{ log.action }}</code></td>
+                <td style="color:#94a3b8;font-size:0.85rem;">{{ log.object_type }}{% if log.object_id %} #{{ log.object_id }}{% endif %}</td>
+                <td style="color:#475569;">{{ log.description|truncatechars:90 }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="table-empty">No audit entries match the current filters.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

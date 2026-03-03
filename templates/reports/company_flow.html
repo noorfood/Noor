@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+{% block title %}Company Flow — NOOR FOODS{% endblock %}
+{% block nav_md_flow %}active{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --navy-deep: #0f172a;
+        --indigo-vibrant: #4f46e5;
+        --emerald-glow: #10b981;
+        --amber-glow: #f59e0b;
+        --sky-glow: #0ea5e9;
+    }
+
+    body { background-color: #f8fafc; }
+
+    .flow-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-bottom: 4rem;
+    }
+
+    /* Glass Card System */
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 2rem;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
+    }
+
+    /* Stage Headers */
+    .stage-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid rgba(0,0,0,0.05);
+    }
+
+    .stage-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .stage-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--navy-deep);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* Stat Grid */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .stat-box {
+        padding: 1rem;
+        border-radius: 15px;
+        background: rgba(255,255,255,0.5);
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--navy-deep);
+    }
+
+    .stat-footer {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        margin-top: 0.25rem;
+    }
+
+    /* Pipeline Arrow */
+    .flow-connector {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: -1rem 0 1rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .flow-arrow {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .flow-line {
+        width: 2px;
+        height: 20px;
+        background: #e2e8f0;
+    }
+
+    /* Financial Pulse */
+    .pulse-card {
+        background: var(--navy-deep);
+        color: white;
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pulse-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .pulse-item h4 { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .pulse-item .val { font-size: 2.25rem; font-weight: 800; letter-spacing: -1px; }
+    .pulse-item.green .val { color: var(--emerald-glow); }
+    .pulse-item.amber .val { color: var(--amber-glow); }
+
+    /* Tables */
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        margin-top: 1rem;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f8fafc; text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+    td { padding: 1rem; border-top: 1px solid #f1f5f9; font-size: 0.9rem; }
+    .num { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
+
+</style>
+
+<div class="flow-container">
+    <div class="page-header" style="margin-bottom: 2rem;">
+        <div class="page-title">Company Transaction Flow</div>
+        <div class="page-subtitle">The ultimate lifecycle pulse: from raw material to cash in bank.</div>
+    </div>
+
+    {% if show_money %}
+    <!-- EXECUTIVE FINANCIAL PULSE -->
+    <div class="pulse-card">
+        <div class="pulse-item">
+            <h4>Total Consolidated Revenue</h4>
+            <div class="val">₦{{ company_total_revenue|floatformat:0 }}</div>
+            <div style="font-size:0.75rem; color:#64748b;">SM + GM + Brand Channels</div>
+        </div>
+        <div class="pulse-item green">
+            <h4>Cash/Transfer Secured</h4>
+            <div class="val">₦{{ company_received_money|floatformat:0 }}</div>
+            <div style="font-size:0.75rem; color:#64748b;">Banked & Confirmed</div>
+        </div>
+        <div class="pulse-item amber">
+            <h4>Outstanding Receivables</h4>
+            <div class="val">₦{{ company_outstanding_money|floatformat:0 }}</div>
+            <div style="font-size:0.75rem; color:#64748b;">Market Debts (SM + Brand)</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- STAGE 1: RAW STORE -->
+    <div class="glass-card">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: #f59e0b;">📦</div>
+            <div class="stage-title">Stage 1 — Raw Material Sourcing</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-label">Maize (Raw)</div>
+                <div class="stat-value">{{ raw_maize_in }}</div>
+                <div class="stat-footer">{{ raw_maize_bal }} bags remaining</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Wheat (Raw)</div>
+                <div class="stat-value">{{ raw_wheat_in }}</div>
+                <div class="stat-footer">{{ raw_wheat_bal }} bags remaining</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-connector">
+        <div class="flow-line"></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-line"></div>
+    </div>
+
+    <!-- STAGE 2: CLEAN STORE -->
+    <div class="glass-card">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: #22c55e;">🧹</div>
+            <div class="stage-title">Stage 2 — Inventory Readiness (Clean)</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-label">Maize (Cleaned)</div>
+                <div class="stat-value">{{ clean_maize_in }}</div>
+                <div class="stat-footer">{{ clean_maize_bal }} bags in clean store</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Wheat (Cleaned)</div>
+                <div class="stat-value">{{ clean_wheat_in }}</div>
+                <div class="stat-footer">{{ clean_wheat_bal }} bags in clean store</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-connector">
+        <div class="flow-line"></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-line"></div>
+    </div>
+
+    <!-- STAGE 3: CORE PRODUCTION -->
+    <div class="glass-card">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: #6366f1;">⚙️</div>
+            <div class="stage-title">Stage 3 — Manufacturing (Production)</div>
+        </div>
+        <div class="stat-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-box">
+                <div class="stat-label">Total Milled</div>
+                <div class="stat-value">{{ total_bags_milled }} <small style="font-size:0.8rem;">Bags</small></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Sacks Packaged</div>
+                <div class="stat-value">{{ total_sacks_produced }} <small style="font-size:0.8rem;">10kg</small></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Powder Produced</div>
+                <div class="stat-value">{{ total_powder_kg|floatformat:0 }} <small style="font-size:0.8rem;">kg</small></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Unpackaged Powder</div>
+                <div class="stat-value" style="color:var(--amber-glow)">{{ powder_bal_kg|floatformat:0 }} <small style="font-size:0.8rem;">kg</small></div>
+            </div>
+        </div>
+
+        {% if prod_officer_rows %}
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Officer</th>
+                        <th class="num">Accepted</th>
+                        <th class="num">Milled</th>
+                        <th class="num">Returned</th>
+                        <th class="num">Floor Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in prod_officer_rows %}
+                    <tr>
+                        <td style="font-weight:600;">{{ row.user.full_name }}</td>
+                        <td class="num">{{ row.accepted }}</td>
+                        <td class="num">{{ row.milled }}</td>
+                        <td class="num">{{ row.returned }}</td>
+                        <td class="num {% if row.balance > 0 %}text-warning{% endif %}">{{ row.balance }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="flow-connector">
+        <div class="flow-line"></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-line"></div>
+    </div>
+
+    <!-- STAGE 4: FINISHED STORE -->
+    <div class="glass-card">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: #0ea5e9;">🏬</div>
+            <div class="stage-title">Stage 4 — Inventory Repo (Finished Store)</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Inducted</div>
+                <div class="stat-value">{{ fg_in }}</div>
+                <div class="stat-footer">Sacks from Packaging</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Extracted</div>
+                <div class="stat-value">{{ fg_out }}</div>
+                <div class="stat-footer">Sacks issued to Channels</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Secure Store Balance</div>
+                <div class="stat-value" style="color:var(--sky-glow)">{{ fg_bal }}</div>
+                <div class="stat-footer">Total sacks available in warehouse</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flow-connector">
+        <div class="flow-line"></div>
+        <div class="flow-arrow">▼</div>
+        <div class="flow-line"></div>
+    </div>
+
+    <!-- STAGE 5: REVENUE CHANNELS (SM & GM) -->
+    <div class="glass-card" style="border: 2px solid var(--indigo-vibrant);">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: var(--indigo-vibrant);">💰</div>
+            <div class="stage-title">Stage 5 — Distribution & Direct Monetization</div>
+        </div>
+
+        <!-- GM COMMAND CENTER (DIRECT SALES) -->
+        <div style="background:rgba(79, 70, 229, 0.05); padding:1rem; border-radius:15px; margin-bottom:1.5rem; border:1px dashed var(--indigo-vibrant);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <div style="font-weight:800; color:var(--indigo-vibrant); font-size:0.9rem;">🏢 General Manager Direct channel (Retail/Piece Sale)</div>
+                {% if show_money %}
+                <div style="font-weight:800; color:var(--indigo-vibrant); font-size:1.1rem;">₦{{ gm_revenue|floatformat:0 }}</div>
+                {% endif %}
+            </div>
+            <div class="stat-grid">
+                <div class="stat-box" style="background:white;">
+                    <div class="stat-label">Maize Sacks in Hand</div>
+                    <div class="stat-value">{{ gm_maize_hand }}</div>
+                    <div style="font-size:0.75rem; color:var(--sky-glow); font-weight:700;">{{ gm_maize_pieces }} <small>Pieces</small></div>
+                </div>
+                <div class="stat-box" style="background:white;">
+                    <div class="stat-label">Wheat Sacks in Hand</div>
+                    <div class="stat-value">{{ gm_wheat_hand }}</div>
+                    <div style="font-size:0.75rem; color:#c2410c; font-weight:700;">{{ gm_wheat_pieces }} <small>Pieces</small></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SM CHANNEL Breakdown -->
+        <div style="font-weight:800; color:var(--navy-deep); font-size:0.9rem; margin-bottom:1rem;">💼 Sales Manager Channel (Wholesale)</div>
+        <div class="stat-grid" style="margin-bottom:1rem;">
+            <div class="stat-box">
+                <div class="stat-label">Sacks with Managers</div>
+                <div class="stat-value">{{ total_goods_outstanding }}</div>
+            </div>
+            {% if show_money %}
+            <div class="stat-box">
+                <div class="stat-label">Expected SM Revenue</div>
+                <div class="stat-value">₦{{ total_sales_value|floatformat:0 }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Confirmed Remittance</div>
+                <div class="stat-value" style="color:var(--emerald-glow)">₦{{ total_money_received|floatformat:0 }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Per SM Breakdown -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sales Manager</th>
+                        <th class="num">Collected</th>
+                        <th class="num">In Hand</th>
+                        {% if show_money %}
+                        <th class="num">Expected (₦)</th>
+                        <th class="num">Paid (₦)</th>
+                        <th class="num">Debt (₦)</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sm_rows %}
+                    <tr>
+                        <td style="font-weight:600;">{{ row.sm.full_name }}</td>
+                        <td class="num">{{ row.collected }}</td>
+                        <td class="num {% if row.goods_balance > 0 %}text-warning{% endif %}">{{ row.goods_balance }}</td>
+                        {% if show_money %}
+                        <td class="num">₦{{ row.total_sales_value|floatformat:0 }}</td>
+                        <td class="num" style="color:var(--emerald-glow)">₦{{ row.money_received|floatformat:0 }}</td>
+                        <td class="num {% if row.money_outstanding > 0 %}text-warning{% endif %}">₦{{ row.money_outstanding|floatformat:0 }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- STAGE 6: AUXILIARY -->
+    <div class="glass-card">
+        <div class="stage-header">
+            <div class="stage-icon" style="background: #c026d3;">♻️</div>
+            <div class="stage-title">Stage 6 — Byproducts & Bran Sales</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-label">Byproduct Sacks Sold</div>
+                <div class="stat-value">{{ total_brand_sacks }}</div>
+            </div>
+            {% if show_money %}
+            <div class="stat-box">
+                <div class="stat-label">Revenue Generated</div>
+                <div class="stat-value">₦{{ brand_sales_value|floatformat:0 }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Debt Owed</div>
+                <div class="stat-value" style="color:var(--amber-glow)">₦{{ brand_outstanding|floatformat:0 }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

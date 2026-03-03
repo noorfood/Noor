@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Cleaning Pipeline — Noor Foods{% endblock %}
+{% block nav_cl_list %}active{% endblock %}
+{% block content %}
+<style>
+  .cl-hero {
+    background: linear-gradient(135deg, #064e3b, #14532d);
+    border-radius: 14px; padding: 2rem 2.5rem;
+    margin-bottom: 2.5rem; border: 1px solid #065f46;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .cl-hero-title { font-size: 1.75rem; font-weight: 800; color: #ecfdf5; margin: 0; display: flex; align-items: center; gap: 1rem; }
+  .cl-hero-sub { font-size: 0.95rem; color: #a7f3d0; margin-top: 0.5rem; max-width: 600px; }
+
+  .cl-action-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.75rem; background: #fff; border-radius: 12px;
+    border: 1.5px solid #e2e8f0; margin-bottom: 2rem;
+  }
+  
+  .premium-cl-table-wrapper {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+    overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .cl-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .cl-table th {
+    background: #f8fafc; padding: 1rem; text-align: left;
+    font-size: .75rem; font-weight: 800; text-transform: uppercase;
+    color: #475569; border-bottom: 1px solid #e2e8f0;
+  }
+  .cl-table td { padding: 1.2rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  .cl-table tr:hover td { background: #fbfcfe; }
+  
+  .batch-id { font-family: monospace; font-weight: 700; color: #64748b; }
+</style>
+
+<div class="cl-hero">
+  <h1 class="cl-hero-title">🧼 Cleaning Operational Pipeline</h1>
+  <p class="cl-hero-sub">Full registry of raw material processing. Monitors dirty bag consumption vs clean bag output and historical yield loss.</p>
+</div>
+
+<div class="cl-action-bar">
+  <div style="font-weight: 800; color: #1e293b; font-size: 1.1rem;">Active Processing Batches</div>
+  {% if current_user.is_cleaning_manager %}
+  <a href="/cleaning/batch/new/" class="btn btn-primary" style="padding: .65rem 1.5rem; font-weight: 800;">+ Initialize New Batch</a>
+  {% endif %}
+</div>
+
+<div class="premium-cl-table-wrapper">
+  <table class="cl-table">
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Date</th>
+        <th>Material</th>
+        <th class="num">Dirty Bags In</th>
+        <th class="num">Clean Bags Out</th>
+        <th class="num">Loss (kg)</th>
+        <th>Status</th>
+        <th>Operations Manager</th>
+        {% if current_user.is_manager_or_above %}<th style="text-align: right;">Action</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in batches %}
+      <tr>
+        <td class="batch-id">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap;">{{ b.date|date:"d M Y" }}</td>
+        <td><span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
+        <td class="num font-bold">{{ b.dirty_bags_used }}</td>
+        <td class="num font-bold" style="color: #10b981;">{{ b.clean_bags_produced }}</td>
+        <td class="num" style="color: #d97706; font-weight: 700;">{{ b.loss_kg }}</td>
+        <td>
+          <span class="badge badge-{{ b.status }}" style="font-weight: 800;">{{ b.status|upper }}</span>
+        </td>
+        <td>
+          <div style="font-weight: 700; color: #0f172a;">{{ b.cleaning_manager.full_name }}</div>
+        </td>
+        {% if current_user.is_manager_or_above %}
+        <td style="text-align: right;">
+          {% if b.status == 'draft' %}
+          <a href="/cleaning/batch/{{ b.pk }}/approve/" class="btn btn-sm btn-primary" style="font-weight: 800; border-radius: 6px;">Verify & Approve</a>
+          {% else %}
+          <span style="font-size: .8rem; font-weight: 800; color: #10b981; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+            <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+            LOCKED
+          </span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="padding: 4rem; text-align: center; color: #94a3b8;">No cleaning batches found in the registry.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top: 1.5rem;">
+  <a href="/cleaning/dashboard/" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

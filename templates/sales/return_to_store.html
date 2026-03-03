@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Return Finished Goods{% endblock %}
+{% block nav_sl_out %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Return Sacks to Finished Goods Store</div>
+    <div class="page-subtitle">Return unsold 10kg sacks from your custody back to the store. This will be pending store acknowledgement.</div>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="date">Date*</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
+            </div>
+            
+            <div class="form-row">
+                <label>Current Unsold Balance</label>
+                <div style="padding: 0.5rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; font-weight: bold;">
+                    {{ balance_10kg }} Sacks Available
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <label for="num_bags">Number of Sacks to Return*</label>
+            <input type="number" id="num_bags" name="num_bags" min="1" required>
+            <div class="form-hint">Must not exceed your current balance.</div>
+        </div>
+        
+        <div class="form-row">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Optional. Reason for return..."></textarea>
+        </div>
+        
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary" {% if balance_10kg <= 0 %}disabled{% endif %}>Initiate Return (Pending Store Check)</button>
+            <a href="/sales/outstanding/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

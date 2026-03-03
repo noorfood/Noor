@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Raw Material Registry — Noor Foods{% endblock %}
+{% block nav_proc_list %}active{% endblock %}
+{% block content %}
+<style>
+  .proc-reg-hero {
+    background: linear-gradient(145deg, #1c1917, #292524);
+    border-radius: 14px; padding: 1.75rem 2rem;
+    margin-bottom: 1.75rem; border: 1px solid #44403c;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+  }
+  .proc-reg-title { font-size:1.4rem; font-weight:800; color:#fafaf9; margin:0; }
+  .proc-reg-sub { font-size:.85rem; color:#a8a29e; margin-top:.2rem; }
+
+  .bal-strip { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
+  .bal-item { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:.75rem 1.1rem; }
+  .bal-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#78716c; margin-bottom:.25rem; }
+  .bal-value { font-size:1.8rem; font-weight:900; font-family:monospace; line-height:1; }
+  .bal-unit { font-size:.7rem; color:#57534e; margin-top:.2rem; }
+  .maize-v { color:#fcd34d; } .wheat-v { color:#86efac; }
+
+  .section-divider { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; padding:.85rem 1.25rem; background:#f8fafc; border-radius:10px 10px 0 0; border:1px solid #e2e8f0; border-bottom:none; font-weight:700; color:#1e293b; font-size:.92rem; }
+  .quick-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:.85rem 1.25rem; margin-bottom:1.5rem; }
+</style>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# HERO + LIVE BALANCES                                      #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="proc-reg-hero">
+  <div>
+    <div class="proc-reg-title">🏗️ Raw Material Registry</div>
+    <div class="proc-reg-sub">Full ledger of all raw material receipts from market and issuances to the cleaning department.</div>
+  </div>
+  <div class="bal-strip" style="min-width:280px;">
+    <div class="bal-item">
+      <div class="bal-label">🌽 Maize Balance</div>
+      <div class="bal-value maize-v">{{ balance_maize }}</div>
+      <div class="bal-unit">100kg bags in store</div>
+    </div>
+    <div class="bal-item">
+      <div class="bal-label">🌾 Wheat Balance</div>
+      <div class="bal-value wheat-v">{{ balance_wheat }}</div>
+      <div class="bal-unit">100kg bags in store</div>
+    </div>
+  </div>
+</div>
+
+{# QUICK ACTIONS #}
+<div class="quick-actions">
+  <span style="font-weight:700;color:#334155;font-size:.9rem;">⚡ Quick Actions</span>
+  <a href="{% url 'procurement:receive' %}" class="btn btn-primary">+ Receive New Stock</a>
+  <a href="{% url 'procurement:issue' %}" class="btn btn-secondary">Issue to Cleaner →</a>
+</div>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# MARKET RECEIPTS                                           #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="section-divider">
+  <span>📥 Market Receipts — Raw Stock In</span>
+  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Total bags received from suppliers</span>
+</div>
+<div class="table-wrapper mb-16" style="border-radius:0 0 10px 10px;border-top:none;">
+  <table>
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Date</th>
+        <th>Material</th>
+        <th>Supplier</th>
+        <th class="num">Bags Received</th>
+        <th class="num">Approx. Weight</th>
+        <th>Ref No.</th>
+        <th>Received By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in receipts %}
+      <tr>
+        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap;">{{ r.date }}</td>
+        <td><span class="badge badge-{{ r.material_type }}">{{ r.material_type|upper }}</span></td>
+        <td><strong>{{ r.supplier }}</strong></td>
+        <td class="num font-bold text-success">+{{ r.num_bags }}</td>
+        <td class="num" style="color:#64748b;">{{ r.approx_weight_kg|default:"—" }} kg</td>
+        <td style="color:#64748b;font-size:.85rem;">{{ r.reference_no|default:"—" }}</td>
+        <td style="color:#64748b;font-size:.85rem;">{{ r.received_by.full_name }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="table-empty">No market receipts recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# CLEANING ISSUANCES                                        #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="section-divider" style="margin-top:1.5rem;">
+  <span>📤 Cleaning Issuances — Raw Stock Out</span>
+  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Bags sent to the Cleaning Department</span>
+</div>
+<div class="table-wrapper" style="border-radius:0 0 10px 10px;border-top:none;">
+  <table>
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Date</th>
+        <th>Material</th>
+        <th class="num">Bags Issued</th>
+        <th>Issued To (Cleaner)</th>
+        <th>Issued By (Store)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for i in issuances %}
+      <tr>
+        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap;">{{ i.date }}</td>
+        <td><span class="badge badge-{{ i.material_type }}">{{ i.material_type|upper }}</span></td>
+        <td class="num font-bold text-danger">-{{ i.num_bags_issued }}</td>
+        <td><strong>{{ i.issued_to }}</strong></td>
+        <td style="color:#64748b;font-size:.85rem;">{{ i.issued_by.full_name }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="table-empty">No issuances to cleaning recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top:1.25rem;">
+  <a href="{% url 'procurement:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

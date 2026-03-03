@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Receive Finished Goods — Noor Foods{% endblock %}
+{% block nav_fg_receive %}active{% endblock %}
+{% block content %}
+<style>
+  .form-page-hero { background:linear-gradient(145deg,#0f172a,#1e293b); border-radius:14px; padding:1.5rem 2rem; margin-bottom:1.75rem; border:1px solid #334155; }
+  .form-page-hero-title { font-size:1.3rem; font-weight:800; color:#f1f5f9; margin:0; }
+  .form-page-hero-sub { font-size:.85rem; color:#94a3b8; margin-top:.25rem; }
+  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+  .form-section-title { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:1.25rem; padding-bottom:.6rem; border-bottom:2px solid #f1f5f9; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+  .submit-bar { display:flex; gap:.75rem; align-items:center; margin-top:1.5rem; }
+  .btn-submit { background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
+  .btn-submit:hover { opacity:.85; }
+  .context-tip { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #10b981; border-radius:8px; padding:.9rem 1.1rem; margin-bottom:1.25rem; font-size:.85rem; color:#166534; }
+</style>
+
+<div class="form-page-hero">
+  <div class="form-page-hero-title">📥 Receive Finished Goods from Packaging</div>
+  <div class="form-page-hero-sub">Log packaged flour sacks confirmed collected from the production department into the Finished Goods Store.</div>
+</div>
+
+{% if error %}
+<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+{% endif %}
+
+{% if not batches %}
+<div class="context-tip">ℹ All available packaging batches have already been received. Ask the Production Officer to record a new batch first.</div>
+{% endif %}
+
+<div class="form-section">
+  <div class="form-section-title">📋 Receipt Details</div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label for="date">Date of Receipt *</label>
+        <input type="date" id="date" name="date" value="{{ today }}" required>
+      </div>
+      <div class="form-group">
+        <label for="batch_id">Packaging Batch *</label>
+        <select id="batch_id" name="batch_id" required>
+          <option value="">— Select Packaging Batch —</option>
+          {% for b in batches %}
+          <option value="{{ b.pk }}">#{{ b.pk }} | {{ b.date }} | {{ b.get_material_type_display|upper }} | {{ b.production_officer.full_name }} | {{ b.qty_10kg }} × 10kg sacks</option>
+          {% empty %}
+          <option disabled>No unreceived packaging batches available</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label for="product_size">Product Size *</label>
+        <select id="product_size" name="product_size" required>
+          <option value="">— Select Size —</option>
+          {% for val, label in size_choices %}
+          <option value="{{ val }}">{{ label }} Sacks</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="qty_received">Quantity Received (Sacks) *</label>
+        <input type="number" id="qty_received" name="qty_received" min="1" placeholder="e.g. 50" required>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:1.25rem;">
+      <label for="notes">Notes (Optional)</label>
+      <textarea id="notes" name="notes" rows="2" placeholder="Any remarks about this receipt…"></textarea>
+    </div>
+    <div class="submit-bar">
+      <button type="submit" class="btn-submit">✓ Save Receipt & Add to Store</button>
+      <a href="{% url 'finished_store:list' %}" class="btn btn-secondary">← Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

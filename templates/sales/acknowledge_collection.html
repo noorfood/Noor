@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Acknowledge Collection — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #7c3aed 100%);
+    color: white; border-radius: 16px; padding: 2rem 2.5rem;
+    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.2);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #c4b5fd; margin-bottom: .3rem; display: block; }
+  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #ddd6fe; font-size: .9rem; }
+
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .detail-chip {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 1rem 1.2rem; box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  }
+  .chip-label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #64748b; margin-bottom: .35rem; }
+  .chip-value { font-size: 1.4rem; font-weight: 900; color: #0f172a; font-family: monospace; }
+
+  .warning-box {
+    background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 12px;
+    padding: 1.25rem 1.5rem; margin-bottom: 2rem; color: #78350f;
+    font-size: .9rem; line-height: 1.6;
+  }
+  .warning-box strong { color: #92400e; }
+
+  .action-section { display: flex; gap: 2rem; flex-wrap: wrap; align-items: flex-start; margin-top: 1.5rem; }
+  .accept-btn {
+    background: #10b981; color: #fff; border: none; padding: .85rem 2.5rem;
+    border-radius: 10px; font-size: 1rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16,185,129,.3); transition: all .2s; white-space: nowrap;
+  }
+  .accept-btn:hover { background: #059669; transform: translateY(-1px); }
+
+  .reject-section {
+    flex: 1; min-width: 300px;
+    border: 1.5px solid #fca5a5; border-radius: 12px;
+    padding: 1.5rem; background: #fff5f5;
+  }
+  .reject-title { font-size: .95rem; font-weight: 800; color: #dc2626; margin: 0 0 .75rem; }
+  .reject-textarea {
+    width: 100%; box-sizing: border-box; padding: .65rem .9rem;
+    border: 1.5px solid #fca5a5; border-radius: 8px; font-size: .9rem;
+    resize: vertical; background: #fff;
+  }
+  .reject-textarea:focus { outline: none; border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+  .reject-btn {
+    background: #ef4444; color: #fff; border: none; padding: .7rem 1.5rem;
+    border-radius: 8px; font-size: .9rem; font-weight: 700; cursor: pointer;
+    margin-top: .75rem; transition: background .2s;
+  }
+  .reject-btn:hover { background: #dc2626; }
+
+  .back-link { display: inline-flex; align-items: center; gap: .4rem; color: #64748b; text-decoration: none; font-size: .88rem; margin-top: 2rem; }
+  .back-link:hover { color: #0f172a; }
+</style>
+
+<div class="page-hero">
+  <span class="hero-label">🤝 Handshake Protocol</span>
+  <h1 class="hero-title">Acknowledge Collection</h1>
+  <p class="hero-sub">Review the details carefully. Accepting means you physically received these goods and take full responsibility.</p>
+</div>
+
+{% if error %}
+<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:.9rem 1.2rem;margin-bottom:1.5rem;color:#991b1b;font-weight:600;">
+  ⚠️ {{ error }}
+</div>
+{% endif %}
+
+{# Details #}
+<div class="detail-grid">
+  <div class="detail-chip">
+    <div class="chip-label">Date</div>
+    <div class="chip-value" style="font-size:1rem;">{{ collection.date }}</div>
+  </div>
+  <div class="detail-chip">
+    <div class="chip-label">Material</div>
+    <div class="chip-value">{{ collection.material_type|upper }}</div>
+  </div>
+  <div class="detail-chip" style="border-left:4px solid #3b82f6;">
+    <div class="chip-label">Quantity</div>
+    <div class="chip-value" style="color:#1d4ed8;">{{ collection.qty_sacks }}</div>
+    <div style="font-size:.75rem;color:#94a3b8;margin-top:.2rem;">10kg sacks</div>
+  </div>
+  <div class="detail-chip">
+    <div class="chip-label">Price / Sack</div>
+    <div class="chip-value" style="font-size:1.1rem;">{% if collection.price_per_sack %}₦{{ collection.price_per_sack|floatformat:0 }}{% else %}—{% endif %}</div>
+  </div>
+  <div class="detail-chip" style="border-left:4px solid #f59e0b;">
+    <div class="chip-label">Total Value</div>
+    <div class="chip-value" style="color:#d97706;font-size:1.3rem;">₦{{ collection.total_value|floatformat:0 }}</div>
+  </div>
+</div>
+
+<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem 1.3rem;margin-bottom:1.75rem;font-size:.88rem;color:#475569;">
+  <strong>Recorded by:</strong> {{ collection.store_officer.full_name }}
+  &nbsp;·&nbsp;
+  <strong>Notes:</strong> {{ collection.notes|default:"None" }}
+</div>
+
+<div class="warning-box">
+  ⚠️ <strong>Read carefully before accepting:</strong><br>
+  If you accept, the company records that <strong>you physically received {{ collection.qty_sacks }} × {{ collection.material_type|upper }} 10kg sacks</strong>.<br>
+  If the count is wrong, <strong>reject it with the correct reason below</strong>.
+</div>
+
+{# Accept/Reject forms #}
+<div class="action-section">
+  <div>
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="accept">
+      <button type="submit" class="accept-btn"
+        onclick="return confirm('Confirm: You accept {{ collection.qty_sacks }} sacks of {{ collection.material_type|upper }}?')">
+        ✓ Accept — I received these goods
+      </button>
+    </form>
+  </div>
+
+  <div class="reject-section">
+    <div class="reject-title">✗ Reject this Collection</div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reject">
+      <textarea name="rejection_note" class="reject-textarea" rows="3"
+        placeholder="e.g. Requested 50 sacks, received 40. Count mismatch." required></textarea>
+      <button type="submit" class="reject-btn">✗ Reject — Count is wrong</button>
+    </form>
+  </div>
+</div>
+
+<a href="{% url 'sales:list_collections' %}" class="back-link">← Back to Collections</a>
+{% endblock %}

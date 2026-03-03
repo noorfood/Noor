@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% block title %}Management Command Center — Noor Foods{% endblock %}
+{% block nav_md_dash %}active{% endblock %}
+{% block content %}
+<style>
+  .cmd-hero {
+    background: linear-gradient(145deg, #020617, #0f172a);
+    border-radius: 14px; padding: 1.75rem 2rem;
+    margin-bottom: 2rem; border: 1px solid #1e293b;
+    box-shadow: 0 12px 32px rgba(0,0,0,.5);
+    display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+  }
+  .cmd-title { font-size:1.6rem; font-weight:900; color:#f8fafc; margin:0; letter-spacing:-.02em; }
+  .cmd-sub { font-size:.88rem; color:#64748b; margin-top:.3rem; max-width:520px; }
+  .cmd-live { display:flex; align-items:center; gap:.5rem; font-size:.8rem; color:#10b981; font-weight:700; }
+  .pulse { width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 1.5s infinite; }
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
+
+  /* ══ MD INSIGHTS BANNER ══════════════════════════════════════ */
+  .insights-banner {
+    background: linear-gradient(135deg, #1e3a5f, #1e40af);
+    border: 1px solid #3b82f6; border-radius: 12px;
+    padding: 1.25rem 1.75rem; margin-bottom: 2rem;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    box-shadow: 0 4px 16px rgba(59,130,246,.25);
+  }
+  .insights-title { font-size:1.1rem; font-weight:800; color:#e0f2fe; }
+  .insights-sub { font-size:.83rem; color:#93c5fd; margin-top:.2rem; }
+
+  /* ══ FINANCIAL PULSE ════════════════════════════════════════ */
+  .fin-row {
+    background:linear-gradient(145deg,#1e293b,#0f172a);
+    border:1px solid #334155; border-radius:12px;
+    padding:1.5rem; display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap:1.25rem; margin-bottom:2rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,.3);
+  }
+  .fin-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#475569; margin-bottom:.4rem; }
+  .fin-value { font-size:2rem; font-weight:900; font-family:monospace; line-height:1; }
+  .fin-sub { font-size:.75rem; color:#475569; margin-top:.35rem; }
+  .rev-color { color:#60a5fa; }
+  .rcv-color { color:#34d399; }
+  .debt-color-red { color:#fb7185; }
+  .debt-color-grn { color:#34d399; }
+
+  /* ══ SM ACCOUNTABILITY BAR ══════════════════════════════════ */
+  .sm-bar {
+    background:#fff; border:1px solid #e2e8f0; border-left:4px solid #3b82f6;
+    border-radius:10px; padding:1.1rem 1.4rem; margin-bottom:.65rem;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;
+    transition: background .2s;
+  }
+  .sm-bar:hover { background:#f8fafc; }
+  .sm-bar.has-debt { border-left-color: #ef4444; }
+  .sm-bar.has-goods { border-left-color: #f59e0b; }
+  .sm-name { font-weight:700; color:#0f172a; font-size:.95rem; }
+  .sm-sub { font-size:.77rem; color:#64748b; margin-top:.1rem; }
+  .sm-pills { display:flex; gap:.65rem; flex-wrap:wrap; }
+  .sm-pill { font-size:.8rem; font-weight:700; padding:4px 12px; border-radius:20px; }
+  .pill-goods { background:#dbeafe; color:#1e40af; }
+  .pill-money-ok { background:#dcfce7; color:#166534; }
+  .pill-money-bad { background:#fee2e2; color:#991b1b; }
+  .pill-pending { background:#fef9c3; color:#854d0e; }
+
+  /* ══ SECTION HEADING ════════════════════════════════════════ */
+  .ops-section-heading {
+    font-size:1rem; font-weight:800; color:#1e293b;
+    border-bottom: 2px solid #e2e8f0; padding-bottom:.6rem;
+    margin-bottom:1.25rem; margin-top:0; display:flex; align-items:center; gap:.5rem;
+  }
+
+  /* ══ OPERATIONAL HEALTH CARDS ═══════════════════════════════ */
+  .health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1.1rem; margin-bottom:2rem; }
+  .health-card { background:#fff; border:1px solid #e2e8f0; border-left:4px solid #3b82f6; border-radius:10px; padding:1.1rem 1.3rem; box-shadow:0 1px 4px rgba(0,0,0,.05); transition:transform .2s; }
+  .health-card:hover { transform:translateY(-2px); }
+  .health-card.warn { border-left-color:#f59e0b; background:linear-gradient(135deg,#fff,#fffbeb); }
+  .health-card.danger { border-left-color:#ef4444; background:linear-gradient(135deg,#fff,#fef2f2); }
+  .health-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:.5rem; }
+  .health-value { font-size:2.2rem; font-weight:900; font-family:monospace; line-height:1; color:#0f172a; }
+  .health-value.warn-val { color:#d97706; }
+  .health-value.danger-val { color:#dc2626; }
+  .health-value.ok-val { color:#16a34a; }
+  .health-unit { font-size:.75rem; color:#94a3b8; margin-top:.3rem; }
+
+  /* ══ OVERSIGHT ═══════════════════════════════════════════════ */
+  /* ══ OVERSIGHT REDESIGN ══════════════════════════════════════ */
+  .oversight-wrapper {
+    display: grid; grid-template-columns: 1.8fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;
+  }
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  }
+  .glass-panel h4 {
+    margin: 0 0 1.25rem; font-size: 1rem; font-weight: 800; color: #0f172a;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  
+  /* Audit Feed */
+  .audit-item {
+    display: flex; gap: 1rem; padding: 1rem;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(0,0,0,0.03);
+    border-radius: 12px; margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+  }
+  .audit-item:hover { transform: translateX(4px); background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  
+  .audit-time-box {
+    min-width: 60px; text-align: center; border-right: 1px solid #e2e8f0; padding-right: 0.75rem;
+  }
+  .audit-time { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 0.85rem; color: #0f172a; }
+  .audit-date { font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+  
+  .audit-content { flex: 1; }
+  .audit-user { font-size: 0.7rem; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.2rem; }
+  .audit-desc { font-size: 0.9rem; font-weight: 500; color: #334155; line-height: 1.4; }
+  .audit-tag {
+    display: inline-block; margin-top: 0.4rem; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;
+  }
+  /* Action specific colors */
+  .tag-login { background: #dbeafe; color: #1e40af; }
+  .tag-sale { background: #dcfce7; color: #166534; }
+  .tag-impersonate { background: #fef9c3; color: #854d0e; }
+
+  /* Personnel Cards */
+  .staff-card {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem; background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(0,0,0,0.03);
+    border-radius: 15px; margin-bottom: 0.75rem;
+    transition: all 0.2s ease;
+  }
+  .staff-card:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+  
+  .staff-info { display: flex; align-items: center; gap: 0.75rem; }
+  .staff-avatar {
+    width: 40px; height: 40px; background: #e0f2fe; color: #0369a1;
+    border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  }
+  .staff-name { font-weight: 800; color: #0f172a; font-size: 0.95rem; }
+  .staff-role { font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 1px; }
+
+  .view-btn {
+    background: #0f172a; color: #fff; border: none; padding: 6px 14px;
+    border-radius: 8px; font-size: 0.75rem; font-weight: 700;
+    transition: all 0.2s; text-decoration: none;
+  }
+  .view-btn:hover { background: #1e293b; transform: scale(1.05); color: #fff; }
+  .flag-warn td { background:#fef9c3; }
+  .flag-critical td { background:#fef2f2; }
+</style>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# COMMAND CENTER HERO                                        #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="cmd-hero">
+  <div>
+    <div class="cmd-title">🏭 Noor Foods — Management Command Center</div>
+    <div class="cmd-sub">Complete factory-to-market accountability. Every figure is calculated live from immutable records. The MD sees everything, always.</div>
+  </div>
+  <div class="cmd-live"><span class="pulse"></span>Auto-Calculated</div>
+</div>
+
+{# MD Insights Shortcut #}
+{% if current_user.role == 'md' %}
+<div class="insights-banner">
+  <div>
+    <div class="insights-title">📊 MD Insights Dashboard — Your Strategic Overview</div>
+    <div class="insights-sub">Sales trends, SM accountability scores, brand recovery rates, top performers, and weekly/monthly comparisons — all in one place.</div>
+  </div>
+  <a href="/reports/md-insights/" class="btn btn-primary" style="background:#3b82f6; border-color:#2563eb; white-space:nowrap; font-size:.95rem; padding:.75rem 1.5rem;">Open MD Insights →</a>
+</div>
+{% endif %}
+
+{# EXECUTIVE FINANCIAL PULSE (MD ONLY) #}
+{% if current_user.role == 'md' %}
+<h3 class="ops-section-heading">💰 Company Financial Pulse — Outstanding vs Received</h3>
+<div class="fin-row">
+  <div>
+    <div class="fin-label">Total Expected Revenue (SM Channel)</div>
+    <div class="fin-value rev-color">₦{{ total_revenue|floatformat:0 }}</div>
+    <div class="fin-sub">Value of all goods collected by Sales Manager</div>
+  </div>
+  <div>
+    <div class="fin-label">Total Secured Funds (Confirmed Payments)</div>
+    <div class="fin-value rcv-color">₦{{ total_received|floatformat:0 }}</div>
+    <div class="fin-sub">Cash &amp; Transfer confirmed by GM</div>
+  </div>
+  <div>
+    <div class="fin-label">Still Owed to Company</div>
+    <div class="fin-value {% if total_outstanding > 0 %}debt-color-red{% else %}debt-color-grn{% endif %}">₦{{ total_outstanding|floatformat:0 }}</div>
+    <div class="fin-sub">Outstanding from SM + Direct Buyers</div>
+  </div>
+</div>
+{% endif %}
+
+{# SM ACCOUNTABILITY OVERVIEW #}
+{% if current_user.role in 'md manager' %}
+<h3 class="ops-section-heading">📦 Sales Manager Accountability — Goods &amp; Money</h3>
+<div style="margin-bottom:2rem;">
+  {% for row in sm_summaries %}
+  <div class="sm-bar {% if row.money_outstanding > 0 %}has-debt{% elif row.goods_balance > 0 %}has-goods{% endif %}">
+    <div>
+      <div class="sm-name">{{ row.sm.full_name }}</div>
+      <div class="sm-sub">Sales Manager — Accountable to the company for all goods collected</div>
+    </div>
+    <div class="sm-pills">
+      <span class="sm-pill pill-goods">📦 {{ row.goods_balance }} sacks in hand</span>
+      {% if row.money_outstanding > 0 %}
+      <span class="sm-pill pill-money-bad">₦{{ row.money_outstanding|floatformat:0 }} owed</span>
+      {% else %}
+      <span class="sm-pill pill-money-ok">✓ Fully Paid</span>
+      {% endif %}
+      {% if row.pending_count > 0 %}
+      <span class="sm-pill pill-pending">⏳ {{ row.pending_count }} pending</span>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:2rem;text-align:center;color:#94a3b8;">No active Sales Managers registered in the system.</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# OPERATIONAL HEALTH #}
+<h3 class="ops-section-heading">🏗️ Milling Plant & Operations Health</h3>
+<div class="health-grid">
+  <div class="health-card">
+    <div class="health-label">Total Milling Batches</div>
+    <div class="health-value ok-val">{{ total_batches }}</div>
+    <div class="health-unit">flour milling + packaging cycles</div>
+  </div>
+  <div class="health-card {% if flagged_batches > 0 %}danger{% endif %}">
+    <div class="health-label">Flagged Spillage / Loss</div>
+    <div class="health-value {% if flagged_batches > 0 %}danger-val{% else %}ok-val{% endif %}">{{ flagged_batches }}</div>
+    <div class="health-unit">batches exceeding allowable loss threshold</div>
+  </div>
+  <div class="health-card {% if outstanding_production > 0 %}warn{% endif %}">
+    <div class="health-label">Raw Bags on Production Floor</div>
+    <div class="health-value {% if outstanding_production > 0 %}warn-val{% else %}ok-val{% endif %}">{{ outstanding_production }}</div>
+    <div class="health-unit">collected, not yet milled or returned</div>
+  </div>
+  <div class="health-card {% if open_flags > 0 %}danger{% endif %}">
+    <div class="health-label">Open Reconciliation Flags</div>
+    <div class="health-value {% if open_flags > 0 %}danger-val{% else %}ok-val{% endif %}">{{ open_flags }}</div>
+    <div class="health-unit">unresolved financial discrepancies</div>
+  </div>
+</div>
+
+{# OVERSIGHT: LIVE FEED + PERSONNEL ROSTER (MD ONLY) #}
+{% if current_user.role == 'md' %}
+<h3 class="ops-section-heading">🛡️ Operational Oversight — Factory Activity & Staffing</h3>
+<div class="oversight-wrapper">
+  
+  <!-- AUDIT LOG PANEL -->
+  <div class="glass-panel">
+    <h4>📜 Central Audit Log — Every Action Mapped</h4>
+    <div style="max-height:520px; overflow-y:auto; padding-right:0.5rem;">
+      {% for log in audit_feed %}
+      <div class="audit-item">
+        <div class="audit-time-box">
+          <div class="audit-time">{{ log.timestamp|date:"H:i" }}</div>
+          <div class="audit-date">{{ log.timestamp|date:"M d" }}</div>
+        </div>
+        <div class="audit-content">
+          <div class="audit-user">{{ log.user_name }} ({{ log.user_role }})</div>
+          <div class="audit-desc">{{ log.description }}</div>
+          <span class="audit-tag 
+            {% if 'LOGIN' in log.action %}tag-login 
+            {% elif 'SALE' in log.action %}tag-sale 
+            {% elif 'IMPERSONATE' in log.action %}tag-impersonate 
+            {% endif %}">
+            {{ log.action }}
+          </span>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center; color:#94a3b8; padding:3rem;">No recent system activity detected.</div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:1.25rem; text-align:center;">
+      <a href="/audit/log/" class="view-btn" style="padding:10px 24px; display:inline-block;">Open Complete Audit Ledger →</a>
+    </div>
+  </div>
+
+  <!-- PERSONNEL ROSTER PANEL -->
+  <div class="glass-panel">
+    <h4>👥 Active Personnel — Identity & Accountability</h4>
+    <p style="font-size:0.8rem; color:#64748b; margin:-0.5rem 0 1.25rem;">Audit and verify individual staff accounts.</p>
+    <div style="max-height:520px; overflow-y:auto; padding-right:0.2rem;">
+      {% for s in staff_roster %}
+      <div class="staff-card">
+        <div class="staff-info">
+          <div class="staff-avatar">
+            {% if s.role == 'manager' %}👑{% elif s.role == 'md' %}🛡️{% elif 'store' in s.role %}📦{% else %}⚙️{% endif %}
+          </div>
+          <div>
+            <div class="staff-name">{{ s.full_name }}</div>
+            <div class="staff-role">{{ s.get_role_display|default:s.role }}{% if s.store_type %} — {{ s.store_type|title }}{% endif %}</div>
+          </div>
+        </div>
+        <a href="{% url 'accounts:md_impersonate' s.pk %}" class="view-btn" onclick="return confirm('Start spectating {{ s.full_name }}?');">
+          👁 View
+        </a>
+      </div>
+      {% empty %}
+      <div style="text-align:center; color:#94a3b8; padding:2rem;">No active staff accounts found.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# RETAIL & BRAN SALES #}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+  <h3 class="ops-section-heading" style="margin-bottom:0; border:none; padding:0;">🏬 Direct Sales — Retail &amp; Bran (GM or MD)</h3>
+  <div style="display:flex; gap:.5rem;">
+    <a href="{% url 'sales:record_company_sale' %}" class="btn btn-primary btn-sm" style="background:#0f172a; border-color:#0f172a;">🛒 Record Retail Sale</a>
+    <a href="{% url 'sales:record_bran_sale' %}" class="btn btn-secondary btn-sm" style="background:#166534; color:#fff; border:none;">🌾 Record Bran Sale</a>
+  </div>
+</div>
+<div style="border-bottom: 2px solid #e2e8f0; margin-bottom:1.25rem;"></div>
+
+<div class="health-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
+  {% for rb in retail_balances %}
+  <div class="health-card" style="border-left-color:#8b5cf6;">
+    <div class="health-label">{{ rb.material|upper }} RETAIL PIECES</div>
+    <div class="health-value {% if rb.pieces < 10 %}warn-val{% else %}ok-val{% endif %}" style="color:#6d28d9;">{{ rb.pieces }}</div>
+    <div class="health-unit">1kg pieces available at retail desk</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+  <div>
+    <h4 style="margin:0 0 1rem; font-size:.95rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:.5rem;">🛒 Recent Retail Sales (Direct/Company)</h4>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Buyer</th><th>Item</th><th class="num">₦ Value</th></tr></thead>
+        <tbody>
+          {% for s in company_sales %}
+          <tr>
+            <td style="white-space:nowrap;">{{ s.date|date:"M d" }}</td>
+            <td style="font-weight:600;">{{ s.display_person }}</td>
+            <td>{{ s.qty_sold }}x {{ s.product_size }} <span class="badge badge-{{ s.material_type }}">{{ s.material_type|upper }}</span></td>
+            <td class="num font-bold">₦{{ s.total_value|floatformat:0 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-state">No recent retail sales.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div>
+    <h4 style="margin:0 0 1rem; font-size:.95rem; color:#14532d; border-bottom:1px solid #bbf7d0; padding-bottom:.5rem;">🌾 Recent Bran Sales (By-product)</h4>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Date</th><th>Buyer</th><th>Sacks</th><th class="num">₦ Value</th></tr></thead>
+        <tbody>
+          {% for b in bran_sales %}
+          <tr>
+            <td style="white-space:nowrap;">{{ b.date|date:"M d" }}</td>
+            <td style="font-weight:600;">{{ b.buyer_name }}</td>
+            <td>{{ b.qty_sacks }}x <span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
+            <td class="num font-bold">₦{{ b.total_amount|floatformat:0 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="empty-state">No recent bran sales.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# EMERGENCY FLAGS #}
+{% if recent_flagged %}
+<h3 class="ops-section-heading" style="color:#dc2626;">🚨 Emergency — Milling Batches with Excessive Loss</h3>
+<div class="table-wrapper" style="border-radius:10px;overflow:hidden;">
+  <table>
+    <thead>
+      <tr>
+        <th>S/N</th><th>Date</th><th>Material</th><th>Officer</th>
+        <th class="num">Bags Milled</th><th class="num">Loss %</th><th>Severity</th><th>Diagnostic</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in recent_flagged %}
+      <tr class="flag-{{ b.flag_level }}">
+        <td style="font-family:monospace;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap;">{{ b.date }}</td>
+        <td><span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
+        <td>{{ b.production_officer.full_name }}</td>
+        <td class="num">{{ b.bags_milled_new }}</td>
+        <td class="num font-bold">{{ b.loss_pct }}%</td>
+        <td><span class="badge badge-{{ b.flag_level }}">{{ b.flag_level|upper }}</span></td>
+        <td style="font-size:.82rem;color:#475569;">{{ b.flag_reason|truncatechars:65 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

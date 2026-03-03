@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Return Clean Bags{% endblock %}
+{% block nav_pr_out %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Return Bags to Clean Store</div>
+    <div class="page-subtitle">Return unused clean bags from your custody back to the store. This will be pending store acknowledgement.</div>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="date">Date*</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
+            </div>
+            <div class="form-row">
+                <label for="material_type">Material Type*</label>
+                <select id="material_type" name="material_type" required>
+                    <option value="">— Select —</option>
+                    {% if balance_maize > 0 %}<option value="maize">Maize (Balance: {{ balance_maize }})</option>{% endif %}
+                    {% if balance_wheat > 0 %}<option value="wheat">Wheat (Balance: {{ balance_wheat }})</option>{% endif %}
+                </select>
+                {% if balance_maize <= 0 and balance_wheat <= 0 %}
+                <div class="form-hint text-warning mt-4">You have no outstanding bags to return.</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <label for="num_bags">Number of Bags to Return*</label>
+            <input type="number" id="num_bags" name="num_bags" min="1" required>
+            <div class="form-hint">Must not exceed your current balance for the selected material.</div>
+        </div>
+        
+        <div class="form-row">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="2" placeholder="Optional. Reason for return..."></textarea>
+        </div>
+        
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary" {% if balance_maize <= 0 and balance_wheat <= 0 %}disabled{% endif %}>Initiate Return (Pending Store Check)</button>
+            <a href="/production/outstanding/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

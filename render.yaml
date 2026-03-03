@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: noor-foods
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn noor_foods.wsgi:application"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: noor_foods.settings
+      - key: PYTHON_VERSION
+        value: 3.14.0
+      - key: DJANGO_DEBUG
+        value: False
+      - key: DATABASE_URL
+        fromConfig: psql_neon
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+# This allows you to easily connect your existing Neon DB URL in the Render Dashboard
+# Or you can just set DATABASE_URL manually in the Render UI

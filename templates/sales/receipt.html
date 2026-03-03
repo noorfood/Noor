@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Sale Receipt #{{ sale.pk }}{% endblock %}
+{% block content %}
+
+{% comment %}
+NOOR FOODS — SALES RECEIPT
+Auto-generated after every sale recording.
+The receipt is READ-ONLY. The only action available is to record a payment.
+{% endcomment %}
+
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+        <div class="page-title">Sale Receipt — #{{ sale.pk }}</div>
+        <div class="page-subtitle">
+            Recorded by <strong>{{ sale.recorded_by.full_name }}</strong>
+            on {{ sale.created_at|date:"d M Y, H:i" }}
+        </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+        {% if sale.amount_outstanding > 0 and current_user.role == 'sales_manager' %}
+        <a href="{% url 'sales:record_payment' sale.pk %}" class="btn btn-primary" style="font-size:15px;padding:10px 28px;">
+            💳 Record Payment
+        </a>
+        {% elif sale.amount_outstanding <= 0 %}
+        <span style="background:#D4EDDA;color:#1E6B45;font-weight:700;padding:8px 20px;border-radius:3px;font-size:14px;">✓ FULLY PAID</span>
+        {% endif %}
+        <a href="{% url 'sales:dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+    </div>
+</div>
+
+{# ── RECEIPT CARD ────────────────────────────────────────── #}
+<div style="background:#fff;border:2px solid #D0D5DD;border-radius:4px;max-width:780px;margin:0 auto 32px;">
+
+    {# Header strip #}
+    <div style="background:#1C2B3A;color:#fff;padding:20px 28px;border-radius:2px 2px 0 0;display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+            <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#A8BACB;margin-bottom:4px;">NOOR FOODS QUALITY SERVICES NIG LTD</div>
+            <div style="font-size:22px;font-weight:700;">Sale Receipt</div>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:11px;color:#A8BACB;letter-spacing:1px;text-transform:uppercase;">Receipt No.</div>
+            <div style="font-size:28px;font-weight:900;letter-spacing:-1px;">#{{ sale.pk }}</div>
+        </div>
+    </div>
+
+    {# Person details — LOCKED, shown prominently #}
+    <div style="padding:24px 28px 16px;border-bottom:1px solid #E8EAED;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+            <div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#718096;margin-bottom:4px;">Sales Person</div>
+                <div style="font-size:17px;font-weight:700;color:#1A1A2E;">{{ sale.display_person }}</div>
+                <div style="font-size:12px;color:#718096;margin-top:2px;">{{ sale.get_channel_display }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#718096;margin-bottom:4px;">Sale Date</div>
+                <div style="font-size:17px;font-weight:700;color:#1A1A2E;">{{ sale.date|date:"d M Y" }}</div>
+            </div>
+            <div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#718096;margin-bottom:4px;">Status</div>
+                <div>
+                    {% if sale.amount_outstanding <= 0 %}
+                    <span style="background:#D4EDDA;color:#1E6B45;font-weight:700;padding:4px 12px;border-radius:2px;font-size:13px;">PAID IN FULL</span>
+                    {% elif sale.total_paid > 0 %}
+                    <span style="background:#FFF3E0;color:#E65100;font-weight:700;padding:4px 12px;border-radius:2px;font-size:13px;">PARTIAL — OUTSTANDING</span>
+                    {% else %}
+                    <span style="background:#FEF3CD;color:#B7770D;font-weight:700;padding:4px 12px;border-radius:2px;font-size:13px;">UNPAID</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Goods details #}
+    <div style="padding:20px 28px;border-bottom:1px solid #E8EAED;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+                <tr style="background:#F4F5F7;">
+                    <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#4A5568;">Description</th>
+                    <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#4A5568;">Qty</th>
+                    <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#4A5568;">Unit Price (₦)</th>
+                    <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#4A5568;">Total (₦)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding:10px 12px;">
+                        {{ sale.get_material_type_display }} Flour — {{ sale.product_size }} Sack
+                        <div style="font-size:11px;color:#718096;margin-top:2px;">Channel: {{ sale.get_channel_display }}</div>
+                    </td>
+                    <td style="padding:10px 12px;text-align:right;font-family:monospace;font-size:15px;font-weight:700;">{{ sale.qty_sold }}</td>
+                    <td style="padding:10px 12px;text-align:right;font-family:monospace;">₦{{ sale.unit_price|floatformat:2 }}</td>
+                    <td style="padding:10px 12px;text-align:right;font-family:monospace;font-weight:700;">₦{{ sale.total_value|floatformat:0 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {# Financial summary #}
+    <div style="padding:20px 28px 0;display:flex;justify-content:flex-end;">
+        <div style="min-width:300px;">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#4A5568;border-bottom:1px solid #E8EAED;">
+                <span>Gross Total</span>
+                <span style="font-family:monospace;font-weight:600;">₦{{ sale.total_value|floatformat:0 }}</span>
+            </div>
+            {% if sale.commission_amount > 0 %}
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#B7770D;border-bottom:1px solid #E8EAED;">
+                <span>Commission ({{ sale.commission_pct }}% deducted)</span>
+                <span style="font-family:monospace;">−₦{{ sale.commission_amount|floatformat:0 }}</span>
+            </div>
+            {% endif %}
+            <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:15px;font-weight:700;color:#1A4A7A;border-bottom:2px solid #1A4A7A;">
+                <span>Net Payable to Company</span>
+                <span style="font-family:monospace;">₦{{ sale.net_payable|floatformat:0 }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#1E6B45;border-bottom:1px solid #E8EAED;">
+                <span>Total Received</span>
+                <span style="font-family:monospace;font-weight:600;">₦{{ sale.total_paid|floatformat:0 }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:10px 0 20px;font-size:16px;font-weight:800;{% if sale.amount_outstanding > 0 %}color:#C0392B;{% else %}color:#1E6B45;{% endif %}">
+                <span>Outstanding Balance</span>
+                <span style="font-family:monospace;">₦{{ sale.amount_outstanding|floatformat:0 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Payment history (if any payments exist) #}
+{% if payments %}
+<div style="max-width:780px;margin:0 auto;">
+    <div class="section-title">Payment History</div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Date</th>
+                    <th class="num">Cash (₦)</th>
+                    <th class="num">Transfer (₦)</th>
+                    <th class="num">Payment Total (₦)</th>
+                    <th>Recorded By</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pmt in payments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ pmt.date }}</td>
+                    <td class="num">₦{{ pmt.amount_cash|floatformat:0 }}</td>
+                    <td class="num">₦{{ pmt.amount_transfer|floatformat:0 }}</td>
+                    <td class="num" style="font-weight:700;">₦{{ pmt.total|floatformat:0 }}</td>
+                    <td>{{ pmt.recorded_by.full_name }}</td>
+                    <td>{{ pmt.notes|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# Bottom action #}
+{% if sale.amount_outstanding > 0 and current_user.role == 'sales_manager' %}
+<div style="max-width:780px;margin:24px auto 0;padding:16px 20px;background:#FEF3CD;border:1px solid #F0C060;border-left:4px solid #B7770D;border-radius:3px;display:flex;align-items:center;justify-content:space-between;">
+    <div>
+        <div style="font-weight:700;color:#B7770D;font-size:14px;">Outstanding: ₦{{ sale.amount_outstanding|floatformat:0 }}</div>
+        <div style="font-size:13px;color:#4A5568;margin-top:2px;">{{ sale.display_person }} has not fully settled this sale yet.</div>
+    </div>
+    <a href="{% url 'sales:record_payment' sale.pk %}" class="btn btn-primary">Record Payment Now</a>
+</div>
+{% endif %}
+
+{% endblock %}

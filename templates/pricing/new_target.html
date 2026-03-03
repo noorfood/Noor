@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Set Sales Target — Noor Foods{% endblock %}
+
+{% block content %}
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 2.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        max-width: 900px;
+        margin: 2rem auto;
+    }
+    .form-header { margin-bottom: 2rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; }
+    .form-title { font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 0; }
+    .form-subtitle { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
+    
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0;
+        background: rgba(255,255,255,0.8); font-size: 0.95rem; font-weight: 600; color: #1e293b;
+        transition: all 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1); background: #fff; }
+    
+    .btn-submit {
+        background: #0f172a; color: #fff; border: none; padding: 12px 32px; border-radius: 12px;
+        font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+</style>
+
+<div class="glass-card">
+    <div class="form-header">
+        <h2 class="form-title">📈 Define Performance Target</h2>
+        <p class="form-subtitle">Assign monthly sales volume goals to a specific Sales Manager.</p>
+    </div>
+
+    {% if error %}
+    <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: #991b1b; font-size: 0.85rem; font-weight: 600;">
+        ⚠️ {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Sales Manager</label>
+                <select name="sales_manager_id" class="form-input" required>
+                    <option value="">— Select Personnel —</option>
+                    {% for sm in sales_managers %}
+                    <option value="{{ sm.pk }}">{{ sm.full_name }}</option>
+                    {% empty %}
+                    <option disabled>No active sales managers found</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Material Type</label>
+                <select name="material_type" class="form-input" required>
+                    <option value="">— Select Category —</option>
+                    {% for val, label in material_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Target Year</label>
+                <input type="number" name="year" value="{{ current_year }}" min="2020" max="2035" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Month</label>
+                <select name="month" class="form-input" required>
+                    <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
+                    <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
+                    <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
+                    <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
+                    <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
+                    <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
+                    <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
+                    <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
+                    <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
+                    <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
+                    <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
+                    <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Target Quantity (Sacks)</label>
+                <input type="number" name="target_qty" min="1" class="form-input" placeholder="e.g. 500" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Directives / Notes (Optional)</label>
+            <textarea name="notes" class="form-input" rows="3" placeholder="Specific goal context..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn-submit">🚀 Set Performance Goal</button>
+            <a href="{% url 'pricing:targets' %}" style="display: flex; align-items: center; text-decoration: none; color: #64748b; font-weight: 700; font-size: 0.85rem;">Cancel & Return</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

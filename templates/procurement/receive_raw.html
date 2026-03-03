@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Record Raw Material Received{% endblock %}
+{% block nav_proc_receive %}active{% endblock %}
+{% block content %}
+<style>
+    .receive-hero {
+        background: linear-gradient(135deg, #10b981, #059669);
+        padding: 2rem; border-radius: 12px; margin-bottom: 2rem;
+        color: white; box-shadow: 0 4px 20px rgba(16, 185, 233, 0.2);
+    }
+    .form-container {
+        display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;
+    }
+    .sidebar-info {
+        background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px;
+    }
+    .info-item { margin-bottom: 1rem; }
+    .info-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .info-item span { font-size: 1rem; color: #1e293b; font-weight: 500; }
+</style>
+
+<div class="receive-hero">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h1 style="margin:0; font-size:1.75rem;">📥 Record Raw Material Received</h1>
+            <p style="margin:0.5rem 0 0 0; opacity:0.9;">Log new dirty raw material inventory arriving from the market/suppliers.</p>
+        </div>
+        <a href="/procurement/list/" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:none;">View Registry</a>
+    </div>
+</div>
+
+{% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
+
+<div class="form-container">
+    <div class="form-card" style="padding:2rem;">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Receipt Date*</label>
+                    <input type="date" name="date" value="{{ today }}" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Material Type*</label>
+                    <select name="material_type" required class="form-control">
+                        <option value="">— Select Material —</option>
+                        <option value="maize">MAIZE (Yellow/White Corn)</option>
+                        <option value="wheat">WHEAT (Grain)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Supplier / Source*</label>
+                <input type="text" name="supplier" placeholder="e.g. Alhaji Musa Market or Farmer Name" required class="form-control">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Number of Bags*</label>
+                    <input type="number" name="num_bags" min="1" placeholder="e.g. 50" required class="form-control">
+                    <small style="color:#64748b;">Dirty bags — not standardized weight</small>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Approx. Total Weight (kg)*</label>
+                    <input type="number" name="approx_weight_kg" min="0.1" step="0.1" placeholder="e.g. 4500" required class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:1.5rem;">
+                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Reference / Waybill Number</label>
+                <input type="text" name="reference_no" placeholder="Optional reference info" class="form-control">
+            </div>
+
+            <div class="form-group" style="margin-bottom:2rem;">
+                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Additional Notes</label>
+                <textarea name="notes" rows="3" placeholder="Any details about the quality or logistics..." class="form-control"></textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
+                <button type="submit" class="btn btn-primary btn-lg" style="padding:10px 24px; font-weight:700;">
+                    Save Receipt & Lock
+                </button>
+                <span style="color:#64748b; font-size:0.85rem;">⚠️ Records are locked immediately after saving.</span>
+            </div>
+        </form>
+    </div>
+
+    <div class="sidebar-info">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #0f172a;">Identity & Quality</h3>
+        
+        <div class="info-item">
+            <label>Receiving Officer</label>
+            <span>{{ current_user.full_name }}</span>
+        </div>
+        
+        <div class="info-item">
+            <label>Entry Point</label>
+            <span>Raw Material Gate</span>
+        </div>
+        
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:1.5rem 0;">
+        
+        <p style="font-size:0.8rem; color:#64748b; line-height:1.5;">
+            Ensure that the supplier details and bag counts are double-checked against physical delivery. This entry will immediately affect the live company balances.
+        </p>
+    </div>
+</div>
+{% endblock %}

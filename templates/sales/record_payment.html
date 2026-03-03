@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Record Payment — Sale #{{ sale.pk }}{% endblock %}
+{% block content %}
+<style>
+  .pay-hero {
+    background: linear-gradient(145deg, #0f2a1a, #14532d);
+    border-radius: 14px; padding: 1.5rem 2rem;
+    margin-bottom: 1.75rem; border: 1px solid #166534;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .pay-hero-title { font-size:1.3rem; font-weight:800; color:#f0fdf4; margin:0; }
+  .pay-hero-sub { font-size:.85rem; color:#86efac; margin-top:.2rem; }
+
+  .sale-snapshot {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1.1rem;
+    background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+    padding:1.25rem 1.5rem; margin-bottom:1.5rem;
+    box-shadow:0 1px 4px rgba(0,0,0,.05);
+  }
+  .snap-item {}
+  .snap-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#94a3b8; margin-bottom:.35rem; }
+  .snap-value { font-size:1.2rem; font-weight:800; font-family:monospace; color:#0f172a; }
+  .snap-sub { font-size:.75rem; color:#64748b; margin-top:.25rem; }
+  .snap-red { color:#dc2626; } .snap-green { color:#16a34a; } .snap-blue { color:#1d4ed8; }
+
+  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+  .form-section-label { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:1.1rem; padding-bottom:.6rem; border-bottom:2px solid #f1f5f9; }
+  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
+  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
+  .form-group input, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
+  .form-group input:focus, .form-group textarea:focus { outline:none; border-color:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.1); }
+  .btn-save-pay { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
+  .btn-save-pay:hover { opacity:.85; }
+
+  .fully-paid-banner { background:linear-gradient(135deg,#f0fdf4,#dcfce7); border:1px solid #86efac; border-left:4px solid #16a34a; border-radius:10px; padding:1.5rem; text-align:center; }
+
+  .payment-history { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-top:1.5rem; }
+  .payment-history-header { padding:.85rem 1.25rem; background:#f8fafc; border-bottom:1px solid #e2e8f0; font-weight:700; color:#1e293b; font-size:.9rem; }
+</style>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# HERO                                                      #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="pay-hero">
+  <div class="pay-hero-title">💳 Record Payment — Sale #{{ sale.pk }}</div>
+  <div class="pay-hero-sub">
+    Receiving payment from <strong>{{ sale.display_person }}</strong> ({{ sale.get_channel_display }}).
+    You can record a full or partial payment.
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# SALE SNAPSHOT                                             #}
+{# ══════════════════════════════════════════════════════════ #}
+<div class="sale-snapshot">
+  <div class="snap-item">
+    <div class="snap-label">Sales Person</div>
+    <div class="snap-value snap-blue" style="font-size:1rem;">{{ sale.display_person }}</div>
+    <div class="snap-sub">{{ sale.get_channel_display }}</div>
+  </div>
+  <div class="snap-item">
+    <div class="snap-label">Goods Sold</div>
+    <div class="snap-value">{{ sale.qty_sold }}</div>
+    <div class="snap-sub">
+      <span class="badge badge-{{ sale.material_type }}" style="font-size:.7rem;">{{ sale.get_material_type_display|upper }}</span>
+      {{ sale.product_size }}
+    </div>
+  </div>
+  <div class="snap-item">
+    <div class="snap-label">Net Payable</div>
+    <div class="snap-value snap-blue">₦{{ sale.net_payable|floatformat:0 }}</div>
+    {% if sale.commission_pct > 0 %}<div class="snap-sub">after {{ sale.commission_pct }}% commission</div>{% endif %}
+  </div>
+  <div class="snap-item">
+    <div class="snap-label">Already Received</div>
+    <div class="snap-value snap-green">₦{{ sale.total_paid|floatformat:0 }}</div>
+  </div>
+  <div class="snap-item">
+    <div class="snap-label">Outstanding Now</div>
+    <div class="snap-value {% if sale.amount_outstanding > 0 %}snap-red{% else %}snap-green{% endif %}">
+      ₦{{ sale.amount_outstanding|floatformat:0 }}
+    </div>
+    {% if sale.amount_outstanding <= 0 %}<div class="snap-sub" style="color:#16a34a;">✓ Fully settled</div>{% endif %}
+  </div>
+  <div class="snap-item">
+    <div class="snap-label">Sale Status</div>
+    <div style="margin-top:.4rem;"><span class="badge badge-{{ sale.status }}">{{ sale.get_status_display }}</span></div>
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════ #}
+{# FULLY PAID STATE                                          #}
+{# ══════════════════════════════════════════════════════════ #}
+{% if sale.amount_outstanding <= 0 %}
+<div class="fully-paid-banner">
+  <div style="font-size:2rem;margin-bottom:.5rem;">✅</div>
+  <div style="font-weight:800;color:#166534;font-size:1.1rem;">Sale is Fully Settled</div>
+  <div style="color:#15803d;font-size:.85rem;margin-top:.25rem;">No outstanding balance remains for this sale.</div>
+  <div style="margin-top:1rem;display:flex;gap:.75rem;justify-content:center;">
+    <a href="{% url 'sales:receipt' sale.pk %}" class="btn btn-secondary">View Receipt</a>
+    <a href="{% url 'sales:dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+  </div>
+</div>
+
+{% else %}
+{# ══════════════════════════════════════════════════════════ #}
+{# PAYMENT FORM                                              #}
+{# ══════════════════════════════════════════════════════════ #}
+{% if error %}<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>{% endif %}
+
+<div class="form-section">
+  <div class="form-section-label">📝 New Payment Entry</div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-3" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label for="date">Payment Date *</label>
+        <input type="date" id="date" name="date" value="{{ today }}" required>
+      </div>
+      <div class="form-group">
+        <label for="amount_cash">Cash Received (₦)</label>
+        <input type="number" id="amount_cash" name="amount_cash" value="0" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label for="amount_transfer">Bank Transfer Received (₦)</label>
+        <input type="number" id="amount_transfer" name="amount_transfer" value="0" min="0" step="0.01" placeholder="0.00">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:1.25rem;">
+      <label for="notes">Notes (Optional)</label>
+      <textarea id="notes" name="notes" rows="2" placeholder="e.g. Cash paid at office, GTBank transfer ref: TXN12345…"></textarea>
+    </div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-left:4px solid #16a34a;border-radius:8px;padding:.75rem 1rem;margin-bottom:1.25rem;font-size:.82rem;color:#166534;">
+      💡 <strong>Partial payment is allowed.</strong> Any remaining amount will stay as outstanding on {{ sale.display_person }}'s account.
+    </div>
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <button type="submit" class="btn-save-pay">💾 Save Payment</button>
+      <a href="{% url 'sales:receipt' sale.pk %}" class="btn btn-secondary">← Back to Receipt</a>
+    </div>
+  </form>
+</div>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════ #}
+{# PAYMENT HISTORY                                           #}
+{# ══════════════════════════════════════════════════════════ #}
+{% if payments %}
+<div class="payment-history">
+  <div class="payment-history-header">💰 Previous Payments on This Sale</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th class="num">Cash (₦)</th>
+        <th class="num">Transfer (₦)</th>
+        <th class="num">Total (₦)</th>
+        <th>Recorded By</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pmt in payments %}
+      <tr>
+        <td style="white-space:nowrap;">{{ pmt.date }}</td>
+        <td class="num" style="color:#16a34a;">{{ pmt.amount_cash|floatformat:0 }}</td>
+        <td class="num" style="color:#3b82f6;">{{ pmt.amount_transfer|floatformat:0 }}</td>
+        <td class="num font-bold">₦{{ pmt.total|floatformat:0 }}</td>
+        <td style="color:#64748b;font-size:.85rem;">{{ pmt.recorded_by.full_name }}</td>
+        <td style="color:#64748b;font-size:.82rem;">{{ pmt.notes|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

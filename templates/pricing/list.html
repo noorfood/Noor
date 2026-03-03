@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Price Configuration — Noor Foods{% endblock %}
+{% block nav_pr_pricing %}active{% endblock %}
+
+{% block content %}
+<style>
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    }
+    
+    .pricing-header {
+        display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;
+    }
+    
+    .config-nav {
+        display: flex; gap: 0.75rem; background: #f1f5f9; padding: 0.5rem; border-radius: 12px;
+    }
+    .config-nav-link {
+        padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+        text-decoration: none; color: #64748b; transition: all 0.2s;
+    }
+    .config-nav-link:hover { color: #0f172a; background: rgba(255,255,255,0.5); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .config-nav-link.active { background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+    .price-badge { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.1rem; color: #10b981; }
+</style>
+
+<div class="pricing-header">
+    <div>
+        <div class="page-title">Market Strategy & Pricing</div>
+        <div class="page-subtitle" style="max-width: 600px;">MD-controlled pricing rules for Sales Manager and Company Direct channels. Prices are versioned by effective date.</div>
+    </div>
+    <div class="config-nav">
+        <a href="{% url 'pricing:list' %}" class="config-nav-link active">Pricing Strategy</a>
+        <a href="{% url 'pricing:commissions' %}" class="config-nav-link">Commission Rules</a>
+        <a href="{% url 'pricing:targets' %}" class="config-nav-link">Sales Targets</a>
+    </div>
+</div>
+
+<div class="glass-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h4 style="margin:0; font-weight:800; color:#0f172a;">🎯 Active Pricing Rules</h4>
+        <a href="{% url 'pricing:new' %}" class="btn btn-primary" style="padding:10px 20px; border-radius:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">+ Set New Price</a>
+    </div>
+    
+    <div class="table-container" style="background:transparent; border:none; box-shadow:none;">
+        <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem;">
+            <thead>
+                <tr style="background:#f8fafc;">
+                    <th style="padding:1rem; border-radius:10px 0 0 10px;">Channel</th>
+                    <th style="padding:1rem;">Material</th>
+                    <th style="padding:1rem;">Size</th>
+                    <th class="num" style="padding:1rem;">Price / Unit</th>
+                    <th style="padding:1rem;">Effective Date</th>
+                    <th style="padding:1rem; border-radius:0 10px 10px 0;">Notes / Set By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in prices %}
+                <tr style="background:rgba(255,255,255,0.4); transition: transform 0.2s; cursor:default;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
+                    <td style="padding:1rem; border-radius:10px 0 0 10px;"><span class="badge badge-{{ p.channel }}">{{ p.get_channel_display }}</span></td>
+                    <td style="padding:1rem;"><span class="badge badge-{{ p.material_type }}">{{ p.get_material_type_display|upper }}</span></td>
+                    <td style="padding:1rem; font-weight:700; color:#1e293b;">{{ p.product_size }}</td>
+                    <td class="num" style="padding:1rem;"><span class="price-badge">₦{{ p.price_per_unit|floatformat:0 }}</span></td>
+                    <td style="padding:1rem; font-size:0.85rem; color:#64748b; font-weight:600;">{{ p.effective_from|date:"M d, Y" }}</td>
+                    <td style="padding:1rem; border-radius:0 10px 10px 0;">
+                        <div style="font-size:0.85rem; color:#334155; font-weight:500;">{{ p.notes|default:"No notes provided." }}</div>
+                        <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; margin-top:2px;">By {{ p.created_by.full_name }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr style="background:transparent;">
+                    <td colspan="6" style="text-align:center; padding:3rem; color:#94a3b8;">No prices configured yet. <a href="{% url 'pricing:new' %}" style="color:#4f46e5; font-weight:700;">Set the first price rule</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

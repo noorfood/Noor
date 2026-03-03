@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Record Payment to Company — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white; border-radius: 16px; padding: 2rem 2.5rem;
+    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.07);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .3rem; display: block; }
+  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .88rem; }
+
+  .outstanding-chip {
+    background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.35);
+    border-radius: 12px; padding: 1rem 1.5rem; text-align: right; white-space: nowrap;
+  }
+  .owing-label { font-size: .72rem; color: #fca5a5; text-transform: uppercase; letter-spacing: .05em; }
+  .owing-value { font-size: 1.8rem; font-weight: 900; color: #fca5a5; font-family: monospace; }
+
+  .form-layout { display: grid; grid-template-columns: 1fr 290px; gap: 1.5rem; align-items: start; }
+  @media (max-width: 720px) { .form-layout { grid-template-columns: 1fr; } }
+
+  .form-card { background: #fff; border-radius: 12px; padding: 2rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  .form-group { margin-bottom: 1.25rem; }
+  .form-label { display: block; font-size: .82rem; font-weight: 700; color: #374151; margin-bottom: .4rem; text-transform: uppercase; letter-spacing: .04em; }
+  .form-control { width: 100%; box-sizing: border-box; padding: .65rem .9rem; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: .95rem; }
+  .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+
+  .submit-btn { background: #1e3a5f; color: white; border: none; padding: .75rem 2rem; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s; }
+  .submit-btn:hover { background: #0f172a; }
+  .cancel-link { color: #64748b; text-decoration: none; font-size: .9rem; margin-left: 1rem; }
+
+  .sidebar-card { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 1.25rem; font-size: .85rem; color: #1e40af; }
+  .sidebar-card h4 { margin: 0 0 .75rem; font-size: .9rem; font-weight: 800; }
+  .sidebar-card li { margin-bottom: .4rem; }
+
+  .history-header { font-size: 1rem; font-weight: 800; color: #1e293b; margin: 2.5rem 0 1rem; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); border: 1px solid #e2e8f0; }
+  thead th { background: #0f172a; color: #fff; padding: .75rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody td { padding: .8rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: monospace; }
+  .badge-ok   { background: #d1fae5; color: #065f46; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .badge-pend { background: #fef3c7; color: #92400e; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .badge-rej  { background: #fee2e2; color: #991b1b; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+</style>
+
+<div class="page-hero">
+  <div>
+    <span class="hero-label">💳 Payment to Company</span>
+    <h1 class="hero-title">Record Payment to Company</h1>
+    <p class="hero-sub">Record money you are sending to the company. The GM will confirm receipt before it reduces your outstanding balance.</p>
+  </div>
+  <div class="outstanding-chip">
+    <div class="owing-label">Your Outstanding Balance</div>
+    <div class="owing-value">₦{{ outstanding|floatformat:0 }}</div>
+  </div>
+</div>
+
+{% if error %}
+<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:.8rem 1.1rem;color:#991b1b;margin-bottom:1.25rem;font-weight:600;">⚠️ {{ error }}</div>
+{% endif %}
+
+<div class="form-layout">
+  <div class="form-card">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Date of Payment</label>
+        <input type="date" name="date" value="{{ today }}" required class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cash Amount (₦)</label>
+        <input type="number" name="amount_cash" min="0" step="0.01" value="0" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Transfer Amount (₦)</label>
+        <input type="number" name="amount_transfer" min="0" step="0.01" value="0" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes <span style="font-weight:400;font-size:.78rem;color:#94a3b8;">(reference, bank, etc.)</span></label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. First Bank transfer ref: 12345678"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;margin-top:1.5rem;">
+        <button type="submit" class="submit-btn">💳 Submit for GM Confirmation</button>
+        <a href="{% url 'sales:list_collections' %}" class="cancel-link">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="sidebar-card">
+    <h4>ℹ️ How this works</h4>
+    <ul style="padding-left:1.2rem;">
+      <li>Submit your payment record here</li>
+      <li>The GM receives a notification to confirm</li>
+      <li>Your balance only reduces <strong>after GM confirms</strong></li>
+      <li>If rejected, the GM will note the reason</li>
+      <li>Always include a reference number for transfers</li>
+    </ul>
+  </div>
+</div>
+
+{% if payments %}
+<div class="history-header">📜 Payment History</div>
+<table>
+  <thead>
+    <tr>
+      <th>S/N</th><th>Date</th>
+      <th class="num">Cash</th><th class="num">Transfer</th><th class="num">Total</th>
+      <th>Status</th><th>GM Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in payments %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ p.date }}</td>
+      <td class="num">{% if p.amount_cash %}₦{{ p.amount_cash|floatformat:0 }}{% else %}—{% endif %}</td>
+      <td class="num">{% if p.amount_transfer %}₦{{ p.amount_transfer|floatformat:0 }}{% else %}—{% endif %}</td>
+      <td class="num"><strong>₦{{ p.total|floatformat:0 }}</strong></td>
+      <td>
+        {% if p.status == 'confirmed' %}<span class="badge-ok">✓ Confirmed</span>
+        {% elif p.status == 'rejected' %}<span class="badge-rej">✗ Rejected</span>
+        {% else %}<span class="badge-pend">⏳ Pending GM</span>{% endif %}
+      </td>
+      <td style="color:#64748b;font-size:.85rem;">{{ p.gm_notes|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

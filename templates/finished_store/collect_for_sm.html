@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Record Handover to SM — Noor Foods{% endblock %}
+{% block nav_fg_sm_coll %}active{% endblock %}
+
+{% block content %}
+<style>
+  .handover-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 2.25rem 2.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+  .hero-label {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .hero-title { font-size: 1.8rem; font-weight: 800; margin: 0; }
+  .hero-subtitle { color: #94a3b8; font-size: 0.9rem; margin-top: 0.5rem; }
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    padding: 2rem;
+  }
+
+  .info-sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+  .info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .info-card-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .balance-badge {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 0.5rem;
+  }
+  .balance-val { font-family: monospace; font-weight: 700; font-size: 1.1rem; color: #0f172a; }
+
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.5rem;
+  }
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .form-control:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .btn-submit {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: #0284c7; }
+
+  @media (max-width: 900px) {
+    .layout-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="handover-hero">
+    <span class="hero-label">Record Entry</span>
+    <h1 class="hero-title">Record Goods to Sales Manager</h1>
+    <div class="hero-subtitle">Initiate acknowledgment collection record for the store registry.</div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger" style="margin-bottom:1.5rem;">{{ error }}</div>
+{% endif %}
+
+<div class="layout-grid">
+    <div class="main-form">
+        <div class="form-card">
+            <form method="post">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group">
+                        <label>Physical Collection Date</label>
+                        <input type="date" name="date" value="{{ today }}" required class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Sales Manager</label>
+                        <select name="sales_manager_id" required class="form-control">
+                            <option value="">-- Choose SM --</option>
+                            {% for sm in sales_managers %}
+                            <option value="{{ sm.pk }}">{{ sm.full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label>Material Type</label>
+                        <select name="material_type" required class="form-control">
+                            {% for val, label in material_choices %}
+                            <option value="{{ val }}">{{ label|upper }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity (10kg Sacks)</label>
+                        <input type="number" name="qty_sacks" min="1" required class="form-control" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:1.5rem;">
+                    <label>Internal Collection Notes</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Specify vehicle details, driver name, or any specific logistics info..."></textarea>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button type="submit" class="btn-submit">🔒 Record & Initiate Goods</button>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <a href="{% url 'finished_store:list' %}" style="color: #64748b; font-size: 0.9rem; font-weight: 600; text-decoration: none;">Cancel and Return</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="info-sidebar">
+        <!-- Live Inventory -->
+        <div class="info-card">
+            <h3 class="info-card-title">📦 Store Inventory (Live)</h3>
+            <div class="balance-badge">
+                <span style="font-size: 0.85rem; color: #475569;">MAIZE 10kg</span>
+                <span class="balance-val">{{ balances.maize }}</span>
+            </div>
+            <div class="balance-badge">
+                <span style="font-size: 0.85rem; color: #475569;">WHEAT 10kg</span>
+                <span class="balance-val">{{ balances.wheat }}</span>
+            </div>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin: 0.5rem 0 0;">Balances represent only "Accepted" stock physically present in store.</p>
+        </div>
+
+        <!-- Handshake Protocol -->
+        <div class="info-card" style="border-left: 4px solid #0ea5e9;">
+            <h3 class="info-card-title" style="color: #0369a1;">🛡 Issue Protocol</h3>
+            <p style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin: 0;">
+                Once you record this, the stock is marked as <strong>Pending</strong>. 
+                <br><br>
+                The <strong>Sales Manager</strong> must acknowledge receipt on their dashboard. Only then does the stock decrease and responsibility officially transfer.
+            </p>
+        </div>
+
+        <!-- Recording Identity -->
+        <div class="info-card">
+            <h3 class="info-card-title">👤 Finished Goods Store Officer</h3>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">
+                    {{ current_user.full_name|slice:":1" }}
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #1e293b;">{{ current_user.full_name }}</div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 700; text-transform: uppercase;">{{ current_user.role }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

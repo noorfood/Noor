@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Outstanding Bags — Noor Foods{% endblock %}
+{% block nav_pr_out %}active{% endblock %}
+{% block content %}
+<style>
+    .out-hero {
+        background: #1e293b; /* Solid Deep Navy for clarity */
+        padding: 2.5rem; border-radius: 16px; margin-bottom: 2rem;
+        color: white; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        position: relative; overflow: hidden;
+        border: 1px solid #334155;
+    }
+    .out-hero::after {
+        content: '📦'; position: absolute; right: -20px; bottom: -20px;
+        font-size: 10rem; opacity: 0.05; transform: rotate(-15deg);
+    }
+    .inventory-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 2rem;
+    }
+    .inventory-card {
+        background: white; /* High contrast solid white */
+        padding: 1.5rem; border-radius: 14px; border: 1px solid #e2e8f0;
+        display: flex; align-items: center; gap: 1.25rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .inv-icon {
+        width: 56px; height: 56px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.75rem; background: #f8fafc; color: #1e293b;
+    }
+    .inv-info .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.25rem; }
+    .inv-info .value { font-size: 2rem; font-weight: 800; line-height: 1; color: #1e293b; }
+    
+    .section-header {
+        font-size: 1.25rem; font-weight: 800; color: #1e293b; margin: 2rem 0 1.25rem;
+        display: flex; align-items: center; gap: 0.75rem;
+    }
+    .handshake-alert {
+        background: #f0f9ff; border: 1px solid #bae6fd; border-left: 4px solid #0ea5e9;
+        padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem;
+    }
+</style>
+
+<div class="out-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+            <h1 style="margin:0; font-size:2rem; font-weight:800; color: white;">📦 Outstanding Floor Stock</h1>
+            <p style="margin:0.5rem 0 0 0; color: #94a3b8; font-size:1.1rem; font-weight: 500;">Bags received from store but not yet processed into flour.</p>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#94a3b8;">Verification Level</div>
+            <div style="font-size:1.1rem; font-weight:600; color: white;">Mass Balance Required</div>
+        </div>
+    </div>
+
+    {% if current_user.is_production_officer %}
+    <div class="inventory-grid">
+        <div class="inventory-card">
+            <div class="inv-icon">🌽</div>
+            <div class="inv-info">
+                <div class="label">Maize Balance</div>
+                <div class="value">{{ balance_maize }} <small style="font-size:0.4em; opacity:0.7;">Bags</small></div>
+            </div>
+        </div>
+        <div class="inventory-card">
+            <div class="inv-icon">🌾</div>
+            <div class="inv-info">
+                <div class="label">Wheat Balance</div>
+                <div class="value">{{ balance_wheat }} <small style="font-size:0.4em; opacity:0.7;">Bags</small></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if current_user.is_production_officer %}
+    {# PENDING HANDSHAKE #}
+    {% if pending_transfers %}
+    <h2 class="section-header">📥 Incoming Transfers (Handshake Required)</h2>
+    <div class="table-wrapper" style="border: 1px solid #0ea5e9; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08);">
+        <table style="margin:0;">
+            <thead style="background:#f0f9ff;">
+                <tr>
+                    <th>S/N</th><th>Date Sent</th><th>Material</th><th class="num">Quantity</th><th>Action Required</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for iss in pending_transfers %}
+                <tr style="background:#fff;">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ iss.date }}</td>
+                    <td><span class="badge badge-{{ iss.material_type }}">{{ iss.material_type|upper }}</span></td>
+                    <td class="num font-bold" style="font-size:1.1rem; color:#0369a1;">{{ iss.num_bags }} bags</td>
+                    <td>
+                        <form method="post" action="{% url 'production:acknowledge_transfer' iss.pk %}" style="display:flex; gap:0.5rem; align-items:center;">
+                            {% csrf_token %}
+                            <button type="submit" name="action" value="accept" class="btn btn-sm" style="background:#10b981; color:white; border:none; padding:8px 16px; font-weight:700;">✓ Accept</button>
+                            <input type="text" name="rejection_note" placeholder="Note if rejecting..." style="flex:1; padding:6px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem;">
+                            <button type="submit" name="action" value="reject" class="btn btn-sm" style="background:#ef4444; color:white; border:none; padding:8px 16px; font-weight:700;" onclick="return confirm('Reject this transfer?');">✕ Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <h2 class="section-header">🛠️ Floor Management</h2>
+    <div style="background:white; border:1px solid #e2e8f0; border-radius:14px; padding:2rem; display:flex; gap:2rem; align-items:center;">
+        <div style="flex:1;">
+            <h4 style="margin:0 0 0.5rem 0; color:#1e293b;">How to clear balances?</h4>
+            <p style="margin:0; font-size:0.9rem; color:#64748b; line-height:1.6;">
+                1. <strong>Milling</strong>: Add "Old Bags Milled" in the Milling Record.<br>
+                2. <strong>Returns</strong>: Use the button here to send wet or low-quality grain back to store.
+            </p>
+        </div>
+        <div style="display:flex; gap:1rem;">
+            <a href="/production/milling/new/" class="btn btn-primary btn-lg" style="background:#4338ca;">Process Stock</a>
+            <a href="/production/returns/new/" class="btn btn-secondary btn-lg" style="border:1px solid #cbd5e1; background:white; color:#475569;">⮌ Return to Store</a>
+        </div>
+    </div>
+
+{% else %}
+    {# MANAGER VIEW #}
+    <h2 class="section-header">👥 Team Floor Balances</h2>
+    <div class="table-wrapper" style="border-radius:14px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
+        <table>
+            <thead style="background:#f8fafc;">
+                <tr>
+                    <th style="width:50px;">S/N</th>
+                    <th>Production Officer</th>
+                    <th class="num">Clean Maize</th>
+                    <th class="num">Clean Wheat</th>
+                    <th>Audit Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in user_balances %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td style="font-weight:700; color:#1e293b;">{{ b.user.full_name }}</td>
+                    <td class="num font-bold {% if b.maize > 0 %}text-warning{% endif %}" style="font-size:1.1rem;">{{ b.maize }}</td>
+                    <td class="num font-bold {% if b.wheat > 0 %}text-warning{% endif %}" style="font-size:1.1rem;">{{ b.wheat }}</td>
+                    <td>
+                        {% if b.maize > 0 or b.wheat > 0 %}
+                        <span class="badge" style="background:#fff7ed; color:#9a3412; border:1px solid #ffedd5;">⚠️ Unmilled Stock</span>
+                        {% else %}
+                        <span class="badge" style="background:#f0fdf4; color:#166534; border:1px solid #dcfce7;">✓ Cleared</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="table-empty">Great! All production officers have cleared their floor stock.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+{% endblock %}

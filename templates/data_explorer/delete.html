@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Delete Record &mdash; Data Explorer{% endblock %}
+{% block nav_de %}active{% endblock %}
+{% block content %}
+<style>
+  .delete-hero {
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 14px; padding: 2.5rem;
+    margin-bottom: 2.5rem; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.05);
+  }
+  .delete-hero-title { font-size: 1.75rem; font-weight: 800; color: #dc2626; margin: 0; display: flex; align-items: center; gap: 1rem; }
+  .delete-hero-sub { font-size: .95rem; color: #b91c1c; margin-top: .75rem; max-width: 600px; font-weight: 500; }
+
+  .delete-confirmation-card {
+    background: #fff; border: 1px solid #fecaca; border-radius: 16px;
+    padding: 3rem; text-align: center; max-width: 700px; margin: 0 auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .danger-icon {
+    width: 64px; height: 64px; background: #fee2e2; color: #dc2626;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin: 0 auto 1.5rem;
+  }
+
+  .record-details {
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 1.5rem; margin: 2rem 0; text-align: left;
+  }
+  .detail-row { display: flex; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding: .65rem 0; font-size: .9rem; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: #64748b; font-weight: 600; }
+  .detail-value { color: #1e293b; font-weight: 800; font-family: monospace; }
+
+  .btn-destructive {
+    background: #dc2626; border-color: #b91c1c; color: #fff;
+    padding: 1rem 2.5rem; font-weight: 800; border-radius: 10px; font-size: 1.05rem;
+  }
+  .btn-destructive:hover { background: #b91c1c; box-shadow: 0 0 0 4px rgba(220,38,38,0.15); }
+
+  .breadcrumb-nav { margin-bottom: 1rem; font-size: .85rem; color: #64748b; font-weight: 500; }
+  .breadcrumb-nav a { text-decoration: none; color: #3b82f6; font-weight: 700; }
+</style>
+
+<div class="breadcrumb-nav">
+  <a href="/data-explorer/">🗄 All Datasets</a> &nbsp;›&nbsp; 
+  <a href="{% url 'data_explorer:model' model_name %}">{{ model_name|title|cut:"-" }}</a> &nbsp;›&nbsp;
+  Delete Verification
+</div>
+
+<div class="delete-hero">
+  <h1 class="delete-hero-title">🌋 Permanent Deletion <span>DANGER ZONE</span></h1>
+  <p class="delete-hero-sub">You are about to excise a record from the database. This action is irreversible and affects historical totals.</p>
+</div>
+
+<div class="delete-confirmation-card">
+  <div class="danger-icon">🧨</div>
+  <h2 style="font-size: 1.5rem; font-weight: 800; color: #111827;">Are you absolutely sure?</h2>
+  <p style="color: #64748b; font-size: .95rem; line-height: 1.6;">
+    Deletion of record <strong>#{{ instance.pk }}</strong> will be permanently recorded in the audit trail.
+  </p>
+
+  <div class="record-details">
+    <div class="detail-row">
+      <span class="detail-label">Dataset</span>
+      <span class="detail-value">{{ model_name }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Primary Key</span>
+      <span class="detail-value">#{{ instance.pk }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Record Identity</span>
+      <span class="detail-value">{{ instance }}</span>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div style="display: flex; gap: 1.5rem; justify-content: center;">
+      <a href="{% url 'data_explorer:model' model_name %}" class="btn btn-secondary" style="padding: 1rem 2rem; font-weight: 700;">Cancel, Keep Record</a>
+      <button type="submit" class="btn btn-primary btn-destructive">Confirm Deletion</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Record Bran Sale — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .sale-hero {
+    background: linear-gradient(145deg, #166534, #14532d);
+    border-radius: 14px; padding: 1.5rem 2rem;
+    margin-bottom: 1.75rem; border: 1px solid #14532d;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .sale-hero-title { font-size:1.3rem; font-weight:800; color:#f0fdf4; margin:0; }
+  .sale-hero-sub { font-size:.85rem; color:#86efac; margin-top:.25rem; }
+  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.1); }
+  .btn-submit { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
+  .btn-submit:hover { opacity:.85; }
+</style>
+
+<div class="sale-hero">
+  <div class="sale-hero-title">🌾 Record Bran (Waste) Sale</div>
+  <div class="sale-hero-sub">Byproduct sales recorded by the Operations Manager. This is tracked completely separately from primary Company Retail Operations.</div>
+</div>
+
+{% if error %}
+<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+{% endif %}
+
+<div class="form-section">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label>Date of Sale *</label>
+        <input type="date" name="date" value="{{ today }}" required>
+      </div>
+      <div class="form-group">
+        <label>Buyer Name *</label>
+        <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required>
+      </div>
+    </div>
+
+    <div class="form-grid-2" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label>Material Source *</label>
+        <select name="material_type" required>
+          {% for val, label in material_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Quantity (Sacks/Bags) *</label>
+        <input type="number" name="qty" min="1" placeholder="e.g. 50" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.25rem;">
+      <label>Total Amount Paid (₦) *</label>
+      <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 45000" required>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.25rem;">
+      <label>Notes (Optional)</label>
+      <textarea name="notes" rows="2" placeholder="Any remarks about this sale…"></textarea>
+    </div>
+
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <button type="submit" class="btn-submit">💾 Record Bran Sale →</button>
+      <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">← Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,5 @@
+{
+  "source_directories": ["."],
+  "search_path": ["C:\\Users\\hp\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages"],
+  "exclude": ["migrations", ".git"]
+}

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Record Money Receipt — Noor Foods{% endblock %}
+{% block nav_rc_list %}active{% endblock %}
+{% block content %}
+
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: #1e1b4b;
+        padding: 2.5rem;
+        color: white;
+    }
+    .form-header h2 { font-size: 1.75rem; font-weight: 900; margin: 0; letter-spacing: -0.5px; }
+    .form-header p { font-size: 0.95rem; opacity: 0.8; margin-top: 0.5rem; }
+
+    .form-body { padding: 3rem; }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .form-group { margin-bottom: 2rem; }
+    .label { display: block; font-size: 0.8rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 0.75rem; }
+    
+    input, select, textarea {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1.5px solid #e2e8f0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .info-banner {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        padding: 1.25rem;
+        border-radius: 16px;
+        margin-bottom: 2.5rem;
+        display: flex;
+        gap: 1rem;
+        color: #0369a1;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .btn-submit {
+        background: #4f46e5;
+        color: white;
+        width: 100%;
+        padding: 1.25rem;
+        border-radius: 14px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 1rem;
+    }
+    .btn-submit:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); }
+
+    .currency-input { position: relative; }
+    .currency-symbol { position: absolute; left: 1rem; top: 1rem; font-weight: 800; color: #94a3b8; }
+    .currency-input input { padding-left: 2.5rem; }
+</style>
+
+<div class="form-container">
+    <div class="form-header">
+        <h2>Record Money Receipt</h2>
+        <p>Log physical cash or transfers collected from sales personnel.</p>
+    </div>
+
+    <div class="form-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="info-banner">
+                <span style="font-size: 1.5rem;">💡</span>
+                <div>
+                    <strong>Pro-Tip:</strong> Providing a <strong>Reconciliation Period</strong> allows the system to automatically check the received amount against the personnel's sales results for those dates.
+                </div>
+            </div>
+
+            {% if error %}
+            <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 14px; margin-bottom: 2rem; border: 1px solid #fecaca; font-weight: 700;">
+                Error: {{ error }}
+            </div>
+            {% endif %}
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="label">Date Received</label>
+                    <input type="date" name="date" value="{{ today }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="label">From Personnel</label>
+                    <select name="sales_person_id" required>
+                        <option value="">Select Member...</option>
+                        {% for sp in sales_persons %}
+                        <option value="{{ sp.pk }}">{{ sp.name }} ({{ sp.get_channel_display }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid" style="background: #f8fafc; padding: 2rem; border-radius: 20px; border: 1px solid #f1f5f9; margin-bottom: 2rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="label">Cash Received</label>
+                    <div class="currency-input">
+                        <span class="currency-symbol">₦</span>
+                        <input type="number" name="cash_received" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="label">Transfer Received</label>
+                    <div class="currency-input">
+                        <span class="currency-symbol">₦</span>
+                        <input type="number" name="transfer_received" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #fffbeb; padding: 2rem; border-radius: 20px; border: 1px solid #fef3c7; margin-bottom: 2rem;">
+                <h4 style="margin: 0 0 1rem 0; font-size: 0.85rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Optional: Reconciliation Period</h4>
+                <div class="form-grid">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="label">Start Date</label>
+                        <input type="date" name="period_start">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="label">End Date</label>
+                        <input type="date" name="period_end">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="label">Notes / Remarks</label>
+                <textarea name="notes" rows="3" placeholder="Any additional details..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Confirm and Save Receipt</button>
+            <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="/reconciliation/dashboard/" style="color: #64748b; font-weight: 700; font-size: 0.9rem; text-decoration: none;">Cancel and Return</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

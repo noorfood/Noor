@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Record Milling Batch — Noor Foods{% endblock %}
+{% block nav_pr_new %}active{% endblock %}
+{% block content %}
+<style>
+    .milling-hero {
+        background: #1e293b; /* Solid Deep Navy */
+        padding: 2rem; border-radius: 12px; margin-bottom: 2rem;
+        color: white; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid #334155;
+    }
+    .balance-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem;
+    }
+    .balance-card {
+        background: white; /* High contrast solid white */
+        padding: 1.25rem; border-radius: 10px; border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .balance-card .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem; }
+    .balance-card .value { font-size: 1.75rem; font-weight: 800; color: #1e293b; }
+    
+    .form-container {
+        display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;
+    }
+    .sidebar-info {
+        background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px;
+    }
+    .info-item { margin-bottom: 1rem; }
+    .info-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+    .info-item span { font-size: 1rem; color: #1e293b; font-weight: 500; }
+</style>
+
+<div class="milling-hero">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h1 style="margin:0; font-size:1.75rem; color: white;">🚜 Record Milling Batch</h1>
+            <p style="margin:0.5rem 0 0 0; color: #94a3b8; font-weight: 500;">Log clean grain consumption and the resulting bulk flour output.</p>
+        </div>
+        <a href="/production/dashboard/" class="btn" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2);">Dashboard</a>
+    </div>
+
+    <div class="balance-grid">
+        <div class="balance-card">
+            <div class="label">Maize on Floor</div>
+            <div class="value">{{ balance_maize }} <small style="font-size:0.5em; color: #94a3b8;">Bags</small></div>
+        </div>
+        <div class="balance-card">
+            <div class="label">Wheat on Floor</div>
+            <div class="value">{{ balance_wheat }} <small style="font-size:0.5em; color: #94a3b8;">Bags</small></div>
+        </div>
+    </div>
+</div>
+
+{% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
+
+<div class="form-container">
+    <div class="form-card" style="padding:2rem;">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-section-title" style="margin-bottom:1.5rem; padding-bottom:0.5rem; border-bottom:1px solid #f1f5f9; font-weight:700; color:#1e293b;">📋 Batch Identity</div>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.5rem; margin-bottom:2rem;">
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Milling Date*</label>
+                    <input type="date" name="date" value="{{ today }}" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Shift*</label>
+                    <select name="shift" required class="form-control">
+                        <option value="">— Select —</option>
+                        <option value="morning">Morning</option>
+                        <option value="afternoon">Afternoon</option>
+                        <option value="night">Night</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Material*</label>
+                    <select name="material_type" required class="form-control">
+                        <option value="">— Select —</option>
+                        <option value="maize">Maize (Corn)</option>
+                        <option value="wheat">Wheat</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section-title" style="margin-bottom:1.5rem; padding-bottom:0.5rem; border-bottom:1px solid #f1f5f9; font-weight:700; color:#1e293b;">📥 Clean Grain Input</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Today's Bags Milled*</label>
+                    <input type="number" name="bags_milled_new" min="0" required value="0" class="form-control">
+                    <small style="color:#64748b;">Bags taken from your current collection.</small>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Outstanding Bags Milled*</label>
+                    <input type="number" name="outstanding_bags_milled" min="0" required value="0" class="form-control">
+                    <small style="color:#64748b;">Remaining bags from previous shifts.</small>
+                </div>
+            </div>
+
+            <div class="form-section-title" style="margin-bottom:1.5rem; padding-bottom:0.5rem; border-bottom:1px solid #f1f5f9; font-weight:700; color:#1e293b;">⚗️ Output Details</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Bulk Flour Produced (kg)*</label>
+                    <input type="number" step="0.01" name="bulk_powder_kg" min="0" placeholder="e.g. 4850.00" required class="form-control">
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Machine/Mill ID</label>
+                    <input type="text" name="machine" placeholder="e.g. Mill #1" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:2rem;">
+                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Milling Observations</label>
+                <textarea name="notes" rows="3" placeholder="Power issues, moisture levels, or machine observations..." class="form-control"></textarea>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
+                <button type="submit" class="btn btn-primary btn-lg" style="padding:10px 24px; font-weight:700; background:#4f46e5;">
+                    Save Milling Record
+                </button>
+                <span style="color:#64748b; font-size:0.85rem;">⚠️ Records are locked immediately upon submission.</span>
+            </div>
+        </form>
+    </div>
+
+    <div class="sidebar-info">
+        <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #0f172a;">Identity & Yield</h3>
+        
+        <div class="info-item">
+            <label>Production Officer</label>
+            <span>{{ current_user.full_name }}</span>
+        </div>
+        
+        <div class="info-item">
+            <label>Standard Bag Weight</label>
+            <span>100 kg</span>
+        </div>
+        
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:1.5rem 0;">
+        
+        <p style="font-size:0.8rem; color:#64748b; line-height:1.5;">
+            Yield percentage is monitored by the MD. Excessive loss will trigger a flag for review. Ensure scales are calibrated before recording.
+        </p>
+    </div>
+</div>
+{% endblock %}

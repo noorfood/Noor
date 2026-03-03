@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Record Cleaning Batch{% endblock %}
+{% block nav_cl_new %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Record Cleaning Batch</div>
+    <div class="page-subtitle">Record pre-clean bags consumed and clean bags produced.</div>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-section-title">Cleaning Batch Details</div>
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="date">Date*</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
+            </div>
+            <div class="form-row">
+                <label for="material_type">Material Type*</label>
+                <select id="material_type" name="material_type" required>
+                    <option value="">— Select —</option>
+                    <option value="maize">Maize</option>
+                    <option value="wheat">Wheat</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="issuance_id">Linked Raw Issuance* (Required)</label>
+            <select id="issuance_id" name="issuance_id" required>
+                <option value="">— Select Issuance —</option>
+                {% for i in issuances %}<option value="{{ i.pk }}">#{{ i.pk }} | {{ i.material_type|upper }} | {{ i.num_bags_issued }} bags ({{ i.remaining_balance }} available) | {{ i.date }}</option>{% endfor %}
+            </select>
+            <div class="form-hint">You must select the official issuance from which you collected these bags.</div>
+        </div>
+        <div class="form-section-title">Consumption &amp; Output</div>
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="dirty_bags_used">Pre-Clean Bags Used*</label>
+                <input type="number" id="dirty_bags_used" name="dirty_bags_used" min="1" required>
+                <div class="form-hint">Number of pre-clean bags consumed</div>
+            </div>
+            <div class="form-row">
+                <label for="approx_dirty_weight_kg">Approx. Pre-Clean Weight (kg)*</label>
+                <input type="number" id="approx_dirty_weight_kg" name="approx_dirty_weight_kg" min="0" step="0.1"
+                    required>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="clean_bags_produced">Clean Bags Produced</label>
+            <input type="number" id="clean_bags_produced" name="clean_bags_produced" min="1" required>
+            <div class="form-hint">Each clean bag must be exactly 100kg</div>
+        </div>
+        <div class="form-row">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="2"></textarea>
+        </div>
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary">Save Cleaning Batch</button>
+            <a href="/cleaning/list/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

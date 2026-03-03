@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Personnel Registry — Noor Foods{% endblock %}
+{% block nav_md_staff %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Personnel Registry</div>
+    <div class="page-subtitle">Manage all staff accounts, roles, access permissions and account statuses. All changes are recorded in the immutable audit ledger.</div>
+</div>
+
+{# Summary Cards #}
+<div class="stats-row mb-8">
+    <div class="stat-card">
+        <div class="stat-label">Total Staff</div>
+        <div class="stat-value">{{ staff|length }}</div>
+        <div class="stat-unit">registered accounts</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" style="color:#10b981;">{{ staff|length }}</div>
+        <div class="stat-unit">can log in</div>
+    </div>
+</div>
+
+<div class="action-bar">
+    <span class="action-bar-title">All Staff Accounts</span>
+    <a href="{% url 'accounts:staff_register' %}" class="btn btn-primary">+ Register New Staff</a>
+</div>
+
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Store Domain</th>
+                <th>Status</th>
+                <th>Registered By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in staff %}
+            <tr>
+                <td>
+                    <strong>{{ s.full_name }}</strong>
+                    {% if s.pk == current_user.pk %}<span style="font-size:0.75rem;color:#94a3b8;margin-left:6px;">(You)</span>{% endif %}
+                </td>
+                <td style="font-family:monospace;font-size:0.9rem;color:#475569;">{{ s.username }}</td>
+                <td><span class="badge badge-draft">{{ s.get_role_display_short|default:s.role|title }}</span></td>
+                <td>
+                    {% if s.role == 'store_officer' %}
+                        {% if s.store_type == 'raw' %}
+                        <span class="badge badge-maize">Raw Materials</span>
+                        {% elif s.store_type == 'finished' %}
+                        <span class="badge badge-paid">Finished Goods</span>
+                        {% else %}
+                        <span style="color:#94a3b8;">—</span>
+                        {% endif %}
+                    {% else %}
+                    <span style="color:#94a3b8;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.status == 'active' %}<span class="badge badge-paid">Active</span>
+                    {% elif s.status == 'suspended' %}<span class="badge badge-partial">Suspended</span>
+                    {% elif s.status == 'dismissed' %}<span class="badge badge-flagged">Dismissed</span>
+                    {% endif %}
+                </td>
+                <td style="color:#64748b;">{{ s.created_by.full_name|default:"System" }}</td>
+                <td>
+                    <a href="{% url 'accounts:staff_edit' s.pk %}" class="btn btn-sm btn-secondary">Edit</a>
+                    <a href="{% url 'accounts:staff_reset_password' s.pk %}" class="btn btn-sm btn-secondary" style="margin-left:4px;">Reset PW</a>
+                    {% if s.pk != current_user.pk %}
+                    <span style="display:inline-block;margin-left:6px;border-left:1px solid #e2e8f0;padding-left:6px;">
+                        {% if s.status == 'active' %}
+                        <form action="{% url 'accounts:staff_action' s.pk %}" method="POST" style="display:inline;"
+                            onsubmit="return confirm('Suspend {{ s.full_name }}? They will not be able to log in.');">
+                            {% csrf_token %}<input type="hidden" name="action" value="suspend">
+                            <button type="submit" class="btn btn-sm btn-secondary" style="color:#d97706;border-color:#fde68a;">Suspend</button>
+                        </form>
+                        {% else %}
+                        <form action="{% url 'accounts:staff_action' s.pk %}" method="POST" style="display:inline;">
+                            {% csrf_token %}<input type="hidden" name="action" value="reactivate">
+                            <button type="submit" class="btn btn-sm btn-secondary" style="color:#059669;border-color:#a7f3d0;">Reactivate</button>
+                        </form>
+                        {% endif %}
+                        {% if s.status != 'dismissed' %}
+                        <form action="{% url 'accounts:staff_action' s.pk %}" method="POST" style="display:inline;margin-left:4px;"
+                            onsubmit="return confirm('DISMISS {{ s.full_name }}? This flags permanent termination.');">
+                            {% csrf_token %}<input type="hidden" name="action" value="dismiss">
+                            <button type="submit" class="btn btn-sm btn-secondary" style="color:#dc2626;border-color:#fecaca;">Dismiss</button>
+                        </form>
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="table-empty">No staff accounts found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

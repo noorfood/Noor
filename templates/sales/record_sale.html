@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Record Sale — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .sale-hero {
+    background: linear-gradient(145deg, #0f172a, #1e3a5f);
+    border-radius: 14px; padding: 1.5rem 2rem;
+    margin-bottom: 1.75rem; border: 1px solid #1e40af;
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  }
+  .sale-hero-title { font-size:1.3rem; font-weight:800; color:#f0f9ff; margin:0; }
+  .sale-hero-sub { font-size:.85rem; color:#93c5fd; margin-top:.25rem; }
+  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+  .form-section-title { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:1.25rem; padding-bottom:.6rem; border-bottom:2px solid #f1f5f9; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
+  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
+  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
+  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+  .btn-submit { background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
+  .btn-submit:hover { opacity:.85; }
+  .auto-calc-note { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #3b82f6; border-radius:8px; padding:.85rem 1.1rem; margin-bottom:1.25rem; font-size:.85rem; color:#1e40af; }
+  .person-hint { font-size:.78rem; color:#64748b; margin-top:.3rem; }
+
+  .no-team-warn { background:#fef9c3; border:1px solid #fde047; border-left:4px solid #eab308; border-radius:8px; padding:.85rem 1.1rem; margin-bottom:1.25rem; font-size:.85rem; color:#854d0e; }
+</style>
+
+<div class="sale-hero">
+  <div class="sale-hero-title">🛒 Record a New Sale</div>
+  <div class="sale-hero-sub">Record goods sold by a sales team member on their behalf. Price and commission are calculated automatically from MD configuration.</div>
+</div>
+
+{% if error %}
+<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+{% endif %}
+
+{% if not salespersons %}
+<div class="no-team-warn">
+  ⚠️ No active sales team members found. <a href="{% url 'sales:add_salesperson' %}" style="color:#854d0e;font-weight:700;">Add a Sales Person →</a>
+</div>
+{% endif %}
+
+<div class="form-section">
+  <div class="form-section-title">👤 Sales Team Member</div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid-2" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label for="date">Date of Sale *</label>
+        <input type="date" id="date" name="date" value="{{ today }}" required>
+      </div>
+      <div class="form-group">
+        <label for="salesperson_id">Sales Person *</label>
+        <select id="salesperson_id" name="salesperson_id" required>
+          <option value="">— Select Sales Team Member —</option>
+          {% for sp in salespersons %}
+          <option value="{{ sp.pk }}" {% if request.GET.sp == sp.pk|stringformat:"s" %}selected{% endif %}>
+            {{ sp.name }} — {{ sp.get_channel_display }}
+          </option>
+          {% empty %}
+          <option disabled>No active sales team members yet.</option>
+          {% endfor %}
+        </select>
+        <div class="person-hint">Channel (Driver/Promoter) is assigned to the person and controls pricing.</div>
+      </div>
+    </div>
+
+    <div class="form-section-title" style="margin-top:1.5rem;">📦 Product Details</div>
+    <div class="form-grid-3" style="margin-bottom:1.25rem;">
+      <div class="form-group">
+        <label for="material_type">Material Type *</label>
+        <select id="material_type" name="material_type" required>
+          {% for val, label in material_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="qty_sold">Quantity Sold (10kg Sacks) *</label>
+        <input type="number" id="qty_sold" name="qty_sold" min="1" placeholder="e.g. 10" required>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:1.25rem;">
+      <label for="notes">Notes (Optional)</label>
+      <textarea id="notes" name="notes" rows="2" placeholder="Any remarks about this sale…"></textarea>
+    </div>
+
+    <div class="auto-calc-note">
+      ⚡ <strong>Auto-Calculated:</strong> Price per sack, commission amount, and net payable will be computed from the MD's active price configuration. A pending FG issuance will also be created for the FG Store Officer to confirm physical handover.
+    </div>
+
+    <div style="display:flex;gap:.75rem;align-items:center;">
+      <button type="submit" class="btn-submit">💾 Save Sale & View Receipt →</button>
+      <a href="{% url 'sales:dashboard' %}" class="btn btn-secondary">← Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

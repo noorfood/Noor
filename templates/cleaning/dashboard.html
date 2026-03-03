@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Cleaning Dashboard{% endblock %}
+{% block nav_cl_list %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Cleaning Dashboard</div>
+    <div class="page-subtitle">Recent cleaning batches.</div>
+</div>
+<div class="action-bar">
+    <span class="action-bar-title">Recent Batches</span>
+    {% if current_user.is_cleaning_manager %}
+    <a href="/cleaning/batch/new/" class="btn btn-primary">+ New Batch</a>
+    {% endif %}
+</div>
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Date</th>
+                <th>Material</th>
+                <th class="num">Dirty Bags Used</th>
+                <th class="num">Clean Bags Out</th>
+                <th class="num">Loss (kg)</th>
+                <th>Status</th>
+                <th>Manager</th>
+                {% if current_user.is_manager_or_above %}<th>Action</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in batches %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ b.date }}</td>
+                <td><span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
+                <td class="num">{{ b.dirty_bags_used }}</td>
+                <td class="num">{{ b.clean_bags_produced }}</td>
+                <td class="num">{{ b.loss_kg }}</td>
+                <td><span class="badge badge-{{ b.status }}">{{ b.status|upper }}</span></td>
+                <td>{{ b.cleaning_manager.full_name }}</td>
+                {% if current_user.is_manager_or_above %}
+                <td>{% if b.status == 'draft' %}<a href="/cleaning/batch/{{ b.pk }}/approve/"
+                        class="btn btn-sm btn-primary">Approve</a>{% else %}<span
+                        class="record-locked">Approved</span>{% endif %}</td>
+                {% endif %}
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="table-empty">No batches recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="action-bar mt-24">
+    <a href="/cleaning/list/" class="btn btn-secondary">View All Batches</a>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Receive Clean Bags Return{% endblock %}
+{% block nav_cs_return %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Receive Clean Bags Returned from Production</div>
+</div>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="date">Date*</label>
+                <input type="date" id="date" name="date" value="{{ today }}" required>
+            </div>
+            <div class="form-row">
+                <label for="material_type">Material Type*</label>
+                <select id="material_type" name="material_type" required>
+                    <option value="">— Select —</option>
+                    {% for val, label in material_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row-inline">
+            <div class="form-row">
+                <label for="num_bags">Number of Bags Returned*</label>
+                <input type="number" id="num_bags" name="num_bags" min="1" required>
+            </div>
+            <div class="form-row">
+                <label for="returned_by_id">Returned By (Production Officer)*</label>
+                <select id="returned_by_id" name="returned_by_id" required>
+                    <option value="">— Select —</option>
+                    {% for p in prod_officers %}
+                    <option value="{{ p.pk }}">{{ p.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <label for="production_batch_ref">Production Batch Reference (Optional)</label>
+            <input type="text" id="production_batch_ref" name="production_batch_ref" placeholder="e.g. Batch #12">
+        </div>
+        <div class="form-row">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" rows="2"></textarea>
+        </div>
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary">Save Return (Locked)</button>
+            <a href="/clean-store/list/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

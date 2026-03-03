@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}SM Payments — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white; border-radius: 16px; padding: 2rem 2.5rem;
+    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.07);
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .3rem; display: block; }
+  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .88rem; }
+
+  .pending-alert { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 1.5rem; color: #78350f; font-size: .88rem; }
+
+  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: .85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: monospace; }
+
+  .badge-ok   { background: #d1fae5; color: #065f46; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .badge-pend { background: #fef3c7; color: #92400e; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .badge-rej  { background: #fee2e2; color: #991b1b; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+</style>
+
+<div class="page-hero">
+  <span class="hero-label">💳 Payment Ledger</span>
+  <h1 class="hero-title">Sales Manager Payments</h1>
+  <p class="hero-sub">
+    {% if current_user.role == 'manager' or current_user.role == 'md' %}
+    Review and confirm payments submitted by Sales Managers.
+    {% else %}
+    Your payment history and status with the company.
+    {% endif %}
+  </p>
+</div>
+
+{% if pending_payments %}
+<div class="pending-alert">
+  ⚠️ <strong>{{ pending_payments.count }} payment(s)</strong> are awaiting your confirmation.
+</div>
+{% endif %}
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Date</th>
+        {% if current_user.role != 'sales_manager' %}<th>Sales Manager</th>{% endif %}
+        <th class="num">Cash</th>
+        <th class="num">Transfer</th>
+        <th class="num">Total</th>
+        <th>Status</th>
+        <th>GM Notes</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ p.date }}</td>
+        {% if current_user.role != 'sales_manager' %}<td>{{ p.sales_manager.full_name }}</td>{% endif %}
+        <td class="num">{% if p.amount_cash %}₦{{ p.amount_cash|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td class="num">{% if p.amount_transfer %}₦{{ p.amount_transfer|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td class="num"><strong>₦{{ p.total|floatformat:0 }}</strong></td>
+        <td>
+          {% if p.status == 'confirmed' %}<span class="badge-ok">✓ Confirmed</span>
+          {% elif p.status == 'rejected' %}<span class="badge-rej">✗ Rejected</span>
+          {% else %}<span class="badge-pend">⏳ Pending GM</span>{% endif %}
+        </td>
+        <td style="font-size:.85rem;color:#64748b;">{{ p.gm_notes|default:"—" }}</td>
+        <td>
+          {% if p.status == 'pending_gm' and current_user.role == 'manager' %}
+          <a href="{% url 'sales:confirm_sm_payment' p.pk %}"
+             style="background:#2563eb;color:#fff;padding:.3rem .8rem;border-radius:6px;font-size:.8rem;font-weight:700;text-decoration:none;">
+            Confirm
+          </a>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:2.5rem;">No payment records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

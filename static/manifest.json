@@ -1,0 +1,21 @@
+{
+  "name": "Noor Foods Quality Services",
+  "short_name": "Noor Foods",
+  "description": "Premium Management System for Noor Foods Quality Services Nig Ltd",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

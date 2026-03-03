@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}My Collections — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white; border-radius: 16px; padding: 2.5rem;
+    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.07);
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .4rem; display: block; }
+  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .9rem; }
+
+  .metrics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .metric { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.1rem 1.3rem; border-left: 4px solid #3b82f6; }
+  .metric.warn { border-left-color: #f59e0b; }
+  .metric.danger { border-left-color: #ef4444; }
+  .metric-label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: #64748b; margin-bottom: .35rem; }
+  .metric-value { font-size: 1.5rem; font-weight: 900; font-family: monospace; color: #0f172a; }
+
+  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: .85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: monospace; }
+
+  .badge-ok   { background: #d1fae5; color: #065f46; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .badge-pend { background: #fef3c7; color: #92400e; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .badge-rej  { background: #fee2e2; color: #991b1b; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+  .mat-badge  { background: #dbeafe; color: #1e40af; padding: .2rem .6rem; border-radius: 10px; font-size: .78rem; font-weight: 700; }
+
+  .section-header { font-size: 1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0; }
+  .action-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .btn-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: .88rem; text-decoration: none; transition: all .2s; }
+  .btn-primary-pill   { background: #2563eb; color: #fff; }
+  .btn-primary-pill:hover { background: #1d4ed8; }
+  .btn-success-pill   { background: #059669; color: #fff; }
+  .btn-success-pill:hover { background: #047857; }
+  .btn-back   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .btn-back:hover { background: #e2e8f0; }
+</style>
+
+<div class="page-hero">
+  <span class="hero-label">📦 Goods Registry</span>
+  <h1 class="hero-title">My Collections from FG Store</h1>
+  <p class="hero-sub">Goods the FG Store has recorded as collected by you. Accept or reject each one.</p>
+</div>
+
+{% if current_user.role == 'sales_manager' %}
+<div class="metrics-bar">
+  <div class="metric {% if maize_holding > 0 %}warn{% endif %}">
+    <div class="metric-label">🌽 Maize in Hands</div>
+    <div class="metric-value">{{ maize_holding }} sacks</div>
+  </div>
+  <div class="metric {% if wheat_holding > 0 %}warn{% endif %}">
+    <div class="metric-label">🌾 Wheat in Hands</div>
+    <div class="metric-value">{{ wheat_holding }} sacks</div>
+  </div>
+  <div class="metric {% if money_outstanding > 0 %}danger{% endif %}">
+    <div class="metric-label">💳 Money Outstanding</div>
+    <div class="metric-value">₦{{ money_outstanding|floatformat:0 }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="action-row">
+  {% if current_user.role == 'sales_manager' %}
+  <a href="{% url 'sales:record_sm_payment' %}" class="btn-pill btn-primary-pill">💳 Record Payment to Company</a>
+  {% endif %}
+  <a href="{% url 'sales:dashboard' %}" class="btn-pill btn-back">← Back to Dashboard</a>
+</div>
+
+<div class="section-header">📋 All Collections</div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Date</th>
+        <th>Material</th>
+        <th class="num">Quantity</th>
+        <th class="num">Price/Sack</th>
+        <th class="num">Total Value</th>
+        <th>Status</th>
+        {% if current_user.role != 'sales_manager' %}<th>Sales Manager</th>{% endif %}
+        <th>Store Officer</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in collections %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ c.date }}</td>
+        <td><span class="mat-badge">{{ c.material_type|upper }}</span></td>
+        <td class="num"><strong>{{ c.qty_sacks }}</strong></td>
+        <td class="num">{% if c.price_per_sack %}₦{{ c.price_per_sack|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td class="num">{% if c.total_value %}₦{{ c.total_value|floatformat:0 }}{% else %}—{% endif %}</td>
+        <td>
+          {% if c.status == 'pending' %}<span class="badge-pend">⏳ Pending</span>
+          {% elif c.status == 'accepted' %}<span class="badge-ok">✓ Accepted</span>
+          {% else %}<span class="badge-rej">✗ Rejected</span>{% endif %}
+        </td>
+        {% if current_user.role != 'sales_manager' %}<td>{{ c.sales_manager.full_name }}</td>{% endif %}
+        <td>{{ c.store_officer.full_name }}</td>
+        <td>
+          {% if c.status == 'pending' and current_user.role == 'sales_manager' %}
+          <a href="{% url 'sales:acknowledge_collection' c.pk %}"
+             style="background:#10b981;color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;">Acknowledge</a>
+          {% elif c.status == 'rejected' and c.rejection_note %}
+          <span style="color:#64748b;font-size:.8rem;" title="{{ c.rejection_note }}">Reason on file</span>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:2.5rem;">No collection records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

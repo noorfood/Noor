@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% block title %}Sales Manager Dashboard — Noor Foods{% endblock %}
+{% block nav_sm_dash %}active{% endblock %}
+{% block content %}
+<style>
+  /* ══════════ DESIGN SYSTEM ══════════ */
+  :root {
+    --navy: #0f172a;
+    --navy-mid: #1e3a5f;
+    --indigo: #3b82f6;
+    --indigo-light: #dbeafe;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --surface: #fff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-muted: #64748b;
+  }
+
+  .sm-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    border: 1px solid rgba(255,255,255,.08);
+    position: relative; overflow: hidden;
+  }
+  .sm-hero::after {
+    content: "";
+    position: absolute; top: -60%; right: -5%;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(59,130,246,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label {
+    text-transform: uppercase; letter-spacing: 2px;
+    font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .4rem; display: block;
+  }
+  .hero-title { font-size: 2rem; font-weight: 800; margin-bottom: .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .9rem; }
+
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 1.25rem; margin-bottom: 2.5rem;
+  }
+  .stat-card {
+    background: #fff; border-radius: 12px; padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border); border-left: 5px solid var(--indigo);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05); transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.09); }
+  .stat-card.danger { border-left-color: var(--danger); }
+  .stat-card.warn   { border-left-color: var(--warning); }
+  .stat-card.safe   { border-left-color: var(--success); }
+  .stat-label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--text-muted); margin-bottom: .5rem; }
+  .stat-value { font-size: 2rem; font-weight: 900; color: var(--text); font-family: monospace; line-height: 1; }
+  .stat-unit  { font-size: .75rem; color: #94a3b8; margin-top: .3rem; }
+
+  /* Section */
+  .section-header {
+    font-size: 1rem; font-weight: 800; color: var(--text);
+    border-bottom: 2px solid var(--border); padding-bottom: .6rem;
+    margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;
+  }
+  .link-sm { font-size: .8rem; color: var(--text-muted); font-weight: 400; text-decoration: none; }
+  .link-sm:hover { color: var(--indigo); }
+
+  /* Quick Actions */
+  .action-pills { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+  .action-pill {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .65rem 1.25rem; border-radius: 8px; font-weight: 700;
+    font-size: .88rem; text-decoration: none;
+    border: 1.5px solid transparent; transition: all .2s; white-space: nowrap;
+  }
+  .pill-primary  { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+  .pill-primary:hover  { background: #1d4ed8; transform: translateY(-1px); }
+  .pill-success  { background: #059669; color: #fff; border-color: #047857; }
+  .pill-success:hover  { background: #047857; transform: translateY(-1px); }
+  .pill-warn     { background: #d97706; color: #fff; border-color: #b45309; }
+  .pill-warn:hover     { background: #b45309; transform: translateY(-1px); }
+  .pill-outline  { background: #fff; color: var(--text); border-color: #cbd5e1; }
+  .pill-outline:hover  { background: #f8fafc; }
+  .pill-navy     { background: var(--navy-mid); color: #fff; border-color: var(--navy); }
+  .pill-navy:hover     { background: var(--navy); transform: translateY(-1px); }
+
+  /* Collection cards */
+  .coll-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.1rem 1.4rem; margin-bottom: .75rem;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: .5rem; transition: background .2s;
+  }
+  .coll-card:hover { background: #f8fafc; }
+  .coll-card.pending-coll { border-left: 4px solid var(--warning); background: linear-gradient(90deg,#fffbeb,#fff); }
+  .coll-material { font-weight: 700; color: var(--text); font-size: .95rem; }
+  .coll-date { font-size: .8rem; color: var(--text-muted); }
+
+  /* Badges */
+  .badge-ok   { background: #d1fae5; color: #065f46; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+  .badge-pend { background: #fef3c7; color: #92400e; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+  .badge-rej  { background: #fee2e2; color: #991b1b; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+
+  /* GM table */
+  .gm-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .gm-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .gm-table thead th { background: var(--navy); color: #fff; padding: .8rem 1rem; text-align: left; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+  .gm-table tbody tr:nth-child(even) { background: #f8fafc; }
+  .gm-table tbody tr:hover { background: #eff6ff; }
+  .gm-table tbody td { padding: .85rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .gm-table tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: monospace; }
+</style>
+
+{# ═══ HERO ═══════════════════════════════════════════════════════════ #}
+<div class="sm-hero">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;position:relative;z-index:1;">
+    <div>
+      <span class="hero-label">💼 Sales Module</span>
+      <h1 class="hero-title">
+        {% if current_user.role == 'sales_manager' %}
+          Sales Manager Operations
+        {% else %}
+          Sales Oversight — MD / GM
+        {% endif %}
+      </h1>
+      <p class="hero-sub">
+        {% if current_user.role == 'sales_manager' %}
+          Track your goods holding, record sales, and manage your team — all in one place.
+        {% else %}
+          Review all Sales Manager accountability, collections, and payments.
+        {% endif %}
+      </p>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:.75rem;color:#93c5fd;letter-spacing:.05em;">{{ "now"|date:"l, d F Y" }}</div>
+      <div style="font-size:1rem;font-weight:700;color:#60a5fa;margin-top:.25rem;">{{ current_user.full_name }}</div>
+    </div>
+  </div>
+</div>
+
+{# ═══ SM VIEW ═══════════════════════════════════════════════════════ #}
+{% if current_user.role == 'sales_manager' %}
+
+{# Metrics #}
+<div class="stats-grid">
+  <div class="stat-card {% if maize_holding > 0 %}warn{% endif %}">
+    <div class="stat-label">🌽 Maize in Your Hands</div>
+    <div class="stat-value">{{ maize_holding }}</div>
+    <div class="stat-unit">10kg sacks</div>
+  </div>
+  <div class="stat-card {% if wheat_holding > 0 %}warn{% endif %}">
+    <div class="stat-label">🌾 Wheat in Your Hands</div>
+    <div class="stat-value">{{ wheat_holding }}</div>
+    <div class="stat-unit">10kg sacks</div>
+  </div>
+  <div class="stat-card {% if money_outstanding > 0 %}danger{% endif %}">
+    <div class="stat-label">💳 Money Outstanding</div>
+    <div class="stat-value" style="font-size:1.6rem;">₦{{ money_outstanding|floatformat:0 }}</div>
+    <div class="stat-unit">owed to company</div>
+  </div>
+  {% if pending_count > 0 %}
+  <div class="stat-card warn">
+    <div class="stat-label">⏳ Pending Collections</div>
+    <div class="stat-value">{{ pending_count }}</div>
+    <div class="stat-unit">require your acknowledgement</div>
+  </div>
+  {% endif %}
+</div>
+
+{# Quick Actions #}
+<h3 class="section-header"><span>⚡ Quick Actions</span></h3>
+<div class="action-pills" style="margin-bottom:2.5rem;">
+  <a href="{% url 'sales:list_collections' %}" class="action-pill pill-primary">📦 My Collections</a>
+  <a href="{% url 'sales:record_distribution' %}" class="action-pill pill-navy">🤝 Give Sacks to Team</a>
+  <a href="{% url 'sales:record_sales_result' %}" class="action-pill pill-success">✓ Record Sales Result</a>
+  <a href="{% url 'sales:record_sm_payment' %}" class="action-pill pill-warn">💳 Record Payment to Company</a>
+  <a href="{% url 'sales:sp_performance' %}" class="action-pill pill-outline">📊 Team Performance</a>
+  <a href="{% url 'sales:salespersons' %}" class="action-pill pill-outline">👥 My Team</a>
+</div>
+
+{# Collections Queue #}
+<h3 class="section-header">
+  <span>📋 Recent Collections from FG Store</span>
+  <a href="{% url 'sales:list_collections' %}" class="link-sm">View All →</a>
+</h3>
+
+{% if recent_collections %}
+{% for c in recent_collections %}
+<div class="coll-card {% if c.status == 'pending' %}pending-coll{% endif %}">
+  <div>
+    <div class="coll-material">{{ c.material_type|upper }} — {{ c.qty_sacks }} sacks</div>
+    <div class="coll-date">{{ c.date }} &nbsp;·&nbsp; Recorded by {{ c.store_officer.full_name }}</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    {% if c.status == 'pending' %}
+    <span class="badge-pend">⏳ Awaiting Your Acceptance</span>
+    <a href="{% url 'sales:acknowledge_collection' c.pk %}"
+       style="background:#10b981;color:white;padding:6px 18px;border-radius:20px;font-size:.82rem;font-weight:700;text-decoration:none;box-shadow:0 4px 10px rgba(16,185,129,.25);">
+       Accept →
+    </a>
+    {% elif c.status == 'accepted' %}
+    <span class="badge-ok">✓ Accepted</span>
+    {% if c.total_value and show_money %}<span style="color:#1d4ed8;font-weight:700;font-size:.9rem;">₦{{ c.total_value|floatformat:0 }}</span>{% endif %}
+    {% else %}
+    <span class="badge-rej">✗ Rejected</span>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:2rem;text-align:center;color:#94a3b8;">
+  No collections yet. The FG Store officer will create a collection when you pick up goods.
+</div>
+{% endif %}
+
+{# Team Panel #}
+{% if salespersons %}
+<h3 class="section-header" style="margin-top:2.5rem;">
+  <span>👥 Team Panel</span>
+  <a href="{% url 'sales:salespersons' %}" class="link-sm">Manage Team →</a>
+</h3>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
+  {% for sp in salespersons %}
+  {% if sp.status == 'active' %}
+  <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:1.25rem;display:flex;flex-direction:column;gap:.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div style="font-weight:800;color:var(--navy);">{{ sp.name }}</div>
+        <div style="font-size:.75rem;background:#eff6ff;color:#1d4ed8;border-radius:10px;padding:.2rem .6rem;display:inline-block;margin-top:.25rem;font-weight:700;">{{ sp.get_channel_display }}</div>
+      </div>
+      <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}"
+         style="background:var(--navy-mid);color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.78rem;font-weight:700;text-decoration:none;">Give Goods</a>
+    </div>
+    {% if sp.phone %}<div style="font-size:.8rem;color:var(--text-muted);">📞 {{ sp.phone }}</div>{% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ═══ GM / MD VIEW ═══════════════════════════════════════════════════ #}
+{% else %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">👔 Active Sales Managers</div>
+    <div class="stat-value">{{ sm_summaries|length }}</div>
+    <div class="stat-unit">currently active</div>
+  </div>
+  {% for row in sm_summaries %}
+  {% if row.pending_count > 0 %}
+  <div class="stat-card warn">
+    <div class="stat-label">⏳ {{ row.sm.full_name }} Pending</div>
+    <div class="stat-value">{{ row.pending_count }}</div>
+    <div class="stat-unit">unacknowledged collections</div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+<h3 class="section-header"><span>📊 Sales Manager Accountability</span></h3>
+<div class="gm-table-wrap">
+  <table class="gm-table">
+    <thead>
+      <tr>
+        <th>S/N</th>
+        <th>Sales Manager</th>
+        <th class="num">🌽 Maize (sacks)</th>
+        <th class="num">🌾 Wheat (sacks)</th>
+        {% if show_money %}<th class="num">💳 Money Owed</th>{% endif %}
+        <th class="num">⏳ Pending</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in sm_summaries %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ row.sm.full_name }}</strong></td>
+        <td class="num">{% if row.maize_holding > 0 %}<span style="color:#d97706;font-weight:700;">{{ row.maize_holding }}</span>{% else %}0{% endif %}</td>
+        <td class="num">{% if row.wheat_holding > 0 %}<span style="color:#d97706;font-weight:700;">{{ row.wheat_holding }}</span>{% else %}0{% endif %}</td>
+        {% if show_money %}
+        <td class="num">{% if row.money_outstanding > 0 %}<span style="color:#dc2626;font-weight:700;">₦{{ row.money_outstanding|floatformat:0 }}</span>{% else %}<span style="color:#10b981;">₦0</span>{% endif %}</td>
+        {% endif %}
+        <td class="num">{% if row.pending_count > 0 %}<span class="badge-pend">{{ row.pending_count }}</span>{% else %}<span style="color:#94a3b8;">0</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:2rem;">No active Sales Managers found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pending_payments %}
+<h3 class="section-header" style="margin-top:2.5rem;">
+  <span>💳 Payments Awaiting GM Confirmation</span>
+  <a href="{% url 'sales:list_sm_payments' %}" class="link-sm">View All →</a>
+</h3>
+<div class="gm-table-wrap">
+  <table class="gm-table">
+    <thead>
+      <tr>
+        <th>S/N</th><th>Date</th><th>Sales Manager</th>
+        <th class="num">Total</th><th>Status</th><th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pending_payments %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ p.date }}</td>
+        <td>{{ p.sales_manager.full_name }}</td>
+        <td class="num"><strong>₦{{ p.total|floatformat:0 }}</strong></td>
+        <td><span class="badge-pend">⏳ Pending</span></td>
+        <td><a href="{% url 'sales:confirm_sm_payment' p.pk %}" style="background:#2563eb;color:#fff;padding:.3rem .8rem;border-radius:6px;font-size:.8rem;font-weight:700;text-decoration:none;">Confirm</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if recent_collections %}
+<h3 class="section-header" style="margin-top:2.5rem;"><span>📋 Recent Collection Activity</span></h3>
+<div class="gm-table-wrap">
+  <table class="gm-table">
+    <thead>
+      <tr><th>S/N</th><th>Date</th><th>Sales Manager</th><th>Material</th><th class="num">Qty</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for c in recent_collections %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ c.date }}</td>
+        <td>{{ c.sales_manager.full_name }}</td>
+        <td><span style="font-weight:700;">{{ c.material_type|upper }}</span></td>
+        <td class="num">{{ c.qty_sacks }}</td>
+        <td>
+          {% if c.status == 'accepted' %}<span class="badge-ok">✓ Accepted</span>
+          {% elif c.status == 'pending' %}<span class="badge-pend">⏳ Pending</span>
+          {% else %}<span class="badge-rej">✗ Rejected</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endif %}
+
+{% endblock %}

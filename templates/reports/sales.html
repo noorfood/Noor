@@ -1,0 +1,126 @@
+﻿{% extends 'base.html' %}
+{% block title %}Sales Ledger Details — Noor Foods{% endblock %}
+{% block nav_rp_sales %}active{% endblock %}
+{% block content %}
+<style>
+  .sales-hero {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 14px; padding: 2.25rem;
+    margin-bottom: 2.5rem; border: 1px solid #334155;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .sales-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 1rem; }
+  .sales-hero-title span { color: #8b5cf6; font-size: .85rem; letter-spacing: 1px; background: rgba(139, 92, 246, 0.1); padding: 4px 10px; border-radius: 6px; }
+  .sales-hero-sub { font-size: 0.95rem; color: #94a3b8; margin-top: 0.6rem; max-width: 600px; }
+
+  .stats-grid-sales { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+  .sales-stat-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem;
+    display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    position: relative; overflow: hidden;
+  }
+  .sales-stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; transition: width 0.3s; }
+  .sales-stat-card:hover::before { width: 6px; }
+  
+  .s-label { font-size: .7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .4rem; }
+  .s-value { font-size: 1.6rem; font-weight: 900; color: #0f172a; line-height: 1; display: flex; align-items: baseline; gap: 4px; }
+  .s-value small { font-size: .9rem; font-weight: 700; color: #94a3b8; }
+  .s-sub { font-size: .75rem; color: #94a3b8; margin-top: .4rem; font-weight: 500; }
+
+  .filter-bar-premium {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    padding: 1.25rem; margin-bottom: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .filter-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; align-items: flex-end; }
+  .filter-item label { font-size: .75rem; font-weight: 700; color: #64748b; margin-bottom: .4rem; display: block; text-transform: uppercase; }
+  .filter-item input, .filter-item select {
+    width: 100%; padding: .6rem .75rem; border-radius: 8px; border: 1.5px solid #cbd5e1;
+    font-size: .95rem; outline: none; transition: border-color .2s;
+  }
+  .filter-item input:focus { border-color: #3b82f6; }
+
+  .sales-table-card {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+  }
+  .sales-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .sales-table th {
+    background: #f8fafc; padding: 1rem; text-align: left;
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    color: #475569; border-bottom: 1px solid #e2e8f0;
+  }
+  .sales-table td { padding: 1.1rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  .sales-table tr:hover td { background: #fbfcfe; }
+  
+  .badge-currency { font-family: 'Courier New', monospace; font-weight: 700; }
+</style>
+
+<div class="sales-hero">
+  <h1 class="sales-hero-title">📈 Sales Ledger Intelligence <span>MD SECURE</span></h1>
+  <p class="sales-hero-sub">Complete audit of all sales transactions, commissions, and payment confirmations. Monitored for financial integrity.</p>
+</div>
+
+{# Summary Cards #}
+<div class="stats-grid-sales">
+  <div class="sales-stat-card" style="--c: #64748b;"><div class="s-label">Gross Value</div><div class="s-value"><small>₦</small>{{ total_value|floatformat:0 }}</div><div class="s-sub">Before team commission</div><style>.sales-stat-card:nth-child(1)::before{background:#64748b;}</style></div>
+  <div class="sales-stat-card" style="--c: #8b5cf6;"><div class="s-label">Total Commission</div><div class="s-value" style="color: #8b5cf6;"><small>₦</small>{{ total_commission|floatformat:0 }}</div><div class="s-sub">Earned by Promoters/Drivers</div><style>.sales-stat-card:nth-child(2)::before{background:#8b5cf6;}</style></div>
+  <div class="sales-stat-card" style="--c: #3b82f6;"><div class="s-label">Net Due</div><div class="s-value" style="color: #3b82f6;"><small>₦</small>{{ total_net|floatformat:0 }}</div><div class="s-sub">Payable to company</div><style>.sales-stat-card:nth-child(3)::before{background:#3b82f6;}</style></div>
+  <div class="sales-stat-card" style="--c: #10b981;"><div class="s-label">Total Collected</div><div class="s-value" style="color: #10b981;"><small>₦</small>{{ total_received|floatformat:0 }}</div><div class="s-sub">Confirmed by GM</div><style>.sales-stat-card:nth-child(4)::before{background:#10b981;}</style></div>
+  <div class="sales-stat-card" style="--c: #f43f5e;"><div class="s-label">Outstanding Debt</div><div class="s-value" style="color: {% if total_outstanding > 0 %}#f43f5e{% else %}#10b981{% endif %};"><small>₦</small>{{ total_outstanding|floatformat:0 }}</div><div class="s-sub">Total market exposure</div><style>.sales-stat-card:nth-child(5)::before{background:{% if total_outstanding > 0 %}#f43f5e{% else %}#10b981{% endif %};}</style></div>
+</div>
+
+{# Filters #}
+<div class="filter-bar-premium">
+  <form method="get" class="filter-form">
+    <div class="filter-item"><label>Date From</label><input type="date" name="date_from" value="{{ f_from }}"></div>
+    <div class="filter-item"><label>Date To</label><input type="date" name="date_to" value="{{ f_to }}"></div>
+    <div class="filter-item">
+      <label>Sales Person</label>
+      <select name="sales_person">
+        <option value="">— All Persons —</option>
+        {% for sp in all_persons %}
+        <option value="{{ sp.name }}" {% if f_person == sp.name %}selected{% endif %}>{{ sp.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display: flex; gap: .5rem;">
+      <button type="submit" class="btn btn-primary" style="flex: 1; padding: .65rem;">Apply</button>
+      <a href="?" class="btn btn-secondary" style="padding: .65rem;">Reset</a>
+    </div>
+  </form>
+</div>
+
+<div class="sales-table-card">
+  <table class="sales-table">
+    <thead>
+      <tr>
+        <th>S/N</th><th>Date</th><th>Sales Person</th><th>Mat.</th><th>Size</th>
+        <th class="num">Qty</th><th class="num">Net (₦)</th>
+        <th class="num">Recvd (₦)</th><th class="num">Debt (₦)</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in sales %}
+      <tr>
+        <td style="font-family: monospace; font-weight: 700; color: #64748b;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap;">{{ r.date }}</td>
+        <td><strong style="color: #0f172a;">{{ r.display_person }}</strong></td>
+        <td><span class="badge badge-{{ r.material_type }}">{{ r.material_type|upper|slice:":3" }}</span></td>
+        <td style="font-size: .8rem; font-weight: 700; color: #64748b;">{{ r.product_size }}</td>
+        <td class="num">{{ r.qty_sold }}</td>
+        <td class="num font-bold badge-currency">{{ r.net_payable|floatformat:2 }}</td>
+        <td class="num badge-currency" style="color: #10b981;">{{ r.total_paid|floatformat:2 }}</td>
+        <td class="num badge-currency {% if r.amount_outstanding > 0 %}text-danger font-bold{% endif %}">
+          {{ r.amount_outstanding|floatformat:2 }}
+        </td>
+        <td>
+          <span class="badge badge-{{ r.status }}" style="font-size: .7rem; font-weight: 800;">{{ r.status|upper }}</span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" style="padding: 4rem; text-align: center; color: #94a3b8;">No matching sales records identified.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

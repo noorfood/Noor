@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Clean Raw Store — Noor Foods{% endblock %}
+{% block nav_cs_list %}active{% endblock %}
+{% block content %}
+<style>
+  .cs-hero {
+    background: linear-gradient(145deg, #0c1a0c, #14532d);
+    border-radius: 14px; padding: 1.75rem 2rem;
+    margin-bottom: 1.75rem; border: 1px solid #166534;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+  }
+  .cs-hero-title { font-size:1.5rem; font-weight:800; color:#f0fdf4; margin:0 0 .25rem; }
+  .cs-hero-sub { font-size:.9rem; color:#86efac; }
+  .mat-grid-cs { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1.5rem; }
+  .mat-bal-cs { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:1.25rem 1.5rem; }
+  .mat-label-cs { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#4ade80; margin-bottom:.5rem; }
+  .mat-val-cs { font-size:2.5rem; font-weight:900; font-family:monospace; line-height:1; color:#dcfce7; }
+  .mat-unit-cs { font-size:.78rem; color:#4ade80; margin-top:.35rem; }
+
+  .alert-stat { background:rgba(234,88,12,.15); border:1px solid #ea580c; border-radius:8px; padding:.9rem 1.1rem; display:flex; align-items:center; gap:.75rem; }
+
+
+  .quick-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; }
+  .section-header-cs { padding:.9rem 1.25rem; background:linear-gradient(90deg,#7c2d12,#c2410c); color:#fff; font-weight:700; font-size:.9rem; border-radius:8px 8px 0 0; display:flex; align-items:center; gap:.75rem; }
+  .section-header { font-size:1rem; font-weight:800; color:#1e293b; border-bottom:2px solid #e2e8f0; padding-bottom:.6rem; margin-bottom:1.25rem; }
+</style>
+
+{# HERO #}
+<div class="cs-hero">
+  <div>
+    <div class="cs-hero-title">🌿 Clean Raw Store Officer</div>
+    <div class="cs-hero-sub">
+      You are the bridge between Procurement and Production.<br>
+      Cleaned bags that pass through you are ready to become Noor flour.
+    </div>
+    <div class="mat-grid-cs">
+      <div class="mat-bal-cs">
+        <div class="mat-label-cs">🌽 Clean Maize — In Store</div>
+        <div class="mat-val-cs">{{ balance_maize }}</div>
+        <div class="mat-unit-cs">100kg bags cleaned &amp; ready for milling</div>
+      </div>
+      <div class="mat-bal-cs">
+        <div class="mat-label-cs">🌾 Clean Wheat — In Store</div>
+        <div class="mat-val-cs">{{ balance_wheat }}</div>
+        <div class="mat-unit-cs">100kg bags cleaned &amp; ready for milling</div>
+      </div>
+    </div>
+  </div>
+  {% if pending_returns %}
+  <div class="alert-stat" style="align-self:flex-start;">
+    <span style="font-size:1.5rem;">⚠️</span>
+    <div>
+      <div style="font-weight:700;color:#fdba74;font-size:.9rem;">{{ pending_returns|length }} Return(s) Awaiting You</div>
+      <div style="font-size:.78rem;color:#fb923c;">Bags returned from Production — requires your acknowledgement</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+{# QUICK ACTIONS #}
+<div class="quick-actions">
+  <span style="font-weight:700;color:#334155;font-size:.9rem;">⚡ Quick Actions</span>
+  <a href="{% url 'clean_store:receive' %}" class="btn btn-secondary">+ Receive Clean Bags from Cleaning Team</a>
+  <a href="{% url 'clean_store:issue' %}" class="btn btn-primary">Issue to Production Officer →</a>
+  <a href="{% url 'clean_store:list' %}" class="btn btn-secondary" style="margin-left:auto;">View Clean Store Register →</a>
+</div>
+
+{# PENDING RETURNS FROM PRODUCTION #}
+{% if pending_returns %}
+<div class="table-wrapper mb-16" style="border-radius:10px;overflow:hidden;border:1px solid #fdba74;">
+  <div class="section-header-cs">
+    <span>⚠️ Pending Returns from Production Officers</span>
+    <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:.8rem;">{{ pending_returns|length }} awaiting your action</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th><th>Material</th><th class="num">Bags Returned</th>
+        <th>Returned By (Production Officer)</th><th style="min-width:260px;">Your Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ret in pending_returns %}
+      <tr>
+        <td style="white-space:nowrap;">{{ ret.date }}</td>
+        <td><span class="badge badge-{{ ret.material_type }}">{{ ret.material_type|upper }}</span></td>
+        <td class="num font-bold">{{ ret.num_bags }}</td>
+        <td><strong>{{ ret.returned_by.full_name }}</strong></td>
+        <td>
+          <form method="post" action="{% url 'clean_store:acknowledge_return' ret.pk %}" style="display:flex;gap:.5rem;align-items:center;">
+            {% csrf_token %}
+            <input type="text" name="rejection_note" placeholder="Reason (if rejecting)" style="padding:.4rem .6rem;font-size:.8rem;border:1px solid #cbd5e1;border-radius:5px;flex:1;min-width:120px;">
+            <button type="submit" name="action" value="accept" class="btn btn-sm" style="background:#10b981;color:#fff;border:none;border-radius:5px;padding:.4rem .8rem;font-weight:600;cursor:pointer;">✓ Accept Back</button>
+            <button type="submit" name="action" value="reject" class="btn btn-sm" style="background:#ef4444;color:#fff;border:none;border-radius:5px;padding:.4rem .8rem;font-weight:600;cursor:pointer;" onclick="return confirm('Reject this return?');">✕ Reject</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;margin-bottom:2rem;color:#166534;">
+  ✅ No pending returns from Production Officers. All bags are accounted for.
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Approve Cleaning Batch{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Approve Cleaning Batch S/N: {{ batch.pk }}</div>
+</div>
+<div class="form-card">
+    <table>
+        <tr>
+            <td><strong>Date</strong></td>
+            <td>{{ batch.date }}</td>
+        </tr>
+        <tr>
+            <td><strong>Material</strong></td>
+            <td>{{ batch.material_type|upper }}</td>
+        </tr>
+        <tr>
+            <td><strong>Cleaning Manager</strong></td>
+            <td>{{ batch.cleaning_manager.full_name }}</td>
+        </tr>
+        <tr>
+            <td><strong>Dirty Bags Used</strong></td>
+            <td>{{ batch.dirty_bags_used }}</td>
+        </tr>
+        <tr>
+            <td><strong>Approx. Dirty Weight</strong></td>
+            <td>{{ batch.approx_dirty_weight_kg }} kg</td>
+        </tr>
+        <tr>
+            <td><strong>Clean Bags Produced</strong></td>
+            <td>{{ batch.clean_bags_produced }} × 100kg</td>
+        </tr>
+        <tr>
+            <td><strong>Calculated Loss</strong></td>
+            <td>{{ batch.loss_kg }} kg</td>
+        </tr>
+        <tr>
+            <td><strong>Notes</strong></td>
+            <td>{{ batch.notes|default:"-" }}</td>
+        </tr>
+    </table>
+    <div class="section-divider"></div>
+    <form method="post">
+        {% csrf_token %}
+        <p>Approving this batch will lock it permanently and make the clean bags available in store.</p>
+        <button type="submit" class="btn btn-primary">Confirm Approval</button>
+        <a href="/cleaning/list/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+    </form>
+</div>
+{% endblock %}

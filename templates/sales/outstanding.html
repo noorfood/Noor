@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Outstanding Balances — Noor Foods{% endblock %}
+{% block nav_sl_out %}active{% endblock %}
+{% block content %}
+<style>
+  /* ══════════ DESIGN SYSTEM ══════════ */
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white; border-radius: 16px; padding: 2.5rem;
+    margin-bottom: 2.5rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.07);
+    position: relative; overflow: hidden;
+  }
+  .page-hero::after {
+    content: ""; position: absolute; top: -50%; right: -10%;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(59,130,246,.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .4rem; display: block; }
+  .hero-title { font-size: 2.25rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .95rem; max-width: 600px; }
+
+  .action-bar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .pill-btn {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .65rem 1.25rem; border-radius: 8px; font-weight: 700;
+    font-size: .88rem; text-decoration: none; transition: all .2s;
+    background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;
+  }
+  .pill-btn:hover { background: #e2e8f0; transform: translateY(-1px); }
+  .pill-btn.primary { background: #2563eb; color: #fff; border-color: #1d4ed8; }
+  .pill-btn.primary:hover { background: #1d4ed8; }
+
+  /* Table styling */
+  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: 'JetBrains Mono', 'Roboto Mono', monospace; }
+
+  /* Badges */
+  .status-badge { display: inline-block; padding: .25rem .75rem; border-radius: 20px; font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+
+  .holding-val { font-weight: 700; color: #f59e0b; }
+  .money-val { font-weight: 800; color: #dc2626; }
+  .safe-val { color: #10b981; font-weight: 600; }
+
+  .footer-note { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 1.25rem 1.5rem; margin-top: 2rem; font-size: .88rem; color: #14532d; line-height: 1.6; }
+</style>
+
+<div class="page-hero">
+  <span class="hero-label">📊 Financial Accountability</span>
+  <h1 class="hero-title">Outstanding Balances</h1>
+  <p class="hero-sub">The company's primary accountability is against Sales Managers. Individual team performance is tracked separately.</p>
+</div>
+
+<div class="action-bar">
+  {% if current_user.role == 'manager' or current_user.role == 'md' %}
+  <a href="{% url 'sales:list_sm_payments' %}" class="pill-btn primary">💳 View All SM Payments</a>
+  {% endif %}
+  <a href="{% url 'sales:dashboard' %}" class="pill-btn">🏠 Dashboard</a>
+</div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Sales Manager</th>
+        <th class="num">Sacks Collected</th>
+        <th class="num">Goods in Hand</th>
+        {% if show_money %}
+        <th class="num">Money Outstanding</th>
+        {% endif %}
+        <th class="num">Pending Collections</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in sm_outstanding %}
+      <tr>
+        <td style="font-weight:700; color:#1e3a5f;">{{ row.sm.full_name }}</td>
+        <td class="num" style="color:#64748b;">{{ row.total_collected }}</td>
+        <td class="num">
+          {% if row.goods_holding > 0 %}
+          <span class="holding-val">{{ row.goods_holding }} sacks</span>
+          {% else %}
+          <span class="safe-val">0</span>
+          {% endif %}
+        </td>
+        {% if show_money %}
+        <td class="num">
+          {% if row.money_outstanding > 0 %}
+          <span class="money-val">₦{{ row.money_outstanding|floatformat:0 }}</span>
+          {% else %}
+          <span class="safe-val">₦0</span>
+          {% endif %}
+        </td>
+        {% endif %}
+        <td class="num">
+          {% if row.pending_collection_count > 0 %}
+          <span class="status-badge badge-amber">{{ row.pending_collection_count }} pending</span>
+          {% else %}
+          <span style="color:#94a3b8;">0</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if row.money_outstanding > 0 or row.goods_holding > 0 %}
+          <span class="status-badge badge-red">Outstanding</span>
+          {% else %}
+          <span class="status-badge badge-green">Clear</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="{% if show_money %}6{% else %}5{% endif %}" style="text-align:center; padding:3rem; color:#94a3b8;">No active Sales Managers found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="footer-note">
+  <strong>💡 Balance Principles:</strong>
+  <ul style="margin:.5rem 0 0; padding-left:1.2rem;">
+    <li><strong>Goods in Hand:</strong> Accepted collections minus successfully recorded sales results.</li>
+    <li><strong>Money Outstanding:</strong> Total value of accepted collections minus confirmed payments confirmed by GM.</li>
+    <li>Team members (Promoters/Drivers) are internal to the SM; their holdings are for performance tracking only.</li>
+  </ul>
+</div>
+
+{% endblock %}

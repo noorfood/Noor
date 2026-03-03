@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Sales Team Performance — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .page-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white; border-radius: 16px; padding: 2rem 2.5rem;
+    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.07);
+    display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .3rem; display: block; }
+  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .88rem; max-width: 550px; }
+
+  .action-pills { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .pill { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: .85rem; text-decoration: none; transition: all .2s; }
+  .pill-primary { background: #2563eb; color: #fff; }
+  .pill-primary:hover { background: #1d4ed8; }
+  .pill-success { background: #059669; color: #fff; }
+  .pill-success:hover { background: #047857; }
+  .pill-back { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  .pill-back:hover { background: #e2e8f0; }
+
+  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+  tbody tr:hover { background: #eff6ff; }
+  tbody td { padding: .85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-family: monospace; }
+
+  .channel-badge { background: #eff6ff; color: #1d4ed8; padding: .2rem .6rem; border-radius: 10px; font-size: .75rem; font-weight: 700; }
+  .progress-bar { height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; margin-right: .4rem; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+
+  .context-note { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 1.5rem; font-size: .85rem; color: #14532d; }
+</style>
+
+<div class="page-hero">
+  <div>
+    <span class="hero-label">📊 Performance Tracking</span>
+    <h1 class="hero-title">Sales Team Performance</h1>
+    <p class="hero-sub">Who is selling, who is outstanding, and who needs a push — pure performance visibility. <em>SalesPerson debts are not tracked here.</em></p>
+  </div>
+  {% if current_user.role == 'sales_manager' %}
+  <div style="display:flex;flex-direction:column;gap:.6rem;align-items:flex-end;">
+    <a href="{% url 'sales:record_distribution' %}" class="pill pill-primary">📦 Give Sacks to Team</a>
+    <a href="{% url 'sales:record_sales_result' %}" class="pill pill-success">✓ Record Sales Result</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="context-note">
+  ℹ️ <strong>Company Principle:</strong> The Sales Manager is the company's debtor. Sales Persons are internal to the SM's operations.
+  This view tracks performance only — no financial liability is created for Sales Persons here.
+</div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Channel</th>
+        <th class="num">Sacks Given</th>
+        <th class="num">Sacks Sold</th>
+        <th class="num">Unsold</th>
+        {% if show_money %}
+        <th class="num">Commission</th>
+        <th class="num">Net to Company</th>
+        {% endif %}
+        <th>Performance</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in sp_rows %}
+      <tr>
+        <td><strong style="color:#1e3a5f;">{{ forloop.counter }}</strong></td>
+        <td><strong>{{ row.sp.name }}</strong></td>
+        <td><span class="channel-badge">{{ row.sp.get_channel_display }}</span></td>
+        <td class="num">{{ row.total_given }}</td>
+        <td class="num">{{ row.total_sold }}</td>
+        <td class="num">
+          {% if row.unsold > 0 %}
+          <span style="color:#dc2626;font-weight:700;">{{ row.unsold }}</span>
+          {% else %}
+          <span style="color:#10b981;font-weight:700;">0</span>
+          {% endif %}
+        </td>
+        {% if show_money %}
+        <td class="num">₦{{ row.total_commission|floatformat:0 }}</td>
+        <td class="num" style="font-weight:700;">₦{{ row.total_net|floatformat:0 }}</td>
+        {% endif %}
+        <td>
+          {% if row.total_given > 0 %}
+            {% widthratio row.total_sold row.total_given 100 as pct %}
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <div class="progress-bar">
+                <div class="progress-fill"
+                  style="width:{{ pct }}%;background:{% if pct|add:0 >= 80 %}#10b981{% elif pct|add:0 >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
+                </div>
+              </div>
+              <span style="font-size:.85rem;font-weight:700;">{{ pct }}%</span>
+            </div>
+          {% else %}
+          <span style="color:#94a3b8;font-size:.82rem;">No distributions</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="{% if show_money %}9{% else %}7{% endif %}" style="text-align:center;color:#94a3b8;padding:3rem;">
+          No performance data yet.
+          {% if current_user.role == 'sales_manager' %}
+          <br><a href="{% url 'sales:record_distribution' %}" style="color:#3b82f6;font-weight:700;text-decoration:none;">Start by giving sacks to a team member →</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

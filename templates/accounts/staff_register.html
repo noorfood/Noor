@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Register Staff{% endblock %}
+{% block nav_md_staff %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Register New Staff</div>
+    <div class="page-subtitle">Create a new user account and assign their system role.</div>
+</div>
+
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="form-card">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-section-title">Personal Details</div>
+        <div class="form-row-two">
+            <div class="form-row">
+                <label for="full_name">Full Name*</label>
+                <input type="text" id="full_name" name="full_name" required>
+            </div>
+            <div class="form-row">
+                <label for="username">Username*</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+                <div class="form-hint">Must be unique (e.g. jdoe)</div>
+            </div>
+        </div>
+
+        <div class="form-section-title">Role Configuration</div>
+        <div class="form-row-two">
+            <div class="form-row">
+                <label for="role">System Role*</label>
+                <select id="role" name="role" required onchange="toggleSalesType()">
+                    <option value="">-- Select Role --</option>
+                    {% for val, label in roles %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-row" id="store_type_container" style="display:none;">
+                <label for="store_type">Store Assigned*</label>
+                <select id="store_type" name="store_type">
+                    <option value="">-- Select Store --</option>
+                    <option value="raw">Raw Material Store</option>
+                    <option value="finished">Finished Goods Store</option>
+                </select>
+                <div class="form-hint">Which store does this officer manage?</div>
+            </div>
+        </div>
+
+        <div class="form-section-title">Authentication</div>
+        <div class="form-row-two">
+            <div class="form-row">
+                <label for="password">Initial Password*</label>
+                <input type="password" id="password" name="password" required autocomplete="new-password">
+            </div>
+            <div class="form-row">
+                <label for="confirm_password">Confirm Password*</label>
+                <input type="password" id="confirm_password" name="confirm_password" required
+                    autocomplete="new-password">
+            </div>
+        </div>
+
+        <div class="form-row mt-24">
+            <button type="submit" class="btn btn-primary">Register Staff</button>
+            <a href="{% url 'accounts:staff_list' %}" class="btn btn-secondary" style="margin-left: 12px;">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleSalesType() {
+        var role = document.getElementById('role').value;
+        var storeContainer = document.getElementById('store_type_container');
+        var storeSelect = document.getElementById('store_type');
+
+        if (role === 'store_officer') {
+            storeContainer.style.display = 'block';
+            storeSelect.required = true;
+        } else {
+            storeContainer.style.display = 'none';
+            storeSelect.required = false;
+            storeSelect.value = '';
+        }
+    }
+</script>
+{% endblock %}

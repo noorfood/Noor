@@ -1,0 +1,32 @@
+{% extends 'base_login.html' %}
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="login-logo-title">NOOR FOODS QUALITY SERVICES NIG LTD</div>
+            <div class="login-logo-sub">Production Accountability System</div>
+        </div>
+        <h2>Sign In</h2>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" autocomplete="username" autofocus required>
+            </div>
+            <div class="form-row">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            </div>
+            <div class="form-row mt-24">
+                <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+            </div>
+        </form>
+        <div class="mt-16 text-muted text-center" style="font-size:11px;">
+            This system records every action. Use responsibly.
+        </div>
+    </div>
+</div>
+{% endblock %}

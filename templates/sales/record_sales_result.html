@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block title %}Record Sales Result{% endblock %}
+{% block content %}
+
+<style>
+  .hero-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+  }
+  .hero-card h1 { margin: 0 0 0.25rem; font-size: 1.6rem; font-weight: 700; }
+  .hero-card p  { margin: 0; opacity: .75; font-size: .95rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .form-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    border: 1px solid #e2e8f0;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: .4rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .form-control {
+    width: 100%;
+    box-sizing: border-box;
+    padding: .65rem .9rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: .95rem;
+    transition: border-color .2s;
+  }
+  .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+
+  .info-box {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: .88rem;
+    color: #14532d;
+  }
+  .info-box.warn {
+    background: #fffbeb;
+    border-color: #fcd34d;
+    color: #92400e;
+  }
+  .sp-holding {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: .75rem;
+  }
+  .holding-pill {
+    background: #1e3a5f;
+    color: white;
+    border-radius: 20px;
+    padding: .35rem .9rem;
+    font-size: .8rem;
+    font-weight: 700;
+  }
+  .holding-pill.empty { background: #dc2626; }
+
+  .submit-btn {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+    padding: .75rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+  }
+  .submit-btn:hover { background: #172d4a; transform: translateY(-1px); }
+
+  .cancel-link { color: #64748b; text-decoration: none; font-size: .9rem; margin-left: 1rem; }
+  .alert-error {
+    background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px;
+    padding: .75rem 1rem; color: #991b1b; margin-bottom: 1rem;
+  }
+</style>
+
+<div class="hero-card">
+  <h1>📊 Record Sales Result</h1>
+  <p>Record how many sacks a team member sold. The company tracks performance only — your SM account is the debtor, not theirs.</p>
+</div>
+
+{% if error %}
+<div class="alert-error">⚠️ {{ error }}</div>
+{% endif %}
+
+<div style="display:grid; grid-template-columns: 1fr 340px; gap:1.5rem; align-items:start;">
+
+  {# ── Main Form ── #}
+  <div class="form-card">
+    <form method="post" id="salesResultForm">
+      {% csrf_token %}
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" name="date" id="date" value="{{ today }}" required class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label>Team Member</label>
+          <select name="sales_person_id" id="salespersonSelect" required class="form-control">
+            <option value="">-- Select Team Member --</option>
+            {% for sp in salespersons %}
+            <option value="{{ sp.pk }}"
+              data-maize="{{ sp.maize_holding }}"
+              data-wheat="{{ sp.wheat_holding }}"
+              data-channel="{{ sp.channel }}"
+              {% if selected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>
+              {{ sp.name }} — {{ sp.get_channel_display }}
+            </option>
+            {% empty %}
+            <option disabled>No team members registered yet.</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Material</label>
+          <select name="material_type" id="materialSelect" required class="form-control">
+            <option value="">-- Select Material --</option>
+            <option value="maize">Maize (10kg sacks)</option>
+            <option value="wheat">Wheat (10kg sacks)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Sacks Sold</label>
+          <input type="number" name="qty_sold" id="qtySold" min="1" required class="form-control"
+                 placeholder="e.g. 10">
+        </div>
+
+        <div class="form-group full">
+          <label>Notes <span style="font-weight:400;font-size:.8rem;color:#94a3b8;">(optional)</span></label>
+          <textarea name="notes" class="form-control" rows="2"
+            placeholder="e.g. Sold 8 out of 10 sacks. Returned ₦36,000."></textarea>
+        </div>
+
+        <div class="form-group full">
+          <div class="info-box" style="font-size:.85rem;">
+            ℹ️ The system will auto-calculate:
+            <ul style="margin:.5rem 0 0; padding-left:1.2rem;">
+              <li>Gross value (qty × MD-set price)</li>
+              <li>Commission for this team member's channel</li>
+              <li>Net amount — reduces <strong>your</strong> outstanding balance</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="form-group full" style="display:flex;align-items:center;gap:1rem;margin-top:.5rem;">
+          <button type="submit" class="submit-btn">✓ Record Sales Result</button>
+          <a href="{% url 'sales:sp_performance' %}" class="cancel-link">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {# ── Sidebar: live stock info ── #}
+  <div>
+    <div class="form-card" id="stockSidebar">
+      <div style="font-size:.85rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
+        📦 Team Member's Holding
+      </div>
+      <div id="holdingDisplay" style="color:#94a3b8;font-size:.9rem;">
+        Select a team member and material to see their current stock.
+      </div>
+    </div>
+
+    <div class="form-card" style="margin-top:1rem;">
+      <div style="font-size:.85rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
+        📋 All Team Members
+      </div>
+      <div style="font-size:.85rem;">
+        {% for sp in salespersons %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid #f1f5f9;">
+          <div>
+            <span style="font-weight:600;color:#1e3a5f;">{{ sp.name }}</span>
+            <span style="font-size:.75rem;background:#f1f5f9;border-radius:10px;padding:.1rem .5rem;margin-left:.4rem;">{{ sp.get_channel_display }}</span>
+          </div>
+          <div style="text-align:right;">
+            {% if sp.maize_holding > 0 %}
+            <span style="background:#dbeafe;color:#1d4ed8;border-radius:10px;padding:.1rem .5rem;font-size:.75rem;font-weight:700;margin-right:.2rem;">
+              🌽 {{ sp.maize_holding }}
+            </span>
+            {% endif %}
+            {% if sp.wheat_holding > 0 %}
+            <span style="background:#fef9c3;color:#92400e;border-radius:10px;padding:.1rem .5rem;font-size:.75rem;font-weight:700;">
+              🌾 {{ sp.wheat_holding }}
+            </span>
+            {% endif %}
+            {% if sp.maize_holding == 0 and sp.wheat_holding == 0 %}
+            <span style="color:#94a3b8;font-size:.75rem;">—</span>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <div style="color:#94a3b8;">No team members yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const spSelect = document.getElementById('salespersonSelect');
+const matSelect = document.getElementById('materialSelect');
+const holdingDisplay = document.getElementById('holdingDisplay');
+const qtySold = document.getElementById('qtySold');
+
+function updateHolding() {
+  const opt = spSelect.options[spSelect.selectedIndex];
+  const mat = matSelect.value;
+
+  if (!opt || !opt.value || !mat) {
+    holdingDisplay.innerHTML = '<span style="color:#94a3b8;">Select a team member and material to see their current stock.</span>';
+    return;
+  }
+
+  const holding = mat === 'maize' ? parseInt(opt.dataset.maize || 0) : parseInt(opt.dataset.wheat || 0);
+  const matLabel = mat === 'maize' ? '🌽 Maize' : '🌾 Wheat';
+  const color = holding > 0 ? '#1e3a5f' : '#dc2626';
+  const bg   = holding > 0 ? '#dbeafe' : '#fee2e2';
+
+  holdingDisplay.innerHTML = `
+    <div style="margin-bottom:.5rem;">
+      <strong style="font-size:1.1rem;color:${color};">${opt.text.split('—')[0].trim()}</strong>
+      currently holds:
+    </div>
+    <div style="padding:.75rem 1rem;background:${bg};border-radius:8px;font-size:1.3rem;font-weight:800;color:${color};text-align:center;">
+      ${holding} sack${holding !== 1 ? 's' : ''} of ${matLabel}
+    </div>
+    ${holding === 0 ? '<div style="margin-top:.5rem;font-size:.8rem;color:#dc2626;">⚠️ This member has no sacks of this material on record.</div>' : ''}
+  `;
+
+  // Update max attribute for qty
+  if (holding > 0) {
+    qtySold.max = holding;
+  } else {
+    qtySold.removeAttribute('max');
+  }
+}
+
+spSelect.addEventListener('change', updateHolding);
+matSelect.addEventListener('change', updateHolding);
+window.addEventListener('load', updateHolding);
+</script>
+
+{% endblock %}

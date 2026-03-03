@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% block title %}MD Insights{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">MD Insights & Overview</div>
+    <div class="page-subtitle">High-level tracking of store holding, financial outstanding, and team performance.</div>
+</div>
+
+<!-- 1. Store Summary Layer (No Money) -->
+<h3 style="margin-bottom:1rem;">Current Store Operations</h3>
+<div class="stats-row" style="margin-bottom:2rem;">
+    <!-- Raw -->
+    <div class="stat-card">
+        <div class="stat-label" style="font-size:0.75rem; color:var(--text-secondary);">DIRTY STORE (Sacks)</div>
+        <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
+            <div><strong style="font-size:1.1rem;">{{ dirty_maize }}</strong> Mz</div>
+            <div><strong style="font-size:1.1rem;">{{ dirty_wheat }}</strong> Wt</div>
+        </div>
+    </div>
+    <!-- Clean -->
+    <div class="stat-card stat-card-primary">
+        <div class="stat-label" style="font-size:0.75rem;">CLEAN STORE (Sacks)</div>
+        <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
+            <div><strong style="font-size:1.1rem;">{{ clean_maize }}</strong> Mz</div>
+            <div><strong style="font-size:1.1rem;">{{ clean_wheat }}</strong> Wt</div>
+        </div>
+    </div>
+    <!-- FG -->
+    <div class="stat-card stat-card-success">
+        <div class="stat-label" style="font-size:0.75rem;">FINISHED GOODS (10kg Sacks)</div>
+        <div style="display:flex; justify-content:space-between; margin-top:0.5rem;">
+            <div><strong style="font-size:1.1rem;">{{ fg_maize }}</strong> Mz</div>
+            <div><strong style="font-size:1.1rem;">{{ fg_wheat }}</strong> Wt</div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Financial & Holding Liability -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-bottom:2rem;">
+    
+    <!-- Who is holding what -->
+    <div class="form-card" style="padding:1.5rem;">
+        <h4 style="margin-bottom:1rem;">Sales Manager Liabilities</h4>
+        <table style="width:100%; text-align:left; border-collapse:collapse;">
+            <thead>
+                <tr style="border-bottom:1px solid var(--border);">
+                    <th style="padding-bottom:0.5rem; width:40px;">S/N</th>
+                    <th style="padding-bottom:0.5rem;">Manager</th>
+                    <th style="padding-bottom:0.5rem; text-align:right;">Sacks in Hand</th>
+                    <th style="padding-bottom:0.5rem; text-align:right;">Money Owed</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sm in sm_holdings %}
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:0.75rem 0;">{{ forloop.counter }}</td>
+                    <td style="padding:0.75rem 0;"><strong>{{ sm.name }}</strong></td>
+                    <td style="padding:0.75rem 0; text-align:right; color:var(--warning); font-weight:600;">
+                        {{ sm.goods }}
+                    </td>
+                    <td style="padding:0.75rem 0; text-align:right; color:var(--danger); font-weight:600;">
+                        ₦{{ sm.money|floatformat:0 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" style="padding:1rem 0; color:var(--text-secondary); text-align:center;">All Sales Managers are fully cleared.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Brand Sales Recovery -->
+    <div class="form-card" style="padding:1.5rem; background:linear-gradient(to right bottom, #f8fafc, #f1f5f9);">
+        <h4 style="margin-bottom:1rem;">Brand Sales Recovery</h4>
+        <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--text-secondary);">Total Value Sold:</span>
+            <strong style="font-size:1.2rem;">₦{{ brand_revenue|floatformat:0 }}</strong>
+        </div>
+        <div style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--success);">Money Received:</span>
+            <strong style="font-size:1.2rem; color:var(--success);">₦{{ brand_received|floatformat:0 }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:1rem; border-top:1px solid #cbd5e1;">
+            <span style="color:var(--danger); font-weight:600;">Outstanding:</span>
+            <strong style="font-size:1.4rem; color:var(--danger);">₦{{ brand_outstanding|floatformat:0 }}</strong>
+        </div>
+    </div>
+
+</div>
+
+<!-- 3. Performance & Trends -->
+<div style="display:grid; grid-template-columns: 1fr 1.5fr 1fr; gap:2rem;">
+    
+    <!-- Top 5 Performers -->
+    <div class="form-card" style="padding:1.5rem;">
+        <h4 style="margin-bottom:1rem;">Top 5 Promoters/Drivers</h4>
+        <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">Ranked by total sacks sold.</div>
+        
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+            {% for sp in top_sps %}
+            <div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+                    <strong>{{ forloop.counter }}. {{ sp.name }}</strong>
+                    <span style="color:var(--text-secondary); font-size:0.85rem;">{{ sp.sold }}/{{ sp.issued }} sold</span>
+                </div>
+                <!-- Progress bar -->
+                <div style="height:6px; width:100%; background:var(--border); border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:{{ sp.pct }}%; background:var(--success); border-radius:3px;"></div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="color:var(--text-secondary); text-align:center; padding:1rem 0;">No sales team activity recorded.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Chart: Sales vs Collections -->
+    <div class="form-card" style="padding:1.5rem; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h4 id="chartTitle" style="margin:0;">Collections vs Sales ({{ this_year }})</h4>
+            <div>
+                <button type="button" class="btn btn-secondary" onclick="toggleChartMode()" id="chartToggleBtn" style="padding:0.4rem 0.8rem; font-size:0.85rem;">View {{ this_month_name }} (Weekly)</button>
+            </div>
+        </div>
+        <div style="position: relative; height: 300px; width: 100%; flex-grow: 1;">
+            <canvas id="salesTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart: Product Mix -->
+    <div class="form-card" style="padding:1.5rem; display:flex; flex-direction:column;">
+        <h4 style="margin-bottom:1rem;">Product Sales Volume</h4>
+        <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">Total sacks sold by material type.</div>
+        <div style="position: relative; height: 300px; width: 100%; flex-grow: 1; display:flex; align-items:center; justify-content:center;">
+            <canvas id="productMixChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js Setup -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('salesTrendChart').getContext('2d');
+    
+    // Parse JSON data from Django
+    const monthlyLabels = JSON.parse('{{ months_json|safe }}');
+    const monthlyColls = JSON.parse('{{ colls_json|safe }}');
+    const monthlySales = JSON.parse('{{ sales_json|safe }}');
+    
+    const weeklyLabels = JSON.parse('{{ weeks_json|safe }}');
+    const weeklyColls = JSON.parse('{{ w_colls_json|safe }}');
+    const weeklySales = JSON.parse('{{ w_sales_json|safe }}');
+    
+    let isWeeklyMode = false;
+
+    window.salesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [
+                {
+                    label: 'Sacks Collected by SM',
+                    data: monthlyColls,
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Sacks Sold by Promoters',
+                    data: monthlySales,
+                    type: 'line',
+                    fill: false,
+                    borderColor: 'rgb(16, 185, 129)',
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointBackgroundColor: 'rgb(16, 185, 129)'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Sacks'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            }
+        }
+    });
+
+    window.toggleChartMode = function() {
+        isWeeklyMode = !isWeeklyMode;
+        const btn = document.getElementById('chartToggleBtn');
+        const title = document.getElementById('chartTitle');
+        
+        if (isWeeklyMode) {
+            window.salesChart.data.labels = weeklyLabels;
+            window.salesChart.data.datasets[0].data = weeklyColls;
+            window.salesChart.data.datasets[1].data = weeklySales;
+            btn.innerText = "View {{ this_year }} (Monthly)";
+            title.innerText = "Collections vs Sales ({{ this_month_name }})";
+        } else {
+            window.salesChart.data.labels = monthlyLabels;
+            window.salesChart.data.datasets[0].data = monthlyColls;
+            window.salesChart.data.datasets[1].data = monthlySales;
+            btn.innerText = "View {{ this_month_name }} (Weekly)";
+            title.innerText = "Collections vs Sales ({{ this_year }})";
+        }
+        window.salesChart.update();
+    };
+
+    // Product Mix Chart
+    const productLabels = JSON.parse('{{ product_labels_json|safe }}');
+    const productData = JSON.parse('{{ product_data_json|safe }}');
+    
+    const pmCtx = document.getElementById('productMixChart').getContext('2d');
+    new Chart(pmCtx, {
+        type: 'doughnut',
+        data: {
+            labels: productLabels,
+            datasets: [{
+                data: productData,
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.8)', // Amber
+                    'rgba(139, 92, 246, 0.8)', // Violet
+                    'rgba(59, 130, 246, 0.8)', // Blue
+                    'rgba(16, 185, 129, 0.8)', // Emerald
+                ],
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 12 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const val = context.raw;
+                            const pct = ((val / total) * 100).toFixed(1);
+                            return ` ${context.label}: ${val} sacks (${pct}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '70%',
+        }
+    });
+});
+</script>
+{% endblock %}

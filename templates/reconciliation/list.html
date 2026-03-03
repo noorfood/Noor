@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Summary Hub — Noor Foods{% endblock %}
+{% block nav_rc_list %}active{% endblock %}
+{% block content %}
+
+<style>
+    .hub-header {
+        background: #f8fafc;
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .hub-title { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin: 0; }
+    .hub-subtitle { font-size: 0.9rem; color: #64748b; margin-top: 0.25rem; font-weight: 500; }
+
+    .twin-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .stat-group {
+        background: white;
+        border-radius: 24px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .mini-card {
+        padding: 1rem;
+        border-radius: 16px;
+        background: #f1f5f9;
+        text-align: center;
+    }
+    .mini-label { font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem; }
+    .mini-value { font-size: 1.25rem; font-weight: 900; color: #1e293b; }
+
+    .premium-table-card {
+        background: white;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+
+    .recon-table { width: 100%; border-collapse: collapse; }
+    .recon-table th {
+        background: #f8fafc;
+        padding: 1.25rem 1rem;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+        text-align: left;
+    }
+    .recon-table td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    
+    /* Segment Styles */
+    .seg-finance { background-color: rgba(79, 70, 229, 0.03); }
+    .seg-stock { background-color: rgba(5, 150, 105, 0.03); }
+    
+    .val-expected { font-weight: 600; color: #64748b; }
+    .val-actual { font-weight: 800; color: #1e293b; }
+    .val-diff { font-weight: 900; }
+
+    .badge-settled { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.7rem; }
+    .badge-pending { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 0.7rem; }
+
+    .filter-bar {
+        background: white;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+</style>
+
+<div class="hub-header">
+    <div>
+        <div class="hub-title">⚖️ Reconciliation Summary Hub</div>
+        <div class="hub-subtitle">Twin-track audit: Physical Financials vs Inventory Distribution.</div>
+    </div>
+    <div style="display: flex; gap: 1rem;">
+        <a href="/reconciliation/dashboard/" class="btn btn-secondary" style="font-weight: 800;">← Dashboard</a>
+        <a href="/reconciliation/flags/" class="btn btn-secondary" style="font-weight: 800;">Discrepancy Registry</a>
+    </div>
+</div>
+
+<div class="twin-stats">
+    <div class="stat-group" style="border-left: 5px solid #4f46e5;">
+        <div class="mini-card" style="grid-column: span 2; background: #eef2ff;"><div class="mini-label">Global Financial Position</div><div class="mini-value" style="color: #4338ca;">₦{{ grand_diff|floatformat:0 }} <small style="font-size: 0.8rem; opacity: 0.7;">Exposure</small></div></div>
+        <div class="mini-card"><div class="mini-label">Expected</div><div class="mini-value">₦{{ grand_expected|floatformat:0 }}</div></div>
+        <div class="mini-card"><div class="mini-label">Actual</div><div class="mini-value">₦{{ grand_actual|floatformat:0 }}</div></div>
+    </div>
+    <div class="stat-group" style="border-left: 5px solid #059669;">
+        <div class="mini-card" style="grid-column: span 2; background: #ecfdf5;"><div class="mini-label">Global Inventory Position</div><div class="mini-value" style="color: #047857;">{{ grand_stock_diff }} <small style="font-size: 0.8rem; opacity: 0.7;">Sacks Unsold</small></div></div>
+        <div class="mini-card"><div class="mini-label">Distributed</div><div class="mini-value">{{ grand_given }}</div></div>
+        <div class="mini-card"><div class="mini-label">Sold</div><div class="mini-value">{{ grand_sold }}</div></div>
+    </div>
+</div>
+
+<div class="premium-table-card">
+    <div class="filter-bar">
+        <span style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Filter by Personnel:</span>
+        <form method="get" id="filterForm">
+            <select name="sp" onchange="this.form.submit()" style="padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 0.9rem; min-width: 200px;">
+                <option value="">— All Team Members —</option>
+                {% for sp in all_persons %}
+                <option value="{{ sp.pk }}" {% if f_sp == sp.pk|stringformat:"s" %}selected{% endif %}>{{ sp.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <table class="recon-table">
+        <thead>
+            <tr>
+                <th rowspan="2">Personnel Member</th>
+                <th colspan="3" style="text-align: center; background: #eef2ff; border-left: 2px solid #e2e8f0;">Financial Audit (₦)</th>
+                <th colspan="3" style="text-align: center; background: #ecfdf5; border-left: 2px solid #e2e8f0;">Stock Audit (Sacks)</th>
+                <th rowspan="2" style="text-align: center; border-left: 2px solid #e2e8f0;">Status</th>
+            </tr>
+            <tr>
+                <th style="background: #f8fafc; border-left: 2px solid #e2e8f0;">Expected</th>
+                <th style="background: #f8fafc;">Actual</th>
+                <th style="background: #f8fafc;">Exposure</th>
+                <th style="background: #f8fafc; border-left: 2px solid #e2e8f0;">Given</th>
+                <th style="background: #f8fafc;">Sold</th>
+                <th style="background: #f8fafc;">Unsold</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>
+                    <div style="font-weight: 800; color: #1e293b; font-size: 1rem;">{{ row.sp.name }}</div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">{{ row.sp.get_channel_display }}</div>
+                </td>
+                
+                <!-- Finance Segment -->
+                <td class="seg-finance" style="border-left: 1px solid #e2e8f0;"><span class="val-expected">{{ row.expected_finance|floatformat:0 }}</span></td>
+                <td class="seg-finance"><span class="val-actual">{{ row.actual_finance|floatformat:0 }}</span></td>
+                <td class="seg-finance"><span class="val-diff" style="color: {% if row.finance_diff > 0 %}#e11d48{% else %}#059669{% endif %};">{{ row.finance_diff|floatformat:0 }}</span></td>
+                
+                <!-- Stock Segment -->
+                <td class="seg-stock" style="border-left: 1px solid #e2e8f0;"><span class="val-expected">{{ row.total_given }}</span></td>
+                <td class="seg-stock"><span class="val-actual">{{ row.total_sold }}</span></td>
+                <td class="seg-stock"><span class="val-diff" style="color: {% if row.stock_diff > 0 %}#d97706{% else %}#059669{% endif %};">{{ row.stock_diff }}</span></td>
+                
+                <td style="text-align: center; border-left: 1px solid #e2e8f0;">
+                    {% if row.status == 'settled' %}
+                    <span class="badge-settled">SETTLED</span>
+                    {% else %}
+                    <span class="badge-pending">PENDING</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" style="padding: 5rem; text-align: center; color: #94a3b8;">No activity identified for the current selection.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

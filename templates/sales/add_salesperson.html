@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Register Sales Team Member — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .reg-hero {
+    background: linear-gradient(145deg, #1e3a8a, #1d4ed8);
+    border-radius: 14px; padding: 2rem;
+    margin-bottom: 2rem; border: 1px solid #3b82f6;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  }
+  .reg-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; }
+  .reg-hero-sub { font-size: .95rem; color: #bfdbfe; margin-top: .5rem; }
+
+  .form-container {
+    max-width: 800px; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 16px;
+    padding: 2.5rem; box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  }
+  .form-section-title {
+    font-size: 1.1rem; font-weight: 800; color: #111827;
+    margin-bottom: 1.5rem; padding-bottom: .75rem;
+    border-bottom: 2px solid #f1f5f9; display: flex; align-items: center; gap: .75rem;
+  }
+  .premium-label { font-size: .85rem; font-weight: 700; color: #475569; margin-bottom: .5rem; display: block; }
+  .premium-input {
+    width: 100%; padding: .85rem 1rem; border-radius: 10px;
+    border: 1.5px solid #e2e8f0; transition: all .2s; font-size: .95rem;
+    background: #f8fafc;
+  }
+  .premium-input:focus {
+    outline: none; border-color: #3b82f6; background: #fff;
+    box-shadow: 0 0 0 4px rgba(59,130,246,.1);
+  }
+  .premium-select { cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C/polyline%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.2rem; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .helper-text { font-size: .8rem; color: #94a3b8; margin-top: .4rem; }
+  .btn-submit { padding: .9rem 2rem; font-weight: 800; font-size: 1rem; border-radius: 10px; letter-spacing: .3px; }
+</style>
+
+<div class="reg-hero">
+  <h1 class="reg-hero-title">👤 Register Team Member</h1>
+  <p class="reg-hero-sub">Add a new promoter or driver to your sales network. They will be linked to your account.</p>
+</div>
+
+{% if error %}
+<div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; color: #991b1b; font-weight: 600;">
+  ⚠️ {{ error }}
+</div>
+{% endif %}
+
+<div class="form-container">
+  <form method="post">
+    {% csrf_token %}
+    
+    <div class="form-section-title"><span>📋 Basic Information</span></div>
+    
+    <div class="form-grid">
+      <div>
+        <label class="premium-label">Full Name *</label>
+        <input type="text" name="name" class="premium-input" placeholder="e.g. John Ibrahim" required>
+        <p class="helper-text">Official name for receipts and records.</p>
+      </div>
+      <div>
+        <label class="premium-label">Role / Channel *</label>
+        <select name="channel" class="premium-input premium-select" required>
+          <option value="">— Select —</option>
+          <option value="promoter">Sales Promoter</option>
+          <option value="driver">Vehicle Driver</option>
+        </select>
+        <p class="helper-text">Drivers use vehicles; Promoters sell directly.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+      <label class="premium-label">Phone Number</label>
+      <input type="text" name="phone" class="premium-input" placeholder="e.g. 0801 234 5678">
+    </div>
+
+    <div class="form-section-title" style="margin-top: 2.5rem;"><span>📝 Additional Context</span></div>
+    
+    <div style="margin-bottom: 2.5rem;">
+      <label class="premium-label">Internal Notes</label>
+      <textarea name="notes" class="premium-input" rows="3" placeholder="Optional notes..."></textarea>
+      <p class="helper-text">Any specific details regarding this member's territory or focus.</p>
+    </div>
+
+    <div style="border-top: 1px solid #f1f5f9; padding-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <p style="margin: 0; font-size: .85rem; color: #64748b;">* Required fields</p>
+      <div style="display: flex; gap: 1rem;">
+        <a href="{% url 'sales:salespersons' %}" class="btn btn-secondary" style="padding: .9rem 2rem; font-weight: 700;">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-submit">Confirm Registration →</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Payment #{{ payment.pk }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="page-title">Confirm Sales Manager Payment #{{ payment.pk }}</div>
+    <div class="page-subtitle">Verify that the funds have been received in the company account before confirming.</div>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="detail-card" style="margin-bottom:1.5rem; padding:1.5rem; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-label">DATE</div>
+            <div class="stat-value">{{ payment.date }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">SALES MANAGER</div>
+            <div class="stat-value">{{ payment.sales_manager.full_name }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">CASH</div>
+            <div class="stat-value">₦{{ payment.amount_cash|floatformat:0 }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">TRANSFER</div>
+            <div class="stat-value">₦{{ payment.amount_transfer|floatformat:0 }}</div>
+        </div>
+        <div class="stat-card stat-card-primary">
+            <div class="stat-label">TOTAL PAYMENT</div>
+            <div class="stat-value">₦{{ payment.total|floatformat:0 }}</div>
+        </div>
+    </div>
+    <div style="margin-top:1rem; color:var(--text-secondary);">
+        <strong>SM Notes:</strong> {{ payment.notes|default:"None" }}
+    </div>
+</div>
+
+<div class="form-card" style="padding:1.5rem;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Confirmation/Rejection Notes (Optional)</label>
+            <textarea name="gm_notes" class="form-control" rows="3" placeholder="e.g. Confirmed in Access Bank statement."></textarea>
+        </div>
+        
+        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+            <button type="submit" name="action" value="confirm" class="btn btn-success btn-lg" 
+                onclick="return confirm('Are you sure you want to CONFIRM this payment? This will update the SM balance.')">
+                ✓ Confirm Payment
+            </button>
+            <button type="submit" name="action" value="reject" class="btn btn-danger btn-lg"
+                onclick="return confirm('Are you sure you want to REJECT this payment? The SM will be notified to re-record.')">
+                ✗ Reject Payment
+            </button>
+        </div>
+    </form>
+</div>
+
+<div style="margin-top:1.5rem;">
+    <a href="{% url 'sales:list_sm_payments' %}" class="btn btn-secondary">← Back to Payments</a>
+</div>
+{% endblock %}

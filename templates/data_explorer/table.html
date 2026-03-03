@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}{{ model_name|title|cut:"-" }} — Data Explorer{% endblock %}
+{% block nav_de %}active{% endblock %}
+{% block content %}
+<style>
+  .table-hero {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 12px; padding: 1.5rem;
+    margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+  }
+  .dataset-badge {
+    background: #eff6ff; color: #3b82f6; font-size: .75rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px; padding: .35rem .75rem; border-radius: 20px;
+    display: inline-block; margin-bottom: .5rem;
+  }
+  .table-hero-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
+  
+  .search-container { position: relative; width: 100%; max-width: 380px; }
+  .search-input {
+    width: 100%; padding: .75rem 1rem .75rem 2.8rem; border-radius: 10px;
+    border: 1.5px solid #cbd5e1; transition: all .2s; font-size: .95rem;
+  }
+  .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+  .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; }
+
+  .god-table-wrapper {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+    overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .god-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .god-table th { 
+    background: #f1f5f9; padding: 1rem; text-align: left; 
+    font-size: .75rem; font-weight: 700; text-transform: uppercase; 
+    letter-spacing: .5px; color: #475569; border-bottom: 1px solid #e2e8f0;
+  }
+  .god-table td { padding: 1.1rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  .god-table tr:hover td { background: #f8fafc; }
+  .god-table tr:last-child td { border-bottom: none; }
+
+  .action-btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .5rem .9rem; border-radius: 8px; font-weight: 700;
+    font-size: .8rem; text-decoration: none; transition: background .15s;
+  }
+  .btn-edit { background: #f1f5f9; color: #1e293b; border: 1px solid #e2e8f0; }
+  .btn-edit:hover { background: #e2e8f0; }
+  .btn-delete { color: #ef4444; }
+  .btn-delete:hover { background: #fef2f2; }
+
+  .breadcrumb-nav { margin-bottom: 1rem; font-size: .85rem; color: #64748b; font-weight: 500; }
+  .breadcrumb-nav a { text-decoration: none; color: #3b82f6; font-weight: 700; }
+</style>
+
+<div class="breadcrumb-nav">
+  <a href="/data-explorer/">🗄 All Datasets</a> &nbsp;›&nbsp; {{ model_name|title|cut:"-" }}
+</div>
+
+<div class="table-hero">
+  <div>
+    <div class="dataset-badge">Dataset</div>
+    <h1 class="table-hero-title">{{ model_name|title|cut:"-" }}</h1>
+    <p style="margin: 0.4rem 0 0; font-size: .85rem; color: #64748b; max-width: 500px;">
+      Direct manual access to the {{ model_name }} ledger. Up to 500 most recent records shown below.
+    </p>
+  </div>
+  
+  <div class="search-container">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="godModeSearch" class="search-input" placeholder="Quick search in this dataset...">
+  </div>
+</div>
+
+<div class="god-table-wrapper">
+  <table class="god-table" id="godModeTable">
+    <thead>
+      <tr>
+        {% for label in fields %}
+        <th>{{ label }}</th>
+        {% endfor %}
+        <th style="text-align:right;">MD Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in records %}
+      <tr>
+        {% for val, f in record.values %}
+        <td>
+          {% if f == 'timestamp' or f == 'created_at' %}
+          <span style="font-family:monospace; color: #64748b; font-size: .8rem;">{{ val|date:"d M Y, H:i" }}</span>
+          {% elif f == 'date' %}
+          <span style="font-weight:700;">{{ val|date:"M d, Y" }}</span>
+          {% else %}
+          {{ val }}
+          {% endif %}
+        </td>
+        {% endfor %}
+        <td style="text-align:right; white-space:nowrap;">
+          <a href="{% url 'data_explorer:edit' model_name record.pk %}" class="action-btn btn-edit">Edit</a>
+          <a href="{% url 'data_explorer:delete' model_name record.pk %}" class="action-btn btn-delete">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="{{ fields|length|add:1 }}" style="padding: 4rem; text-align: center; color: #94a3b8;">
+          No records found in this dataset.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.getElementById('godModeSearch').addEventListener('keyup', function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll('#godModeTable tbody tr');
+    
+    rows.forEach(row => {
+        if(row.cells.length < 2) return;
+        let text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

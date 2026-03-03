@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block title %}Outstanding Balances — Noor Foods{% endblock %}
+{% block nav_rp_out_md %}active{% endblock %}
+{% block nav_rp_out %}active{% endblock %}
+{% block content %}
+<style>
+  .out-hero {
+    background: linear-gradient(135deg, #450a0a, #7f1d1d);
+    border-radius: 14px; padding: 2.25rem;
+    margin-bottom: 2.5rem; border: 1px solid #991b1b;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .out-hero-title { font-size: 1.75rem; font-weight: 800; color: #fef2f2; margin: 0; display: flex; align-items: center; gap: 1rem; }
+  .out-hero-sub { font-size: 0.95rem; color: #fecaca; margin-top: 0.6rem; max-width: 600px; }
+
+  .out-section { margin-bottom: 3.5rem; }
+  .out-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid #f1f5f9;
+  }
+  .out-section-title { font-size: 1.25rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: .75rem; }
+  
+  .out-table-wrapper {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .out-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .out-table th {
+    background: #f8fafc; padding: 1rem; text-align: left;
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    color: #475569; border-bottom: 1px solid #e2e8f0;
+  }
+  .out-table td { padding: 1.1rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  .out-table tr:hover td { background: #fbfcfe; }
+
+  .status-tag-ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; padding: .75rem 1.25rem; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: .75rem; }
+</style>
+
+<div class="out-hero">
+  <h1 class="out-hero-title">⚖️ Global Obligations Report</h1>
+  <p class="out-hero-sub">Summary of all unresolved material and financial burdens across production and sales channels.</p>
+</div>
+
+{# ══ PRODUCTION OUTSTANDING ══════════════════════════════════════ #}
+<div class="out-section">
+  <div class="out-section-header">
+    <div class="out-section-title">⚙️ Production: Bags-In-Hand</div>
+  </div>
+  {% if prod_outstanding %}
+  <div class="out-table-wrapper">
+    <table class="out-table">
+      <thead>
+        <tr>
+          <th>Production Officer</th>
+          <th class="num">Clean Bags Outstanding</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in prod_outstanding %}
+        <tr>
+          <td><strong style="color: #0f172a; font-size: 1rem;">{{ row.user.full_name }}</strong></td>
+          <td class="num" style="font-weight: 900; color: #f59e0b; font-size: 1.2rem; font-family: monospace;">{{ row.balance }}</td>
+          <td><a href="/production/outstanding/" class="btn btn-sm btn-secondary" style="font-weight:700;">Audit Batches</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="status-tag-ok"><span>✅</span> Zero production exposure. All clean bags accountated for.</div>
+  {% endif %}
+</div>
+
+{# ══ SALES MANAGER OUTSTANDING ════════════════════════════════════ #}
+<div class="out-section">
+  <div class="out-section-header">
+    <div class="out-section-title">💳 Sales Team: Market Exposure</div>
+  </div>
+  {% if sales_balances %}
+  <div class="out-table-wrapper">
+    <table class="out-table">
+      <thead>
+        <tr>
+          <th>Sales Manager</th>
+          <th class="num">Sacks Holding</th>
+          <th class="num">Batches</th>
+          <th class="num">Money Owed (₦)</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in sales_balances %}
+        <tr>
+          <td><strong style="color: #0f172a; font-size: 1rem;">{{ row.sm.full_name }}</strong></td>
+          <td class="num font-bold" style="color: {% if row.goods_holding > 0 %}#f59e0b{% else %}#16a34a{% endif %}; font-family: monospace;">{{ row.goods_holding }}</td>
+          <td class="num" style="color: #64748b;">{{ row.record_count }}</td>
+          <td class="num font-bold text-danger" style="font-size: 1.1rem; font-family: monospace;">₦{{ row.outstanding|floatformat:0 }}</td>
+          <td><a href="/sales/outstanding/" class="btn btn-sm btn-secondary" style="font-weight:700;">Reconcile</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="status-tag-ok"><span>✅</span> Global sales settlement reached. No outstanding market debt.</div>
+  {% endif %}
+</div>
+
+{# ══ OPEN RECONCILIATION FLAGS ════════════════════════════════════ #}
+<div class="out-section">
+  <div class="out-section-header">
+    <div class="out-section-title">🚨 Unresolved Discrepancies</div>
+  </div>
+  {% if recon_flags %}
+  <div class="out-table-wrapper">
+    <table class="out-table">
+      <thead>
+        <tr>
+          <th>Flag #</th><th>Date</th><th>Person</th><th>Expected (₦)</th><th>Actual (₦)</th><th>Gap (₦)</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in recon_flags %}
+        <tr style="background: #fffaf0;">
+          <td style="font-family: monospace; font-weight: 700;">#{{ f.pk }}</td>
+          <td>{{ f.date|date:"d M Y" }}</td>
+          <td><strong>{{ f.sales_person.name }}</strong></td>
+          <td class="num">{{ f.expected_amount|floatformat:0 }}</td>
+          <td class="num">{{ f.actual_amount|floatformat:0 }}</td>
+          <td class="num font-bold text-danger">{{ f.difference|floatformat:0 }}</td>
+          <td style="font-size: .85rem; color: #64748b;">{{ f.notes|truncatechars:60 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="status-tag-ok"><span>✅</span> Discrepancy log is clear. All receipts match sales results.</div>
+  {% endif %}
+</div>
+{% endblock %}
