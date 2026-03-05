@@ -69,7 +69,6 @@
         <th class="num">Pieces Sold</th>
         <th class="num">Unsold (Sacks)</th>
         {% if show_money %}
-        {% if show_money %}
         <th class="num">Commission</th>
         <th class="num">Expected Money</th>
         <th class="num">Outstanding Debt</th>
@@ -93,7 +92,6 @@
           <span style="color:#10b981;font-weight:700;">0</span>
           {% endif %}
         </td>
-        {% if show_money %}
         {% if show_money %}
         <td class="num">₦{{ row.total_commission|floatformat:0 }}</td>
         <td class="num" style="font-weight:700;">₦{{ row.total_net|floatformat:0 }}</td>
