@@ -180,6 +180,34 @@
 </div>
 {% endif %}
 
+{# ═══ PENDING HANDSHAKES (GM / MD) ══════════════════════════════════════ #}
+{% if pending_company_issuances or pending_sm_payments %}
+<div style="background: linear-gradient(90deg, #fffbeb, #fff); border: 1px solid #fcd34d; border-left: 5px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(245,158,11,0.1);">
+  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h3 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.25rem;">⏱️</span> Action Required: Pending Acceptance
+      </h3>
+      <p style="margin: 0; font-size: 0.85rem; color: #b45309;">
+        You have internal transfers or payments waiting for your official acceptance.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      {% if pending_company_issuances %}
+      <a href="/finished-store/list/" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #fcd34d; color: #92400e; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: transform 0.2s;">
+        🏢 {{ pending_company_issuances|length }} Company Handovers
+      </a>
+      {% endif %}
+      {% if pending_sm_payments %}
+      <a href="/sales/dashboard/" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #fcd34d; color: #92400e; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: transform 0.2s;">
+        💳 {{ pending_sm_payments|length }} Pending SM Payments
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 {# EXECUTIVE FINANCIAL PULSE (MD ONLY) #}
 {% if current_user.role == 'md' %}
 <h3 class="ops-section-heading">💰 Company Financial Pulse — Outstanding vs Received</h3>

@@ -128,6 +128,8 @@
             <option value="{{ sp.pk }}"
               data-maize="{{ sp.maize_holding }}"
               data-wheat="{{ sp.wheat_holding }}"
+              data-mcomm="{{ sp.maize_comm }}"
+              data-wcomm="{{ sp.wheat_comm }}"
               data-channel="{{ sp.channel }}"
               {% if selected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>
               {{ sp.name }} — {{ sp.get_channel_display }}
@@ -148,25 +150,60 @@
         </div>
 
         <div class="form-group">
-          <label>Sacks Sold</label>
-          <input type="number" name="qty_sold" id="qtySold" min="1" required class="form-control"
+          <label>Sacks Sold (10kg)</label>
+          <input type="number" name="qty_sold" id="qtySold" min="0" value="0" required class="form-control"
                  placeholder="e.g. 10">
+        </div>
+
+        <div class="form-group">
+          <label>Pieces Sold (1kg)</label>
+          <input type="number" name="qty_pieces_sold" id="qtyPiecesSold" min="0" value="0" required class="form-control"
+                 placeholder="e.g. 5">
+        </div>
+
+        <div class="form-group">
+          <label>Returned Sacks (10kg) <span style="font-weight:400;color:#94a3b8;">(Unsold)</span></label>
+          <input type="number" name="qty_returned" id="qtyReturned" min="0" value="0" class="form-control"
+                 placeholder="e.g. 2">
+        </div>
+
+        <div class="form-group">
+          <label>Returned Pieces (1kg) <span style="font-weight:400;color:#94a3b8;">(Unsold)</span></label>
+          <input type="number" name="qty_pieces_returned" id="qtyPiecesReturned" min="0" value="0" class="form-control"
+                 placeholder="e.g. 0">
         </div>
 
         <div class="form-group full">
           <label>Notes <span style="font-weight:400;font-size:.8rem;color:#94a3b8;">(optional)</span></label>
           <textarea name="notes" class="form-control" rows="2"
-            placeholder="e.g. Sold 8 out of 10 sacks. Returned ₦36,000."></textarea>
+            placeholder="e.g. Sold 8 out of 10 sacks. Returned remaining."></textarea>
         </div>
 
         <div class="form-group full">
-          <div class="info-box" style="font-size:.85rem;">
-            ℹ️ The system will auto-calculate:
-            <ul style="margin:.5rem 0 0; padding-left:1.2rem;">
-              <li>Gross value (qty × MD-set price)</li>
-              <li>Commission for this team member's channel</li>
-              <li>Net amount — reduces <strong>your</strong> outstanding balance</li>
-            </ul>
+          <div class="info-box" style="font-size:.85rem; border-color: #3b82f6; background: #eff6ff; color: #1e3a5f;">
+            <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.95rem;">💡 Expected Money Calculation</div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Total Value (MD Price):</span>
+              <span id="calcTotalValue" style="font-weight:600;">₦0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; color: #dc2626;">
+              <span>Minus Commission (<span id="calcCommPct">0</span>%):</span>
+              <span id="calcCommVal" style="font-weight:600;">-₦0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #bfdbfe; font-size: 1rem; font-weight: 800;">
+              <span>Expected Money Return:</span>
+              <span id="calcNetExpected">₦0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group full" style="margin-top: 0.5rem;">
+          <label style="font-size: 1rem; color: #0f172a;">Money Handed Over (₦)</label>
+          <input type="number" step="0.01" name="amount_returned" id="amountReturned" min="0" value="0" required class="form-control"
+                 style="font-size: 1.2rem; font-weight: 700; background: #f8fafc; border-color: #94a3b8;"
+                 placeholder="How much cash/transfer did they actually give you?">
+          <div id="outstandingWarning" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600; display: none;">
+            ⚠️ This is less than the expected amount. The difference will be logged as their outstanding debt.
           </div>
         </div>
 
@@ -230,19 +267,64 @@ const matSelect = document.getElementById('materialSelect');
 const holdingDisplay = document.getElementById('holdingDisplay');
 const qtySold = document.getElementById('qtySold');
 
+const qtyPiecesSold = document.getElementById('qtyPiecesSold');
+const amountReturned = document.getElementById('amountReturned');
+const outstandingWarning = document.getElementById('outstandingWarning');
+
+// Prices passed from backend context
+const maizePriceSack = {{ maize_price }};
+const maizePricePiece = maizePriceSack / 10;
+const wheatPriceSack = {{ wheat_price }};
+const wheatPricePiece = wheatPriceSack / 10;
+
+function calculateExpected() {
+  const opt = spSelect.options[spSelect.selectedIndex];
+  const mat = matSelect.value;
+  
+  if (!opt || !opt.value || !mat) return;
+
+  const commPct = mat === 'maize' ? parseFloat(opt.dataset.mcomm || 0) : parseFloat(opt.dataset.wcomm || 0);
+  const sackPrice = mat === 'maize' ? maizePriceSack : wheatPriceSack;
+  const piecePrice = mat === 'maize' ? maizePricePiece : wheatPricePiece;
+
+  const sacks = parseInt(qtySold.value || 0);
+  const pieces = parseInt(qtyPiecesSold.value || 0);
+
+  const gross = (sacks * sackPrice) + (pieces * piecePrice);
+  const commAmount = gross * (commPct / 100);
+  const netDue = gross - commAmount;
+
+  document.getElementById('calcCommPct').innerText = commPct;
+  document.getElementById('calcTotalValue').innerText = '₦' + gross.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('calcCommVal').innerText = '-₦' + commAmount.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  document.getElementById('calcNetExpected').innerText = '₦' + netDue.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  const handedOver = parseFloat(amountReturned.value || 0);
+  if (handedOver < (netDue - 0.01)) {
+    outstandingWarning.style.display = 'block';
+  } else {
+    outstandingWarning.style.display = 'none';
+  }
+}
+
 function updateHolding() {
   const opt = spSelect.options[spSelect.selectedIndex];
   const mat = matSelect.value;
+  calculateExpected();
 
   if (!opt || !opt.value || !mat) {
     holdingDisplay.innerHTML = '<span style="color:#94a3b8;">Select a team member and material to see their current stock.</span>';
     return;
   }
 
-  const holding = mat === 'maize' ? parseInt(opt.dataset.maize || 0) : parseInt(opt.dataset.wheat || 0);
+  const holding = mat === 'maize' ? parseFloat(opt.dataset.maize || 0) : parseFloat(opt.dataset.wheat || 0);
   const matLabel = mat === 'maize' ? '🌽 Maize' : '🌾 Wheat';
   const color = holding > 0 ? '#1e3a5f' : '#dc2626';
   const bg   = holding > 0 ? '#dbeafe' : '#fee2e2';
+
+  // Calculate sacks and pieces for display
+  const sacks = Math.floor(holding);
+  const pieces = Math.round((holding - sacks) * 10);
 
   holdingDisplay.innerHTML = `
     <div style="margin-bottom:.5rem;">
@@ -250,21 +332,36 @@ function updateHolding() {
       currently holds:
     </div>
     <div style="padding:.75rem 1rem;background:${bg};border-radius:8px;font-size:1.3rem;font-weight:800;color:${color};text-align:center;">
-      ${holding} sack${holding !== 1 ? 's' : ''} of ${matLabel}
+      ${sacks} sack${sacks !== 1 ? 's' : ''} 
+      ${pieces > 0 ? `<br><small style="font-size:0.9rem;">& ${pieces} piece${pieces !== 1 ? 's' : ''}</small>` : ''}
     </div>
-    ${holding === 0 ? '<div style="margin-top:.5rem;font-size:.8rem;color:#dc2626;">⚠️ This member has no sacks of this material on record.</div>' : ''}
+    <div style="text-align:center; font-size:0.8rem; color:${color}; margin-top:0.4rem;">
+      of ${matLabel}
+    </div>
+    ${holding === 0 ? '<div style="margin-top:.5rem;font-size:.8rem;color:#dc2626;">⚠️ This member has no stock of this material.</div>' : ''}
   `;
 
-  // Update max attribute for qty
-  if (holding > 0) {
-    qtySold.max = holding;
-  } else {
-    qtySold.removeAttribute('max');
-  }
+  // We no longer strictly peg max attribute to sold input, because they might be returning things too
 }
+
+document.getElementById('salesResultForm').addEventListener('submit', function(e) {
+  const sacksSold = parseInt(qtySold.value || 0);
+  const piecesSold = parseInt(qtyPiecesSold.value || 0);
+  const sacksRet = parseInt(document.getElementById('qtyReturned').value || 0);
+  const piecesRet = parseInt(document.getElementById('qtyPiecesReturned').value || 0);
+  
+  if (sacksSold === 0 && piecesSold === 0 && sacksRet === 0 && piecesRet === 0) {
+    e.preventDefault();
+    alert('Please enter at least one sack or piece sold OR returned.');
+  }
+});
 
 spSelect.addEventListener('change', updateHolding);
 matSelect.addEventListener('change', updateHolding);
+qtySold.addEventListener('input', calculateExpected);
+qtyPiecesSold.addEventListener('input', calculateExpected);
+amountReturned.addEventListener('input', calculateExpected);
+
 window.addEventListener('load', updateHolding);
 </script>
 

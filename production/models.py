@@ -90,14 +90,32 @@ class MillingBatch(models.Model):
         loss_p = (loss / total_raw * 100) if total_raw > 0 else 0
         return total_raw, loss, loss_p
 
+    def _get_active_threshold(self):
+        """Fetch the most recent ProductionThreshold effective on or before this batch's date."""
+        return ProductionThreshold.objects.filter(
+            material_type=self.material_type,
+            effective_from__lte=self.date
+        ).order_by('-effective_from').first()
+
     def determine_flag(self, loss_pct, threshold=None):
-        # Use 9/19/20 logic as requested
-        if loss_pct <= 9.0:
-            return 'normal', ''
-        elif loss_pct <= 19.0:
-            return 'warning', f'Loss {loss_pct:.1f}% exceeds normal 9% range. Manager review required.'
+        # Load from DB if not supplied
+        if threshold is None:
+            threshold = self._get_active_threshold()
+
+        if threshold:
+            normal_max = float(threshold.normal_max_loss_pct)
+            warning_max = float(threshold.warning_max_loss_pct)
         else:
-            return 'critical', f'Loss {loss_pct:.1f}% is CRITICAL (20%+). Immediate manager review required.'
+            # Fallback to hardcoded defaults if MD hasn't set thresholds yet
+            normal_max = 9.0
+            warning_max = 19.0
+
+        if loss_pct <= normal_max:
+            return 'normal', ''
+        elif loss_pct <= warning_max:
+            return 'warning', f'Loss {loss_pct:.1f}% exceeds normal threshold ({normal_max}%). Manager review required.'
+        else:
+            return 'critical', f'Loss {loss_pct:.1f}% is CRITICAL (above {warning_max}%). Immediate manager review required.'
 
     def save(self, *args, **kwargs):
         total_raw, loss, loss_p = self.calculate_outputs()
@@ -150,19 +168,35 @@ class PackagingBatch(models.Model):
     def __str__(self):
         return f"Packaging #{self.pk} | {self.qty_10kg} sacks | {self.date}"
 
+    def _get_active_threshold(self):
+        """Fetch the most recent ProductionThreshold effective on or before this batch's date."""
+        return ProductionThreshold.objects.filter(
+            material_type=self.material_type,
+            effective_from__lte=self.date
+        ).order_by('-effective_from').first()
+
     def save(self, *args, **kwargs):
         self.total_output_kg = float(self.qty_10kg) * 10
         self.loss_kg = float(self.powder_used_kg) - float(self.total_output_kg)
         self.loss_pct = round(float(self.loss_kg / float(self.powder_used_kg) * 100), 2) if self.powder_used_kg > 0 else 0
-        
-        # Use same 9/19/20 logic
-        if self.loss_pct <= 9.0:
-            self.flag_level, self.flag_reason = 'normal', ''
-        elif self.loss_pct <= 19.0:
-            self.flag_level, self.flag_reason = 'warning', f'Packaging Loss {self.loss_pct:.1f}% exceeds 9%.'
+
+        # Use MD-configured thresholds, fall back to defaults
+        threshold = self._get_active_threshold()
+        if threshold:
+            normal_max = float(threshold.normal_max_loss_pct)
+            warning_max = float(threshold.warning_max_loss_pct)
         else:
-            self.flag_level, self.flag_reason = 'critical', f'Packaging Loss {self.loss_pct:.1f}% is CRITICAL (20%+).'
-            
+            normal_max = 9.0
+            warning_max = 19.0
+
+        loss = float(self.loss_pct)
+        if loss <= normal_max:
+            self.flag_level, self.flag_reason = 'normal', ''
+        elif loss <= warning_max:
+            self.flag_level, self.flag_reason = 'warning', f'Packaging Loss {loss:.1f}% exceeds normal threshold ({normal_max}%).'
+        else:
+            self.flag_level, self.flag_reason = 'critical', f'Packaging Loss {loss:.1f}% is CRITICAL (above {warning_max}%).'
+
         super().save(*args, **kwargs)
 
 

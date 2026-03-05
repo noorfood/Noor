@@ -91,6 +91,14 @@ def dashboard(request):
             'pending_count': pending_count,
         })
 
+    # Real-world handshake: Goods issued to Company channel but not yet GM-acknowledged
+    from finished_store.models import FinishedGoodsIssuance
+    pending_company_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
+
+    # Pending SM payments awaiting GM confirmation
+    from sales.models import SalesManagerPayment
+    pending_sm_payments = SalesManagerPayment.objects.filter(status='pending_gm').order_by('-date', '-created_at')
+
     return render(request, 'reports/dashboard.html', {
         'current_user': user,
         'total_batches': total_batches,
@@ -107,6 +115,8 @@ def dashboard(request):
         'bran_sales': bran_sales,
         'retail_balances': retail_balances,
         'sm_summaries': sm_summaries,
+        'pending_company_issuances': pending_company_issuances,
+        'pending_sm_payments': pending_sm_payments,
     })
 
 

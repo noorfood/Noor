@@ -353,18 +353,27 @@ class SalesResult(models.Model):
     )
     material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES)
     qty_sold = models.PositiveIntegerField(help_text='Number of 10kg sacks sold by this person')
+    qty_pieces_sold = models.PositiveIntegerField(default=0, help_text='Number of 1kg pieces sold by this person')
+    qty_returned = models.PositiveIntegerField(default=0, help_text='Number of 10kg sacks returned to SM')
+    qty_pieces_returned = models.PositiveIntegerField(default=0, help_text='Number of 1kg pieces returned to SM')
 
     # Commission breakdown (auto-calculated from CommissionConfig)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0,
                                      help_text='Price per sack from MD config (sales_manager channel)')
+    unit_price_piece = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                           help_text='Price per 1kg piece from MD config (sales_manager channel)')
+    
     gross_value = models.DecimalField(max_digits=14, decimal_places=2, default=0,
-                                      help_text='qty_sold × unit_price')
+                                      help_text='(qty_sold × unit_price) + (qty_pieces_sold × unit_price_piece)')
     commission_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     commission_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     net_due_to_company = models.DecimalField(
         max_digits=14, decimal_places=2, default=0,
         help_text='gross_value − commission_amount — reduces SM outstanding'
     )
+    
+    amount_returned = models.DecimalField(max_digits=14, decimal_places=2, default=0,
+                                          help_text='Actual money handed over by the SalesPerson to the SM')
 
     recorded_by = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name='sales_results_recorded',
@@ -379,10 +388,18 @@ class SalesResult(models.Model):
         ordering = ['-date', '-created_at']
 
     def save(self, *args, **kwargs):
-        self.gross_value = float(self.unit_price) * self.qty_sold
+        self.gross_value = (float(self.unit_price) * self.qty_sold) + (float(self.unit_price_piece) * self.qty_pieces_sold)
         self.commission_amount = self.gross_value * float(self.commission_pct) / 100
         self.net_due_to_company = self.gross_value - self.commission_amount
         super().save(*args, **kwargs)
+
+    @property
+    def expected_amount(self):
+        return float(self.net_due_to_company)
+        
+    @property
+    def outstanding_amount(self):
+        return max(0.0, self.expected_amount - float(self.amount_returned))
 
     def __str__(self):
         return (f"SalesResult #{self.pk} | {self.sales_person.name} sold "

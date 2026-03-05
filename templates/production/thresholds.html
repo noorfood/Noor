@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% block title %}Loss Threshold Settings — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --navy: #0f172a; --navy-mid: #1e3a5f;
+    --indigo: #3b82f6; --success: #10b981;
+    --warning: #f59e0b; --danger: #ef4444;
+    --surface: #fff; --border: #e2e8f0; --text: #0f172a; --muted: #64748b;
+  }
+  .thresh-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    border-radius: 16px; padding: 2rem 2.5rem; margin-bottom: 2rem;
+    color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    border: 1px solid rgba(255,255,255,.08); position: relative; overflow: hidden;
+  }
+  .thresh-hero::after {
+    content: ""; position: absolute; top: -60%; right: -5%;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(59,130,246,.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .4rem; display: block; }
+  .hero-title { font-size: 1.9rem; font-weight: 800; margin-bottom: .25rem; }
+  .hero-sub { color: #93c5fd; font-size: .9rem; max-width: 520px; }
+
+  .legend-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin-bottom: 2.5rem;
+  }
+  .legend-card { border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid transparent; }
+  .legend-card.normal  { background: #f0fdf4; border-color: #86efac; }
+  .legend-card.warning { background: #fffbeb; border-color: #fde68a; }
+  .legend-card.critical{ background: #fef2f2; border-color: #fca5a5; }
+  .legend-icon { font-size: 1.4rem; margin-bottom: .35rem; }
+  .legend-label { font-weight: 800; font-size: .85rem; }
+  .legend-label.normal  { color: #166534; }
+  .legend-label.warning { color: #92400e; }
+  .legend-label.critical{ color: #991b1b; }
+  .legend-desc { font-size: .78rem; color: var(--muted); margin-top: .15rem; }
+
+  .form-card {
+    background: #fff; border-radius: 14px; border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,.06); padding: 2rem; margin-bottom: 2.5rem;
+  }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
+  .form-group label { display: block; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: .4rem; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: .65rem .85rem; border: 1px solid var(--border);
+    border-radius: 8px; font-size: .95rem; color: var(--text);
+    transition: border-color .2s, box-shadow .2s; background: #fafafa;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--indigo); background: #fff;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+  }
+  .pct-hint { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+  .threshold-note {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+    padding: .85rem 1rem; margin-bottom: 1.5rem; font-size: .85rem; color: #1e40af;
+  }
+  .section-header {
+    font-size: 1rem; font-weight: 800; color: var(--text);
+    border-bottom: 2px solid var(--border); padding-bottom: .6rem; margin-bottom: 1.25rem;
+  }
+  .active-badge {
+    display: inline-block; background: #d1fae5; color: #065f46;
+    font-size: .75rem; font-weight: 700; padding: 2px 10px; border-radius: 20px;
+    margin-left: .5rem;
+  }
+  .history-card { background: #fff; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.05); overflow: hidden; }
+</style>
+
+<div class="thresh-hero" style="position:relative;z-index:1;">
+  <span class="hero-label">⚙️ MD Configuration</span>
+  <h1 class="hero-title">Production Loss Thresholds</h1>
+  <p class="hero-sub">
+    Set the acceptable loss ranges for milling and packaging. The system will automatically classify
+    every batch as Normal, Warning, or Critical based on your active thresholds.
+  </p>
+</div>
+
+{# LEGEND #}
+<div class="legend-row">
+  <div class="legend-card normal">
+    <div class="legend-icon">✅</div>
+    <div class="legend-label normal">Normal</div>
+    <div class="legend-desc">Loss is within the expected operational range. No action required.</div>
+  </div>
+  <div class="legend-card warning">
+    <div class="legend-icon">⚠️</div>
+    <div class="legend-label warning">Warning</div>
+    <div class="legend-desc">Loss exceeds the normal threshold. Manager review is recommended.</div>
+  </div>
+  <div class="legend-card critical">
+    <div class="legend-icon">🚨</div>
+    <div class="legend-label critical">Critical</div>
+    <div class="legend-desc">Loss is dangerously high. Immediate management escalation required.</div>
+  </div>
+</div>
+
+{# SET NEW THRESHOLD FORM #}
+<div class="form-card">
+  <h3 class="section-header">📋 Set New Threshold</h3>
+
+  <div class="threshold-note">
+    ℹ️ New thresholds are versioned by <strong>Effective From</strong> date.
+    The most recent threshold before a batch's date will be used automatically.
+    Existing batches are not retroactively re-flagged.
+  </div>
+
+  {% if error %}
+  <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.25rem;color:#991b1b;font-weight:600;">
+    ❌ {{ error }}
+  </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Material Type *</label>
+        <select name="material_type" required>
+          <option value="maize">🌽 Maize</option>
+          <option value="wheat">🌾 Wheat</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Normal Max Loss % *</label>
+        <input type="number" name="normal_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0" required>
+        <div class="pct-hint">Loss at or below this % → ✅ Normal</div>
+      </div>
+      <div class="form-group">
+        <label>Warning Max Loss % *</label>
+        <input type="number" name="warning_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 19.0" required>
+        <div class="pct-hint">Loss between Normal Max and this % → ⚠️ Warning. Above this → 🚨 Critical</div>
+      </div>
+      <div class="form-group">
+        <label>Expected Loss % (Benchmark)</label>
+        <input type="number" name="expected_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0">
+        <div class="pct-hint">Informational benchmark, not used for flagging</div>
+      </div>
+      <div class="form-group">
+        <label>Effective From *</label>
+        <input type="date" name="effective_from" value="{{ today }}" required>
+        <div class="pct-hint">All batches on/after this date use this threshold</div>
+      </div>
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>Notes (Optional)</label>
+        <textarea name="notes" rows="2" placeholder="Reason for change, seasonal adjustment, etc."></textarea>
+      </div>
+    </div>
+    <div style="margin-top: 1.5rem; display: flex; gap: .75rem;">
+      <button type="submit" class="btn btn-primary" style="background:#0f172a; border-color:#0f172a; padding: .65rem 1.75rem; font-weight: 700;">
+        💾 Save New Threshold
+      </button>
+      <a href="{% url 'production:dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{# THRESHOLD HISTORY TABLE #}
+<div class="history-card">
+  <div class="section-header" style="padding: 1.25rem 1.5rem; margin: 0; border-bottom: 1px solid var(--border); background: #f8fafc;">
+    📜 Threshold History
+    <span style="font-weight: 400; font-size: .82rem; color: var(--muted); margin-left: .5rem;">Most recent is active for new batches</span>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th>Effective From</th>
+          <th class="num">Normal Max %</th>
+          <th class="num">Warning Max %</th>
+          <th class="num">Expected %</th>
+          <th>Set By</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for thresh in thresholds %}
+        <tr>
+          <td>
+            {% if thresh.material_type == 'maize' %}🌽{% else %}🌾{% endif %}
+            <strong>{{ thresh.material_type|upper }}</strong>
+            {% if forloop.first %}<span class="active-badge">Active</span>{% endif %}
+          </td>
+          <td style="white-space:nowrap;">{{ thresh.effective_from }}</td>
+          <td class="num">
+            <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-family:monospace;font-weight:700;">
+              ≤ {{ thresh.normal_max_loss_pct }}%
+            </span>
+          </td>
+          <td class="num">
+            <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:4px;font-family:monospace;font-weight:700;">
+              ≤ {{ thresh.warning_max_loss_pct }}%
+            </span>
+          </td>
+          <td class="num">
+            <span style="font-family:monospace;color:var(--muted);">{{ thresh.expected_loss_pct }}%</span>
+          </td>
+          <td>{{ thresh.created_by.full_name }}</td>
+          <td style="font-size:.82rem;color:var(--muted);">{{ thresh.notes|default:"—"|truncatechars:50 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center;padding:3rem;color:var(--muted);">
+            No thresholds configured yet. Batches will use the <strong>default 9% / 19%</strong> thresholds until you set custom ones above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

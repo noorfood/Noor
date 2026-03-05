@@ -47,17 +47,21 @@
       </div>
     </div>
   </div>
+</div>
   {% if pending_returns %}
-  <div class="alert-stat" style="align-self:flex-start;">
-    <span style="font-size:1.5rem;">⚠️</span>
-    <div>
-      <div style="font-weight:700;color:#fdba74;font-size:.9rem;">{{ pending_returns|length }} Return(s) Awaiting You</div>
-      <div style="font-size:.78rem;color:#fb923c;">Bags returned from Production — requires your acknowledgement</div>
-    </div>
+  <div style="background: linear-gradient(90deg, #fffbeb, #fff); border: 1px solid #fcd34d; border-left: 5px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; box-shadow: 0 4px 12px rgba(245,158,11,0.1); align-self: flex-start; max-width: 400px;">
+    <h3 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
+      <span style="font-size: 1.25rem;">⏱️</span> Pending Acceptance
+    </h3>
+    <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; color: #b45309;">
+      {{ pending_returns|length }} bag return(s) from Production require your official acceptance.
+    </p>
+    <a href="#returns-table" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #fcd34d; color: #92400e; padding: 0.4rem 0.8rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none;">
+      Verify Returns ↓
+    </a>
   </div>
   {% endif %}
 </div>
-
 
 {# QUICK ACTIONS #}
 <div class="quick-actions">

@@ -69,11 +69,13 @@
   </div>
   <div class="metric green">
     <div class="metric-label">✓ Maize Sold</div>
-    <div class="metric-value">{{ total_maize_sold }}</div>
+    <div class="metric-value">{{ total_maize_sold }} <span style="font-size:.8rem;opacity:.6;">sacks</span></div>
+    <div class="metric-value" style="font-size:1rem;">{{ total_maize_pieces }} <span style="font-size:.7rem;opacity:.6;">pieces</span></div>
   </div>
   <div class="metric {% if unsold_maize > 0 %}danger{% endif %}">
     <div class="metric-label">⏳ Maize Unsold</div>
-    <div class="metric-value">{{ unsold_maize }}</div>
+    <div class="metric-value">{{ unsold_maize|floatformat:1 }} <span style="font-size:.8rem;opacity:.6;">sacks</span></div>
+    <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;">Returned: {{ total_maize_returned }} S, {{ total_maize_pieces_returned }} P</div>
   </div>
   <div class="metric warn">
     <div class="metric-label">🌾 Wheat Given</div>
@@ -81,11 +83,20 @@
   </div>
   <div class="metric green">
     <div class="metric-label">✓ Wheat Sold</div>
-    <div class="metric-value">{{ total_wheat_sold }}</div>
+    <div class="metric-value">{{ total_wheat_sold }} <span style="font-size:.8rem;opacity:.6;">sacks</span></div>
+    <div class="metric-value" style="font-size:1rem;">{{ total_wheat_pieces }} <span style="font-size:.7rem;opacity:.6;">pieces</span></div>
   </div>
   <div class="metric {% if unsold_wheat > 0 %}danger{% endif %}">
     <div class="metric-label">⏳ Wheat Unsold</div>
-    <div class="metric-value">{{ unsold_wheat }}</div>
+    <div class="metric-value">{{ unsold_wheat|floatformat:1 }} <span style="font-size:.8rem;opacity:.6;">sacks</span></div>
+    <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;">Returned: {{ total_wheat_returned }} S, {{ total_wheat_pieces_returned }} P</div>
+  </div>
+</div>
+
+<div class="metrics-bar" style="margin-top: -1rem; margin-bottom: 2rem;">
+  <div class="metric" style="border-left-color: #8b5cf6;">
+    <div class="metric-label">💰 Total Outstanding Debt</div>
+    <div class="metric-value" style="color: #dc2626;">₦{{ total_outstanding|floatformat:0 }}</div>
   </div>
 </div>
 
@@ -98,12 +109,12 @@
         <th>S/N</th>
         <th>Date</th>
         <th>Material</th>
-        <th class="num">Sacks Sold</th>
-        <th class="num">Unit Price</th>
+        <th class="num">Sold (S/P)</th>
+        <th class="num">Returned (S/P)</th>
         <th class="num">Gross Value</th>
-        <th class="num">Commission ({{ results.0.commission_pct|default:"—" }}%)</th>
-        <th class="num">Net to Company</th>
-        <th>Recorded By</th>
+        <th class="num">Expected Return</th>
+        <th class="num">Handed Over</th>
+        <th class="num">Outstanding</th>
       </tr>
     </thead>
     <tbody>
@@ -112,15 +123,26 @@
         <td>{{ forloop.counter }}</td>
         <td>{{ r.date }}</td>
         <td><span class="mat-badge {% if r.material_type == 'wheat' %}mat-wheat{% endif %}">{{ r.material_type|upper }}</span></td>
-        <td class="num"><strong>{{ r.qty_sold }}</strong></td>
-        <td class="num">₦{{ r.unit_price|floatformat:0 }}</td>
-        <td class="num">₦{{ r.gross_value|floatformat:0 }}</td>
-        <td class="num">₦{{ r.commission_amount|floatformat:0 }}</td>
-        <td class="num" style="font-weight:700; color:#1e3a5f;">₦{{ r.net_due_to_company|floatformat:0 }}</td>
-        <td style="font-size:.82rem; color:#64748b;">{{ r.recorded_by.full_name }}</td>
+        <td class="num">
+          <span style="display:block; font-weight:700;">{{ r.qty_sold }}</span>
+          <span style="font-size:.8rem; color:#64748b;">{{ r.qty_pieces_sold }}</span>
+        </td>
+        <td class="num">
+          <span style="display:block; font-weight:700;">{{ r.qty_returned }}</span>
+          <span style="font-size:.8rem; color:#64748b;">{{ r.qty_pieces_returned }}</span>
+        </td>
+        <td class="num" style="padding-right: 0.5rem;">
+          <span style="display:block; font-weight:700;">₦{{ r.gross_value|floatformat:0 }}</span>
+          <span style="font-size:.7rem; color:#64748b; background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">Comm: ₦{{ r.commission_amount|floatformat:0 }}</span>
+        </td>
+        <td class="num" style="font-weight:700; color:#1e3a5f;">₦{{ r.expected_amount|floatformat:0 }}</td>
+        <td class="num" style="font-weight:700; color:#059669;">₦{{ r.amount_returned|floatformat:0 }}</td>
+        <td class="num" style="font-weight:700; color:{% if r.outstanding_amount > 0 %}#dc2626{% else %}#10b981{% endif %};">
+          ₦{{ r.outstanding_amount|floatformat:0 }}
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="9" style="text-align:center; padding:2.5rem; color:#94a3b8;">No sales results recorded for {{ sp.name }} yet.</td></tr>
+      <tr><td colspan="10" style="text-align:center; padding:2.5rem; color:#94a3b8;">No sales results recorded for {{ sp.name }} yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>

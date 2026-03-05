@@ -75,12 +75,22 @@
 
         <div class="form-grid">
             <div class="form-group">
+                <label class="form-label">Frequency</label>
+                <select name="target_type" id="targetType" class="form-input" required onchange="toggleFreq()">
+                    <option value="monthly" selected>Monthly Target</option>
+                    <option value="weekly">Weekly Target</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Target Year</label>
                 <input type="number" name="year" value="{{ current_year }}" min="2020" max="2035" class="form-input" required>
             </div>
-            <div class="form-group">
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group" id="monthGrp">
                 <label class="form-label">Target Month</label>
-                <select name="month" class="form-input" required>
+                <select name="month" id="monthInput" class="form-input">
                     <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
                     <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
                     <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
@@ -95,6 +105,12 @@
                     <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
                 </select>
             </div>
+            
+            <div class="form-group" id="weekGrp" style="display: none;">
+                <label class="form-label">Target Week (ISO 1-53)</label>
+                <input type="number" name="week" id="weekInput" min="1" max="53" value="{{ current_week }}" class="form-input">
+            </div>
+
             <div class="form-group">
                 <label class="form-label">Target Quantity (Sacks)</label>
                 <input type="number" name="target_qty" min="1" class="form-input" placeholder="e.g. 500" required>
@@ -112,4 +128,21 @@
         </div>
     </form>
 </div>
+
+<script>
+function toggleFreq() {
+    const type = document.getElementById('targetType').value;
+    const mGrp = document.getElementById('monthGrp');
+    const wGrp = document.getElementById('weekGrp');
+    
+    if (type === 'weekly') {
+        mGrp.style.display = 'none';
+        wGrp.style.display = 'block';
+    } else {
+        mGrp.style.display = 'block';
+        wGrp.style.display = 'none';
+    }
+}
+window.addEventListener('load', toggleFreq);
+</script>
 {% endblock %}

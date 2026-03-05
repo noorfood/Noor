@@ -38,7 +38,17 @@ def get_sm_goods_holding(sales_manager, material_type=None):
         dist_qs = dist_qs.filter(material_type=material_type)
     total_distributed = dist_qs.aggregate(t=Sum('qty_given'))['t'] or 0
 
-    return max(0, total_collected - total_distributed)
+    # Add back all returned goods
+    ret_qs = SalesResult.objects.filter(
+        recorded_by=sales_manager
+    )
+    if material_type:
+        ret_qs = ret_qs.filter(material_type=material_type)
+    total_returned_sacks = ret_qs.aggregate(t=Sum('qty_returned'))['t'] or 0
+    total_returned_pieces = ret_qs.aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
+    total_returned = total_returned_sacks + (total_returned_pieces / 10.0)
+
+    return max(0, float(total_collected) - float(total_distributed) + float(total_returned))
 
 
 def get_gm_goods_holding(material_type, size='10kg'):
@@ -79,7 +89,11 @@ def get_sm_money_outstanding(sales_manager):
         t=Sum('amount_cash') + Sum('amount_transfer')
     )['t'] or 0
 
-    return max(0, float(total_value) - float(total_paid))
+    total_commission = SalesResult.objects.filter(
+        recorded_by=sales_manager
+    ).aggregate(t=Sum('commission_amount'))['t'] or 0
+
+    return max(0.0, float(total_value) - float(total_paid) - float(total_commission))
 
 
 def get_sm_money_received(sales_manager):
@@ -417,46 +431,64 @@ def record_sales_result(request):
     raw_salespersons = SalesPerson.objects.filter(status='active').order_by('channel', 'name')
     salespersons = []
     for sp in raw_salespersons:
-        sp.maize_holding = SalesDistributionRecord.objects.filter(
-            sales_person=sp, recorded_by=user
-        ).aggregate(t=Sum('qty_given'))['t'] or 0
-        # Subtract any sales results already recorded for this sp by this manager
-        sp.maize_holding -= SalesResult.objects.filter(
+        # Maize Holding
+        given_m = SalesDistributionRecord.objects.filter(
             sales_person=sp, recorded_by=user, material_type='maize'
-        ).aggregate(t=Sum('qty_sold'))['t'] or 0
-        sp.maize_holding = max(0, sp.maize_holding)
+        ).aggregate(t=Sum('qty_given'))['t'] or 0
+        sold_m = SalesResult.objects.filter(
+            sales_person=sp, recorded_by=user, material_type='maize'
+        ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+        sp.maize_holding = float(given_m) - (float(sold_m['s'] or 0) + (float(sold_m['p'] or 0) / 10))
+        sp.maize_holding = max(0.0, sp.maize_holding)
 
-        sp.wheat_holding = SalesDistributionRecord.objects.filter(
+        # Wheat Holding
+        given_w = SalesDistributionRecord.objects.filter(
             sales_person=sp, recorded_by=user, material_type='wheat'
         ).aggregate(t=Sum('qty_given'))['t'] or 0
-        sp.wheat_holding -= SalesResult.objects.filter(
+        sold_w = SalesResult.objects.filter(
             sales_person=sp, recorded_by=user, material_type='wheat'
-        ).aggregate(t=Sum('qty_sold'))['t'] or 0
-        sp.wheat_holding = max(0, sp.wheat_holding)
+        ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+        sp.wheat_holding = float(given_w) - (float(sold_w['s'] or 0) + (float(sold_w['p'] or 0) / 10))
+        sp.wheat_holding = max(0.0, sp.wheat_holding)
+
+        sp.maize_comm = CommissionConfig.get_active_pct(sp.channel, 'maize', '10kg', datetime.date.fromisoformat(today)) or 0
+        sp.wheat_comm = CommissionConfig.get_active_pct(sp.channel, 'wheat', '10kg', datetime.date.fromisoformat(today)) or 0
+        
         salespersons.append(sp)
+
+    maize_price = PriceConfig.get_active_price('sales_manager', 'maize', '10kg', datetime.date.fromisoformat(today)) or 0
+    wheat_price = PriceConfig.get_active_price('sales_manager', 'wheat', '10kg', datetime.date.fromisoformat(today)) or 0
 
     if request.method == 'POST':
         try:
             date_val = datetime.date.fromisoformat(request.POST.get('date'))
             sales_person_id = request.POST.get('sales_person_id')
             material_type = request.POST.get('material_type')
-            qty_sold = int(request.POST.get('qty_sold', 0))
+            qty_sold = int(request.POST.get('qty_sold', 0) or 0)
+            qty_pieces_sold = int(request.POST.get('qty_pieces_sold', 0) or 0)
+            qty_returned = int(request.POST.get('qty_returned', 0) or 0)
+            qty_pieces_returned = int(request.POST.get('qty_pieces_returned', 0) or 0)
+            amount_returned = float(request.POST.get('amount_returned', 0) or 0)
             notes = request.POST.get('notes', '').strip()
 
-            if qty_sold <= 0:
-                error = 'Quantity sold must be greater than zero.'
+            if qty_sold <= 0 and qty_pieces_sold <= 0:
+                error = 'Quantity sold (sacks or pieces) must be greater than zero.'
             else:
                 sp = get_object_or_404(SalesPerson, pk=sales_person_id)
 
-                # Get MD-configured price for this material (sales_manager channel)
+                # Get MD-configured prices (sales_manager channel)
                 unit_price = PriceConfig.get_active_price(
                     'sales_manager', material_type, '10kg', date_val
                 )
+
                 if unit_price is None:
                     error = (f'No price configured for sales_manager / {material_type} / 10kg '
                              f'on {date_val}. Please ask MD to set a price.')
                 else:
-                    # Get commission % for this SP's channel
+                    unit_price_piece = unit_price / 10
+
+                    # Get commission %
+                    # We use the 10kg % as the primary commission for the record.
                     comm_pct = CommissionConfig.get_active_pct(
                         sp.channel, material_type, '10kg', date_val
                     )
@@ -466,19 +498,24 @@ def record_sales_result(request):
                         sales_person=sp,
                         material_type=material_type,
                         qty_sold=qty_sold,
+                        qty_pieces_sold=qty_pieces_sold,
+                        qty_returned=qty_returned,
+                        qty_pieces_returned=qty_pieces_returned,
+                        amount_returned=amount_returned,
                         unit_price=unit_price,
+                        unit_price_piece=unit_price_piece or 0,
                         commission_pct=comm_pct,
                         recorded_by=user,
                         notes=notes,
                         is_locked=True,
                     )
                     log_action(request, user, 'sales', 'RECORD_SALES_RESULT',
-                               f'{sp.name} sold {qty_sold} × {material_type} sacks | '
+                               f'{sp.name} sold {qty_sold} sacks & {qty_pieces_sold} pieces | '
                                f'Net ₦{result.net_due_to_company:,.0f}',
                                'SalesResult', result.pk)
                     messages.success(
                         request,
-                        f'Recorded: {sp.name} sold {qty_sold} sacks. '
+                        f'Recorded: {sp.name} sold {qty_sold} sacks and {qty_pieces_sold} pieces. '
                         f'Commission: ₦{result.commission_amount:,.0f} | '
                         f'Net due to company: ₦{result.net_due_to_company:,.0f}'
                     )
@@ -493,6 +530,8 @@ def record_sales_result(request):
         'today': today,
         'salespersons': salespersons,
         'selected_sp_id': selected_sp_id,
+        'maize_price': float(maize_price),
+        'wheat_price': float(wheat_price),
     })
 
 
@@ -525,6 +564,10 @@ def sp_performance(request):
             sales_person=sp, **manager_filter
         ).aggregate(t=Sum('qty_sold'))['t'] or 0
 
+        total_pieces_sold = SalesResult.objects.filter(
+            sales_person=sp, **manager_filter
+        ).aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
+
         total_commission = SalesResult.objects.filter(
             sales_person=sp, **manager_filter
         ).aggregate(t=Sum('commission_amount'))['t'] or 0
@@ -533,13 +576,32 @@ def sp_performance(request):
             sales_person=sp, **manager_filter
         ).aggregate(t=Sum('net_due_to_company'))['t'] or 0
 
+        total_returned = SalesResult.objects.filter(
+            sales_person=sp, **manager_filter
+        ).aggregate(t=Sum('qty_returned'))['t'] or 0
+
+        total_pieces_returned = SalesResult.objects.filter(
+            sales_person=sp, **manager_filter
+        ).aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
+
+        total_amount_returned = SalesResult.objects.filter(
+            sales_person=sp, **manager_filter
+        ).aggregate(t=Sum('amount_returned'))['t'] or 0
+
+        total_outstanding = max(0.0, float(total_net) - float(total_amount_returned))
+
+        # Unsold calculation: Given Sacks - Sold - Returned
+        unsold = float(total_given) - (float(total_sold) + (float(total_pieces_sold) / 10)) - (float(total_returned) + (float(total_pieces_returned) / 10))
+
         sp_rows.append({
             'sp': sp,
             'total_given': total_given,
             'total_sold': total_sold,
-            'unsold': max(0, total_given - total_sold),
+            'total_pieces_sold': total_pieces_sold,
+            'unsold': max(0, unsold),
             'total_commission': float(total_commission),
             'total_net': float(total_net),
+            'total_outstanding': total_outstanding,
         })
 
     # Sort by most sold
@@ -586,7 +648,18 @@ def sp_detail(request, sp_id):
     total_maize_given  = distributions.filter(material_type='maize').aggregate(t=Sum('qty_given'))['t'] or 0
     total_wheat_given  = distributions.filter(material_type='wheat').aggregate(t=Sum('qty_given'))['t'] or 0
     total_maize_sold   = results.filter(material_type='maize').aggregate(t=Sum('qty_sold'))['t'] or 0
+    total_maize_pieces = results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
     total_wheat_sold   = results.filter(material_type='wheat').aggregate(t=Sum('qty_sold'))['t'] or 0
+    total_wheat_pieces = results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
+
+    total_maize_returned   = results.filter(material_type='maize').aggregate(t=Sum('qty_returned'))['t'] or 0
+    total_maize_pieces_returned = results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
+    total_wheat_returned   = results.filter(material_type='wheat').aggregate(t=Sum('qty_returned'))['t'] or 0
+    total_wheat_pieces_returned = results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
+
+    total_net = results.aggregate(t=Sum('net_due_to_company'))['t'] or 0
+    total_amount_returned = results.aggregate(t=Sum('amount_returned'))['t'] or 0
+    total_outstanding = max(0.0, float(total_net) - float(total_amount_returned))
 
     return render(request, 'sales/sp_detail.html', {
         'current_user': user,
@@ -596,9 +669,16 @@ def sp_detail(request, sp_id):
         'total_maize_given': total_maize_given,
         'total_wheat_given': total_wheat_given,
         'total_maize_sold': total_maize_sold,
+        'total_maize_pieces': total_maize_pieces,
         'total_wheat_sold': total_wheat_sold,
-        'unsold_maize': max(0, total_maize_given - total_maize_sold),
-        'unsold_wheat': max(0, total_wheat_given - total_wheat_sold),
+        'total_wheat_pieces': total_wheat_pieces,
+        'total_maize_returned': total_maize_returned,
+        'total_maize_pieces_returned': total_maize_pieces_returned,
+        'total_wheat_returned': total_wheat_returned,
+        'total_wheat_pieces_returned': total_wheat_pieces_returned,
+        'unsold_maize': max(0.0, float(total_maize_given) - (float(total_maize_sold) + (float(total_maize_pieces) / 10)) - (float(total_maize_returned) + (float(total_maize_pieces_returned) / 10))),
+        'unsold_wheat': max(0.0, float(total_wheat_given) - (float(total_wheat_sold) + (float(total_wheat_pieces) / 10)) - (float(total_wheat_returned) + (float(total_wheat_pieces_returned) / 10))),
+        'total_outstanding': total_outstanding,
     })
 
 
