@@ -1,107 +1,192 @@
 {% extends 'base.html' %}
 {% block title %}Record Company Sale — Noor Foods{% endblock %}
 {% block content %}
+
 <style>
-  .sale-hero {
-    background: linear-gradient(145deg, #0f172a, #1e3a5f);
-    border-radius: 14px; padding: 1.5rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #1e40af;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  .hero-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.08);
   }
-  .sale-hero-title { font-size:1.3rem; font-weight:800; color:#f0f9ff; margin:0; }
-  .sale-hero-sub { font-size:.85rem; color:#93c5fd; margin-top:.25rem; }
-  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
-  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem; }
-  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
-  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
-  .btn-submit { background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
-  .btn-submit:hover { opacity:.85; }
+  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.5rem; display: block; }
+  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
+  .hero-sub { color: #93c5fd; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 600px; }
+
+  .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .balance-pill {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 1.25rem 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.3s, background 0.3s;
+  }
+  .balance-pill:hover { transform: translateY(-3px); background: rgba(255,255,255,0.08); }
+  .pill-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #93c5fd; letter-spacing: 0.05rem; margin-bottom: 0.5rem; }
+  .pill-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+  .pill-value { font-size: 1.6rem; font-weight: 800; color: #fff; }
+  .pill-subvalue { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.8); }
+  .pill-icon { font-size: 2.25rem; opacity: 0.9; }
+
+  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
+
+  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .form-control {
+    width: 100%; box-sizing: border-box; padding: 0.85rem 1.1rem; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; color: #1e293b; transition: all 0.2s; background: #f8fafc;
+  }
+  .form-control:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
+  
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 600px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
+
+  .btn-primary {
+    background: #1e3a5f; color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px;
+    font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(30,58,95,0.2);
+  }
+  .btn-primary:hover { background: #0f172a; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(30,58,95,0.3); }
+  .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
+  .btn-secondary:hover { color: #1e293b; }
+
+  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; }
+  .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
+  .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+
+  .error-box { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
 </style>
 
-<div class="sale-hero">
-  <div class="sale-hero-title">🛒 Record Company Sale (Retail/Wholesale)</div>
-  <div class="sale-hero-sub">Direct sales recorded by the Operations Manager. Selling 1kg pieces will automatically draw from or request 10kg sacks from the store.</div>
+<div class="hero-card">
+  <div class="hero-header">
+    <div>
+      <span class="hero-label">🛒 Sales Operations</span>
+      <h1 class="hero-title">Record Company Sale</h1>
+      <p class="hero-sub">Direct sales recorded by Management. Selling 1kg pieces automatically unwraps 10kg sacks from store inventory.</p>
+    </div>
+  </div>
+
+  <div class="balance-grid">
+    <div class="balance-pill">
+      <div style="flex-grow: 1;">
+        <div class="pill-label">🌽 Maize (In Hand)</div>
+        <div class="pill-metric">
+          <div><span class="pill-value">{{ holding_maize }}</span> <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.7;">Sacks</span></div>
+          <div><span class="pill-subvalue">{{ pieces_maize }}</span> <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.7;">Pieces</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="balance-pill">
+      <div style="flex-grow: 1;">
+        <div class="pill-label">🌾 Wheat (In Hand)</div>
+        <div class="pill-metric">
+          <div><span class="pill-value">{{ holding_wheat }}</span> <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.7;">Sacks</span></div>
+          <div><span class="pill-subvalue">{{ pieces_wheat }}</span> <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.7;">Pieces</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% if error %}
-<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+<div class="error-box">
+  <span>⚠️</span> {{ error }}
+</div>
 {% endif %}
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.25rem;">
-  <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:1.25rem; display:flex; align-items:center; gap:1rem;">
-    <div style="font-size:1.75rem;">🌽</div>
-    <div style="flex-grow:1;">
-      <div style="font-size:0.75rem; font-weight:700; color:#0369a1; text-transform:uppercase; margin-bottom:4px;">Maize Inventory (GM Hand)</div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline;">
-        <div style="font-size:1.4rem; font-weight:800; color:#0c4a6e;">{{ holding_maize }} <small style="font-size:0.8rem; font-weight:400;">Sacks</small></div>
-        <div style="font-size:1.1rem; font-weight:700; color:#0284c7;">{{ pieces_maize }} <small style="font-size:0.75rem; font-weight:400;">Pieces</small></div>
+<div class="layout-grid">
+  <div class="card">
+    <h3 class="card-title">📝 Point of Sale Details</h3>
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date of Sale</label>
+          <input type="date" name="date" value="{{ today }}" required class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Buyer Name</label>
+          <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required class="form-control">
+        </div>
       </div>
-    </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Material Type</label>
+          <select name="material_type" required class="form-control">
+            {% for val, label in material_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Selling Unit</label>
+          <select name="unit" required class="form-control">
+            <option value="1kg">1 KG Pieces (Retail)</option>
+            <option value="10kg">10 KG Sacks (Wholesale)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="qty" min="1" placeholder="e.g. 5" required class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Total Amount Paid (₦) <span style="font-weight:400; color:#ef4444;">*</span></label>
+        <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 25000" required class="form-control" style="font-size: 1.2rem; font-family: monospace;">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Internal Memo <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any remarks about this direct sale..."></textarea>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:1.5rem; margin-top:2.5rem; padding-top:1.5rem; border-top:1px solid #f1f5f9;">
+        <button type="submit" class="btn-primary">
+          <span>💾</span> Complete Transaction
+        </button>
+        <a href="{% url 'reports:dashboard' %}" class="btn-secondary">Cancel</a>
+      </div>
+    </form>
   </div>
-  <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:1.25rem; display:flex; align-items:center; gap:1rem;">
-    <div style="font-size:1.75rem;">🌾</div>
-    <div style="flex-grow:1;">
-      <div style="font-size:0.75rem; font-weight:700; color:#9a3412; text-transform:uppercase; margin-bottom:4px;">Wheat Inventory (GM Hand)</div>
-      <div style="display:flex; justify-content:space-between; align-items:baseline;">
-        <div style="font-size:1.4rem; font-weight:800; color:#7c2d12;">{{ holding_wheat }} <small style="font-size:0.8rem; font-weight:400;">Sacks</small></div>
-        <div style="font-size:1.1rem; font-weight:700; color:#c2410c;">{{ pieces_wheat }} <small style="font-size:0.75rem; font-weight:400;">Pieces</small></div>
-      </div>
+
+  <div class="sidebar-card">
+    <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
+    
+    <div class="info-item">
+      <div class="info-icon">📦</div>
+      <div><strong>Automatic Unwrapping:</strong> If you sell 1KG pieces and run out, the system automatically unwraps a 10KG sack into 10 pieces.</div>
+    </div>
+    
+    <div class="info-item">
+      <div class="info-icon">💰</div>
+      <div><strong>Revenue Recognition:</strong> Direct company sales immediately hit the primary accounts ledger without intermediate reconciliation.</div>
+    </div>
+    
+    <div class="info-item">
+      <div class="info-icon">🌾</div>
+      <div><strong>Bran Sales:</strong> For Bran sales, please use the dedicated "Record Bran Sale" form from the operations menu.</div>
+    </div>
+
+    <div style="background: #e0f2fe; color: #0369a1; padding: 1.25rem; border-radius: 12px; font-size: 0.9rem; margin-top: 2rem;">
+      💡 <strong>Did You Know:</strong> Sales Managers do not have access to this page, as it is restricted to Management for Company-owned stock.
     </div>
   </div>
 </div>
 
-<div class="form-section">
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-grid-2" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label>Date of Sale *</label>
-        <input type="date" name="date" value="{{ today }}" required>
-      </div>
-      <div class="form-group">
-        <label>Buyer Name *</label>
-        <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required>
-      </div>
-    </div>
-
-    <div class="form-grid-3" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label>Material Type *</label>
-        <select name="material_type" required>
-          {% for val, label in material_choices %}
-          <option value="{{ val }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Selling Unit *</label>
-        <select name="unit" required>
-          <option value="1kg">1 KG Pieces (Retail)</option>
-          <option value="10kg">10 KG Sacks (Wholesale)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Quantity *</label>
-        <input type="number" name="qty" min="1" placeholder="e.g. 5" required>
-      </div>
-    </div>
-
-    <div class="form-group" style="margin-bottom:1.25rem;">
-      <label>Total Amount Paid (₦) *</label>
-      <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 25000" required>
-    </div>
-
-    <div class="form-group" style="margin-bottom:1.25rem;">
-      <label>Notes (Optional)</label>
-      <textarea name="notes" rows="2" placeholder="Any remarks about this sale…"></textarea>
-    </div>
-
-    <div style="display:flex;gap:.75rem;align-items:center;">
-      <button type="submit" class="btn-submit">💾 Record Company Sale →</button>
-      <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">← Cancel</a>
-    </div>
-  </form>
-</div>
 {% endblock %}

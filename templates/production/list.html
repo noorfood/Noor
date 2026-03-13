@@ -3,50 +3,66 @@
 {% block nav_pr_list %}active{% endblock %}
 {% block content %}
 <style>
-  .prod-ledger-hero {
-    background: linear-gradient(145deg, #0f172a, #1e293b);
-    border-radius: 14px; padding: 1.5rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #334155;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3);
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+  .hero-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.08);
   }
-  .prod-ledger-title { font-size:1.4rem; font-weight:800; color:#f8fafc; margin:0; }
-  .prod-ledger-sub { font-size:.85rem; color:#94a3b8; margin-top:.2rem; }
+  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; display: block; }
+  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
+  .hero-sub { color: #cbd5e1; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 600px; }
 
-  .filter-bar { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; }
-  .filter-grid { display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; }
-  .filter-group { display:flex; flex-direction:column; gap:.3rem; flex:1; min-width:130px; }
-  .filter-group label { font-size:.78rem; font-weight:600; color:#475569; }
-  .filter-group select, .filter-group input { padding:.55rem .75rem; border:1.5px solid #cbd5e1; border-radius:6px; font-size:.88rem; }
+  .filter-bar { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+  .filter-grid { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end; }
+  .filter-group { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 150px; }
+  .filter-group label { font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; }
+  .filter-group select, .filter-group input { padding: 0.75rem 1rem; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: #f8fafc; transition: all 0.2s; }
+  .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
 
-  .section-divider { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; padding:.85rem 1.25rem; background:linear-gradient(90deg,#f8fafc,#f1f5f9); border-radius:10px 10px 0 0; border:1px solid #e2e8f0; border-bottom:none; font-weight:700; color:#1e293b; font-size:.92rem; }
+  .section-header { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+  .section-desc { font-size: 0.85rem; color: #64748b; font-weight: 500; }
 
-  .flag-critical td { background:#fef2f2; }
-  .flag-warning td { background:#fef9c3; }
-  .loss-red { color:#dc2626; font-weight:700; }
-  .loss-amber { color:#d97706; font-weight:700; }
-  .loss-ok { color:#16a34a; }
+  .flag-critical td { background: #fef2f2 !important; }
+  .flag-warning td { background: #fef9c3 !important; }
+  .loss-red { color: #dc2626 !important; font-weight: 800 !important; }
+  .loss-amber { color: #d97706 !important; font-weight: 800 !important; }
+  .loss-ok { color: #16a34a !important; font-weight: 600 !important; }
+
+  .btn-primary {
+    background: #4f46e5; color: white; border: none; padding: 0.85rem 1.75rem; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
+  
+  .btn-secondary {
+    background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 0.85rem 1.75rem; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none;
+  }
+  .btn-secondary:hover { background: #e2e8f0; color: #1e293b; }
 </style>
 
-{# ══════════════════════════════════════════════════════════ #}
-{# HERO                                                      #}
-{# ══════════════════════════════════════════════════════════ #}
-<div class="prod-ledger-hero">
-  <div>
-    <div class="prod-ledger-title">⚙️ Production Ledgers</div>
-    <div class="prod-ledger-sub">Historical records of all milling and packaging batches. Flagged rows indicate yield loss above threshold.</div>
+<div class="hero-card">
+  <div class="hero-header">
+    <div>
+      <span class="hero-label">⚙️ Factory Operations</span>
+      <h1 class="hero-title">Production Ledgers</h1>
+      <p class="hero-sub">Historical records of all milling and packaging batches. Flagged rows indicate yield loss above threshold.</p>
+    </div>
+    {% if current_user.is_production_officer %}
+    <div style="display:flex; gap:1rem;">
+      <a href="/production/milling/new/" class="btn-primary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">+ Record Milling</a>
+      <a href="/production/packaging/new/" class="btn-primary" style="background: #4f46e5;">+ Record Packaging</a>
+    </div>
+    {% endif %}
   </div>
-  {% if current_user.is_production_officer %}
-  <div style="display:flex;gap:.75rem;">
-    <a href="/production/milling/new/" class="btn btn-primary">+ Record Milling</a>
-    <a href="/production/packaging/new/" class="btn btn-primary">+ Record Packaging</a>
-  </div>
-  {% endif %}
 </div>
 
-{# ══════════════════════════════════════════════════════════ #}
-{# MANAGER FILTER BAR                                        #}
-{# ══════════════════════════════════════════════════════════ #}
 {% if not current_user.is_production_officer %}
 <div class="filter-bar">
   <form method="get">
@@ -76,43 +92,41 @@
           <option value="critical" {% if f_flag == "critical" %}selected{% endif %}>🔴 Critical</option>
         </select>
       </div>
-      <div style="display:flex;gap:.5rem;padding-top:1.25rem;">
-        <button type="submit" class="btn btn-primary">Apply Filter</button>
-        <a href="?" class="btn btn-secondary">Reset</a>
+      <div style="display:flex; gap:0.75rem; padding-top:1.5rem;">
+        <button type="submit" class="btn-primary">Filter</button>
+        <a href="?" class="btn-secondary">Reset</a>
       </div>
     </div>
   </form>
 </div>
 {% endif %}
 
-{# ══════════════════════════════════════════════════════════ #}
-{# MILLING BATCHES                                           #}
-{# ══════════════════════════════════════════════════════════ #}
-<div class="section-divider">
-  <span>⚗️ Milling Batches — 100kg Bags → Bulk Powder</span>
-  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Flagged rows indicate abnormal yield loss</span>
+<div class="section-header">
+  <div>⚗️ Milling Batches <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">100kg Bags → Bulk Powder</span></div>
+  <div class="section-desc">Flagged rows indicate abnormal yield loss</div>
 </div>
-<div class="table-wrapper mb-16" style="border-radius:0 0 10px 10px;border-top:none;">
+
+<div class="table-wrapper" style="margin-bottom: 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
   <table>
-    <thead>
+    <thead style="background: #f8fafc;">
       <tr>
-        <th>S/N</th>
-        <th>Date</th>
-        <th>Shift</th>
-        <th>Material</th>
-        <th class="num">New Bags</th>
-        <th class="num">Old Bags</th>
-        <th class="num">Powder Out (kg)</th>
-        <th class="num">Loss %</th>
-        <th>Flag</th>
-        <th>Production Officer</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">S/N</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Date</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">New Bags</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Old Bags</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Out (kg)</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Loss %</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Flag</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
       </tr>
     </thead>
     <tbody>
       {% for m in milling_batches %}
       <tr class="{% if m.flag_level == 'critical' %}flag-critical{% elif m.flag_level == 'warning' %}flag-warning{% endif %}">
-        <td style="font-family:monospace;font-weight:600;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ m.date }}</td>
+        <td style="font-family:monospace;font-weight:600; color: #64748b;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap; font-weight: 500;">{{ m.date }}</td>
         <td><span class="badge badge-draft">{{ m.shift|title }}</span></td>
         <td><span class="badge badge-{{ m.material_type }}">{{ m.get_material_type_display|upper }}</span></td>
         <td class="num">{{ m.bags_milled_new }}</td>
@@ -133,55 +147,53 @@
         <td style="color:#64748b;font-size:.85rem;">{{ m.production_officer.full_name }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="10" class="table-empty">No milling batches match your criteria.</td></tr>
+      <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:2.5rem;">No milling batches match your criteria.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-{# ══════════════════════════════════════════════════════════ #}
-{# PACKAGING BATCHES                                         #}
-{# ══════════════════════════════════════════════════════════ #}
-<div class="section-divider" style="margin-top:1.5rem;">
-  <span>📦 Packaging Batches — Bulk Powder → Final Sacks</span>
-  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Each batch feeds directly into Finished Goods Store</span>
+<div class="section-header" style="margin-top:2rem;">
+  <div>📦 Packaging Batches <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Bulk Powder → Final Sacks</span></div>
+  <div class="section-desc">Each batch feeds directly into Finished Goods Store</div>
 </div>
-<div class="table-wrapper" style="border-radius:0 0 10px 10px;border-top:none;">
+
+<div class="table-wrapper" style="margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
   <table>
-    <thead>
+    <thead style="background: #f8fafc;">
       <tr>
-        <th>S/N</th>
-        <th>Date</th>
-        <th>Shift</th>
-        <th>Material</th>
-        <th class="num">Powder Used (kg)</th>
-        <th class="num">10kg Sacks</th>
-        <th class="num">Loss %</th>
-        <th>Production Officer</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">S/N</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Date</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Used (kg)</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">10kg Sacks</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Loss %</th>
+        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
       </tr>
     </thead>
     <tbody>
       {% for p in packaging_batches %}
       <tr>
-        <td style="font-family:monospace;color:#94a3b8;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ p.date }}</td>
+        <td style="font-family:monospace;font-weight:600; color: #64748b;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap; font-weight: 500;">{{ p.date }}</td>
         <td><span class="badge badge-draft">{{ p.shift|title }}</span></td>
         <td><span class="badge badge-{{ p.material_type }}">{{ p.get_material_type_display|upper }}</span></td>
         <td class="num">{{ p.powder_used_kg|floatformat:1 }}</td>
-        <td class="num font-bold text-success">+{{ p.qty_10kg }}</td>
+        <td class="num font-bold text-success" style="color:#059669;">+{{ p.qty_10kg }}</td>
         <td class="num {% if p.flag_level == 'critical' %}loss-red{% elif p.flag_level == 'warning' %}loss-amber{% else %}loss-ok{% endif %}">
           {{ p.loss_pct|floatformat:1 }}%
         </td>
         <td style="color:#64748b;font-size:.85rem;">{{ p.production_officer.full_name }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="8" class="table-empty">No packaging batches match your criteria.</td></tr>
+      <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2.5rem;">No packaging batches match your criteria.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
 <div style="margin-top:1.25rem;">
-  <a href="/production/dashboard/" class="btn btn-secondary">← Back to Dashboard</a>
+  <a href="/production/dashboard/" class="btn-secondary">← Back to Dashboard</a>
 </div>
 {% endblock %}

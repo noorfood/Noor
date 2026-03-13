@@ -317,12 +317,29 @@ class SalesDistributionRecord(models.Model):
         User, on_delete=models.PROTECT, related_name='distributions_recorded',
         limit_choices_to={'role': 'sales_manager'}
     )
+    
+    # Financial Projections (captured at time of distribution)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    commission_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    commission_amount = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    expected_return = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'sales_distribution_record'
         ordering = ['-date', '-created_at']
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate financial projections
+        self.commission_amount = (float(self.unit_price) * self.qty_given) * (float(self.commission_pct) / 100)
+        self.expected_return = (float(self.unit_price) * self.qty_given) - self.commission_amount
+        super().save(*args, **kwargs)
+
+    @property
+    def gross_value(self):
+        return float(self.unit_price) * self.qty_given
 
     def __str__(self):
         return (f"Distribution #{self.pk} | {self.sales_person.name} | "
@@ -401,6 +418,14 @@ class SalesResult(models.Model):
     def outstanding_amount(self):
         return max(0.0, self.expected_amount - float(self.amount_returned))
 
+    @property
+    def equivalent_sacks_sold(self):
+        return float(self.qty_sold) + (float(self.qty_pieces_sold) / 10.0)
+
+    @property
+    def equivalent_sacks_returned(self):
+        return float(self.qty_returned) + (float(self.qty_pieces_returned) / 10.0)
+
     def __str__(self):
         return (f"SalesResult #{self.pk} | {self.sales_person.name} sold "
                 f"{self.qty_sold} sacks | Net ₦{self.net_due_to_company} | {self.date}")
@@ -461,3 +486,81 @@ class SalesManagerPayment(models.Model):
     def __str__(self):
         return (f"SM Payment #{self.pk} | {self.sales_manager.full_name} | "
                 f"₦{self.total:,.0f} | {self.status.upper()} | {self.date}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DirectSalePayment — GM records factory-gate / company sales
+# The MD must review and confirm or reject each record.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class DirectSalePayment(models.Model):
+    """
+    Recorded by the General Manager (role=manager) when a customer comes directly
+    to the factory to purchase goods. The MD reviews and confirms the record.
+
+    Flow:
+      1. GM records sale → status=pending_md
+      2. MD confirms → status=confirmed  (financial record is finalized)
+      3. MD rejects  → status=rejected   (GM must correct and re-submit)
+    """
+    DIRECT_SALE_STATUS = [
+        ('pending_md', 'Pending MD Confirmation'),
+        ('confirmed', 'Confirmed by MD'),
+        ('rejected', 'Rejected by MD'),
+    ]
+
+    date = models.DateField()
+    material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES)
+    product_size = models.CharField(
+        max_length=5, choices=[('10kg', '10 KG Sacks')], default='10kg'
+    )
+    qty_sold = models.PositiveIntegerField(help_text='Number of sacks sold')
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, help_text='Price per sack')
+    total_sale_value = models.DecimalField(
+        max_digits=14, decimal_places=2,
+        help_text='Total sale value (auto: qty × unit_price)'
+    )
+    amount_received_cash = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    amount_received_transfer = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    buyer_name = models.CharField(max_length=200, blank=True, help_text='Name of the customer')
+
+    # Who recorded this sale
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='direct_sales_recorded',
+        limit_choices_to={'role': 'manager'},
+    )
+    notes = models.TextField(blank=True)
+
+    # MD confirmation
+    status = models.CharField(max_length=15, choices=DIRECT_SALE_STATUS, default='pending_md')
+    confirmed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='direct_sales_confirmed',
+        limit_choices_to={'role': 'md'},
+    )
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    md_notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_locked = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'sales_direct_payment'
+        ordering = ['-date', '-created_at']
+
+    def save(self, *args, **kwargs):
+        self.total_sale_value = float(self.unit_price) * self.qty_sold
+        super().save(*args, **kwargs)
+
+    @property
+    def total_received(self):
+        return float(self.amount_received_cash) + float(self.amount_received_transfer)
+
+    @property
+    def outstanding(self):
+        return max(0.0, float(self.total_sale_value) - self.total_received)
+
+    def __str__(self):
+        return (f"DirectSale #{self.pk} | {self.material_type.upper()} × {self.qty_sold} "
+                f"| ₦{self.total_sale_value:,.0f} | {self.status.upper()} | {self.date}")
+

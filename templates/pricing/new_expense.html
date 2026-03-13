@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Record Expense — Noor Foods{% endblock %}
+{% block nav_md_expenses %}active{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+    <div>
+        <span class="hero-badge" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">💸 New Entry</span>
+        <h1 class="hero-title">Record Operational Expense</h1>
+        <p class="hero-subtitle">Log non-production costs — fuel, salaries, maintenance, transport, etc.</p>
+    </div>
+</div>
+
+{% if error %}
+<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:.8rem 1.1rem;color:#991b1b;margin-bottom:1.25rem;font-weight:600;">⚠️ {{ error }}</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start;">
+    <div class="card" style="padding: 2rem;">
+        <h3 style="margin: 0 0 1.5rem; font-size: 1.1rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 0.75rem;">📝 Expense Details</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:700;color:var(--slate-600);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Date*</label>
+                    <input type="date" name="date" value="{{ today }}" required style="width:100%;box-sizing:border-box;padding:.65rem .9rem;border:1.5px solid var(--slate-200);border-radius:8px;font-size:.95rem;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:.82rem;font-weight:700;color:var(--slate-600);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Amount (₦)*</label>
+                    <input type="number" name="amount" min="1" step="0.01" required placeholder="e.g. 50000" style="width:100%;box-sizing:border-box;padding:.65rem .9rem;border:1.5px solid var(--slate-200);border-radius:8px;font-size:.95rem;">
+                </div>
+            </div>
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display:block;font-size:.82rem;font-weight:700;color:var(--slate-600);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Description*</label>
+                <input type="text" name="description" required placeholder="e.g. Diesel for Generators, Staff Salaries, Truck Maintenance" style="width:100%;box-sizing:border-box;padding:.65rem .9rem;border:1.5px solid var(--slate-200);border-radius:8px;font-size:.95rem;">
+            </div>
+            <div style="margin-bottom: 2rem;">
+                <label style="display:block;font-size:.82rem;font-weight:700;color:var(--slate-600);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em;">Notes <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
+                <textarea name="notes" rows="3" placeholder="Additional details or references..." style="width:100%;box-sizing:border-box;padding:.65rem .9rem;border:1.5px solid var(--slate-200);border-radius:8px;font-size:.95rem;"></textarea>
+            </div>
+            <div style="display:flex; align-items:center; gap:1rem; padding-top:1.5rem; border-top:1px solid var(--slate-100);">
+                <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.75rem 2rem;">💸 Save Expense</button>
+                <a href="{% url 'pricing:expenses' %}" style="color:var(--slate-500);text-decoration:none;font-weight:600;">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div style="background: var(--slate-50); border-radius: 16px; padding: 1.75rem; border: 1px solid var(--slate-200);">
+        <h3 style="margin:0 0 1.25rem;font-size:1.1rem;color:var(--navy);font-weight:800;display:flex;align-items:center;gap:0.75rem;">ℹ️ Expense Categories</h3>
+        <div style="font-size:0.85rem; color:var(--slate-600); line-height:1.8;">
+            <div>🚛 <strong>Transport</strong> — Fuel, truck hire, logistics</div>
+            <div>👷 <strong>Labour</strong> — Staff salaries, casual wages</div>
+            <div>🔧 <strong>Maintenance</strong> — Equipment repair, parts</div>
+            <div>⚡ <strong>Utilities</strong> — Power, diesel for generators</div>
+            <div>📦 <strong>Supplies</strong> — Office materials, cleaning</div>
+            <div>🏢 <strong>Rent</strong> — Warehouse, factory space</div>
+            <div>📋 <strong>Other</strong> — Any other operational cost</div>
+        </div>
+        <div style="background: #e0f2fe; color: #0369a1; padding: 1rem; border-radius: 10px; font-size: 0.85rem; margin-top: 1.25rem;">
+            💡 <strong>Tip:</strong> Be specific with descriptions. This feeds directly into the P&L report for accurate profit calculation.
+        </div>
+    </div>
+</div>
+
+{% endblock %}

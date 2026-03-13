@@ -1,76 +1,140 @@
 {% extends 'base.html' %}
 {% block title %}Record Bran Sale — Noor Foods{% endblock %}
 {% block content %}
+
 <style>
-  .sale-hero {
-    background: linear-gradient(145deg, #166534, #14532d);
-    border-radius: 14px; padding: 1.5rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #14532d;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  .hero-card {
+    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 30px rgba(22, 101, 52, 0.2);
+    border: 1px solid rgba(255,255,255,0.08);
   }
-  .sale-hero-title { font-size:1.3rem; font-weight:800; color:#f0fdf4; margin:0; }
-  .sale-hero-sub { font-size:.85rem; color:#86efac; margin-top:.25rem; }
-  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
-  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
-  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.1); }
-  .btn-submit { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
-  .btn-submit:hover { opacity:.85; }
+  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #86efac; margin-bottom: 0.5rem; display: block; }
+  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
+  .hero-sub { color: #bbf7d0; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 650px; }
+
+  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
+
+  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem; }
+
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .form-control {
+    width: 100%; box-sizing: border-box; padding: 0.85rem 1.1rem; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; color: #1e293b; transition: all 0.2s; background: #f8fafc;
+  }
+  .form-control:focus { outline: none; border-color: #16a34a; background: #fff; box-shadow: 0 0 0 4px rgba(22,163,74,0.1); }
+  
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+  .btn-primary {
+    background: #16a34a; color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px;
+    font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+  }
+  .btn-primary:hover { background: #15803d; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(22,163,74,0.4); }
+  .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
+  .btn-secondary:hover { color: #1e293b; }
+
+  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; }
+  .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
+  .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+
+  .error-box { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
 </style>
 
-<div class="sale-hero">
-  <div class="sale-hero-title">🌾 Record Bran (Waste) Sale</div>
-  <div class="sale-hero-sub">Byproduct sales recorded by the Operations Manager. This is tracked completely separately from primary Company Retail Operations.</div>
+<div class="hero-card">
+  <div class="hero-header">
+    <div>
+      <span class="hero-label">🌾 Byproduct Management</span>
+      <h1 class="hero-title">Record Bran (Waste) Sale</h1>
+      <p class="hero-sub">Byproduct sales recorded by Management. This revenue is tracked entirely separate from the primary Company Retail Operations.</p>
+    </div>
+  </div>
 </div>
 
 {% if error %}
-<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+<div class="error-box">
+  <span>⚠️</span> {{ error }}
+</div>
 {% endif %}
 
-<div class="form-section">
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-grid-2" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label>Date of Sale *</label>
-        <input type="date" name="date" value="{{ today }}" required>
+<div class="layout-grid">
+  <div class="card">
+    <h3 class="card-title">📝 Bran Sale Details</h3>
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date of Sale</label>
+          <input type="date" name="date" value="{{ today }}" required class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Buyer Name</label>
+          <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required class="form-control">
+        </div>
       </div>
-      <div class="form-group">
-        <label>Buyer Name *</label>
-        <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Material Source</label>
+          <select name="material_type" required class="form-control">
+            {% for val, label in material_choices %}
+            <option value="{{ val }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity (Sacks/Bags)</label>
+          <input type="number" name="qty" min="1" placeholder="e.g. 50" required class="form-control" style="font-family: monospace;">
+        </div>
       </div>
-    </div>
 
-    <div class="form-grid-2" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label>Material Source *</label>
-        <select name="material_type" required>
-          {% for val, label in material_choices %}
-          <option value="{{ val }}">{{ label }}</option>
-          {% endfor %}
-        </select>
+      <div class="form-group" style="margin-top: 1rem;">
+        <label class="form-label">Total Amount Paid (₦) <span style="font-weight:400; color:#ef4444;">*</span></label>
+        <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 45000" required class="form-control" style="font-size: 1.4rem; font-family: monospace; color: #059669;">
       </div>
-      <div class="form-group">
-        <label>Quantity (Sacks/Bags) *</label>
-        <input type="number" name="qty" min="1" placeholder="e.g. 50" required>
+
+      <div class="form-group" style="margin-top: 1.5rem;">
+        <label class="form-label">Notes <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any remarks about this bran sale..."></textarea>
       </div>
-    </div>
 
-    <div class="form-group" style="margin-bottom:1.25rem;">
-      <label>Total Amount Paid (₦) *</label>
-      <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 45000" required>
-    </div>
+      <div style="display:flex; align-items:center; justify-content: flex-end; gap:1.5rem; margin-top:2.5rem; padding-top:1.5rem; border-top:2px solid #f1f5f9;">
+        <a href="{% url 'reports:dashboard' %}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">
+          <span>💾</span> Record Bran Sale
+        </button>
+      </div>
+    </form>
+  </div>
 
-    <div class="form-group" style="margin-bottom:1.25rem;">
-      <label>Notes (Optional)</label>
-      <textarea name="notes" rows="2" placeholder="Any remarks about this sale…"></textarea>
+  <div class="sidebar-card">
+    <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
+    
+    <div class="info-item">
+      <div class="info-icon">💰</div>
+      <div><strong>Revenue Ledger:</strong> All bran sales revenue immediately hits the central financial ledger and does not require MD approval.</div>
     </div>
-
-    <div style="display:flex;gap:.75rem;align-items:center;">
-      <button type="submit" class="btn-submit">💾 Record Bran Sale →</button>
-      <a href="{% url 'reports:dashboard' %}" class="btn btn-secondary">← Cancel</a>
+    
+    <div class="info-item">
+      <div class="info-icon">📊</div>
+      <div><strong>Yield Tracking:</strong> Bran sold here is separated from Standard Flour sales, ensuring manufacturing loss metrics remain accurate.</div>
     </div>
-  </form>
+    
+    <div class="info-item">
+      <div class="info-icon">🛒</div>
+      <div><strong>Primary Goods:</strong> For standard product sales, please use the "Record Company Sale" link on your dashboard.</div>
+    </div>
+  </div>
 </div>
+
 {% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Operational Expenses — Noor Foods{% endblock %}
+{% block nav_md_expenses %}active{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">💸 P&L Tracking</span>
+            <h1 class="hero-title">Operational Expenses</h1>
+            <p class="hero-subtitle">Track all non-production costs — salaries, fuel, maintenance, transport, and more.</p>
+        </div>
+        <a href="{% url 'pricing:new_expense' %}" class="btn-modern btn-modern-primary" style="padding: 0.65rem 1.5rem; font-size: 0.9rem;">+ Record Expense</a>
+    </div>
+</div>
+
+<div class="balance-grid" style="margin-bottom: 2rem;">
+    <div class="balance-card" style="border-left: 4px solid var(--rose);">
+        <div class="balance-label" style="color: var(--rose);">💸 Total Expenses (All Time)</div>
+        <div class="balance-value">₦{{ total_expenses|floatformat:0 }}</div>
+    </div>
+    <div class="balance-card" style="border-left: 4px solid var(--slate-400);">
+        <div class="balance-label" style="color: var(--slate-500);">📊 Total Records</div>
+        <div class="balance-value">{{ expenses|length }}</div>
+    </div>
+</div>
+
+{% if expenses %}
+<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th class="num">Amount</th>
+                <th>Notes</th>
+                <th>Recorded By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in expenses %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><strong style="color: var(--navy);">{{ exp.date }}</strong></td>
+                <td style="font-weight: 700; color: var(--slate-800);">{{ exp.description }}</td>
+                <td class="num"><strong style="color: var(--rose); font-size: 1.05rem;">₦{{ exp.amount|floatformat:0 }}</strong></td>
+                <td style="color: var(--slate-500); font-size: 0.85rem;">{{ exp.notes|default:"—" }}</td>
+                <td style="color: var(--slate-500);">{{ exp.recorded_by.full_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div style="background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: 16px; padding: 4rem; text-align: center;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">💸</div>
+    <h3 style="color:var(--slate-700);margin-bottom:.5rem;font-weight:800;">No Expenses Recorded Yet</h3>
+    <p style="color:var(--slate-500);margin-bottom:2rem;">Start recording operational costs to track your P&L accurately.</p>
+    <a href="{% url 'pricing:new_expense' %}" class="btn-modern btn-modern-primary">+ Record First Expense</a>
+</div>
+{% endif %}
+
+{% endblock %}

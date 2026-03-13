@@ -2,73 +2,108 @@
 {% block title %}Issue Finished Goods to Company — Noor Foods{% endblock %}
 {% block nav_fg_issue %}active{% endblock %}
 {% block content %}
-<style>
-  .form-page-hero { background:linear-gradient(145deg,#0c4a6e,#164e63); border-radius:14px; padding:1.5rem 2rem; margin-bottom:1.75rem; border:1px solid #0e7490; }
-  .form-page-hero-title { font-size:1.3rem; font-weight:800; color:#f0f9ff; margin:0; }
-  .form-page-hero-sub { font-size:.85rem; color:#7dd3fc; margin-top:.25rem; }
-  .form-section { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:1.75rem; margin-bottom:1.25rem; box-shadow:0 1px 4px rgba(0,0,0,.05); }
-  .form-section-title { font-size:.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:1.25rem; padding-bottom:.6rem; border-bottom:2px solid #f1f5f9; }
-  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; }
-  .form-group label { display:block; font-size:.85rem; font-weight:600; color:#334155; margin-bottom:.4rem; }
-  .form-group input, .form-group select, .form-group textarea { width:100%; padding:.65rem .85rem; border:1.5px solid #cbd5e1; border-radius:7px; font-size:.95rem; transition:border-color .2s; box-sizing:border-box; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.1); }
-  .btn-submit { background:linear-gradient(135deg,#0ea5e9,#0284c7); color:#fff; border:none; border-radius:8px; padding:.75rem 1.75rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .2s; }
-  .btn-submit:hover { opacity:.85; }
-  .info-note { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0ea5e9; border-radius:8px; padding:.75rem 1rem; font-size:.82rem; color:#0369a1; margin-bottom:1rem; }
-</style>
+{# Standardized Form Page Styles from global context #}
 
-<div class="form-page-hero">
-  <div class="form-page-hero-title">📤 Issue Finished Goods to Company</div>
-  <div class="form-page-hero-sub">Initiate a formal record of goods issued for company retail or internal disposal.</div>
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📤 Store Issuance</span>
+            <h1 class="hero-title">Issue Finished Goods</h1>
+            <p class="hero-subtitle">Transfer packaged goods from store to company retail or disposal.</p>
+        </div>
+    </div>
 </div>
 
 {% if error %}
-<div class="alert alert-error" style="margin-bottom:1.25rem;">⚠ {{ error }}</div>
+<div class="action-bar-modern" style="background: #fff1f2; border-left: 5px solid var(--rose); margin-bottom: 2.5rem;">
+    <div style="color: #9f1239; font-weight: 700;">⚠ {{ error }}</div>
+</div>
 {% endif %}
 
-<div class="info-note">
-  ℹ <strong>Handshake Protocol:</strong> This issuance will be marked as <strong>Pending</strong> and will NOT deduct stock until it is explicitly acknowledged by the <strong>General Manager</strong> or <strong>MD</strong>.
+<div class="action-bar-modern" style="background: #f0f9ff; border-left: 5px solid var(--blue); margin-bottom: 2.5rem;">
+    <div style="color: #0369a1; font-weight: 500; font-size: 0.9rem;">
+        <strong style="color: var(--navy);">Handshake Protocol:</strong> This issuance requires explicit authorization from the GM/MD before stock is deducted.
+    </div>
 </div>
 
-<div class="form-section">
-  <div class="form-section-title">📋 Issuance Details</div>
-  <form method="post">
-    {% csrf_token %}
-    <div class="form-grid-2" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label for="date">Date of Issuance *</label>
-        <input type="date" id="date" name="date" value="{{ today }}" required>
-      </div>
-      <div class="form-group">
-        <label>Sales Channel</label>
-        <div style="padding:.65rem .85rem; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:7px; color:#64748b; font-weight:600;">
-          🏢 COMPANY DIRECT
-          <input type="hidden" name="channel" value="company">
+<div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2.5rem;">
+    <div class="card" style="padding: 2rem;">
+        <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
+            Issuance Parameters
+        </h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label class="form-label" for="date">Issuance Date</label>
+                    <input type="date" id="date" name="date" value="{{ today }}" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sales Channel</label>
+                    <div style="padding: 0.65rem 0.85rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; color: var(--slate-500); font-weight: 700; font-size: 0.9rem;">
+                        🏢 COMPANY DIRECT
+                    </div>
+                    <input type="hidden" name="channel" value="company">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label class="form-label" for="material_type">Material Category</label>
+                    <select id="material_type" name="material_type" class="form-input" required>
+                        {% for val, label in material_choices %}
+                        <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="qty_issued">Quantity (10kg Sacks)</label>
+                    <input type="number" id="qty_issued" name="qty_issued" min="1" placeholder="e.g. 50" class="form-input" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="form-group">
+                    <label class="form-label" for="buyer_name">Recipient Identity</label>
+                    <input type="text" id="buyer_name" name="buyer_name" placeholder="Name of recipient" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="approver_id">Authorizing Officer</label>
+                    <select id="approver_id" name="approver_id" class="form-input" required>
+                        <option value="">-- Authority Selection --</option>
+                        {% for officer in approvers %}
+                        <option value="{{ officer.id }}">{{ officer.full_name }} ({{ officer.get_role_display }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="notes">Purpose / Remarks</label>
+                <textarea id="notes" name="notes" rows="3" class="form-input" placeholder="Justification for this issuance..."></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--slate-100);">
+                <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.8rem 2rem;">
+                    Initiate Handover Record
+                </button>
+                <a href="{% url 'finished_store:list' %}" class="btn-modern" style="padding: 0.8rem 2rem; background: var(--slate-100); color: var(--slate-600);">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card" style="padding: 1.5rem; background: #f8fafc; border: 1px dashed var(--slate-300);">
+            <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; text-transform: uppercase;">
+                Chain of Custody
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--slate-600); line-height: 1.5; margin: 0;">
+                All company-direct issuances must be approved by high-level management to ensure fiscal accountability. Stock balance is only adjusted after digital signature.
+            </p>
         </div>
-      </div>
     </div>
-    <div class="form-grid-2" style="margin-bottom:1.25rem;">
-      <div class="form-group">
-        <label for="material_type">Material Type *</label>
-        <select id="material_type" name="material_type" required>
-          {% for val, label in material_choices %}
-          <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="qty_issued">Quantity to Issue (10kg Sacks) *</label>
-        <input type="number" id="qty_issued" name="qty_issued" min="1" placeholder="e.g. 20" required>
-      </div>
-    </div>
-    <div class="form-group" style="margin-bottom:1.25rem;">
-      <label for="notes">Notes (Optional)</label>
-      <textarea id="notes" name="notes" rows="2" placeholder="Any remarks about this issuance…"></textarea>
-    </div>
-    <div style="display:flex;gap:.75rem;align-items:center;margin-top:1.5rem;">
-      <button type="submit" class="btn-submit">✓ Record Issuance</button>
-      <a href="{% url 'finished_store:list' %}" class="btn btn-secondary">← Cancel</a>
-    </div>
-  </form>
 </div>
 {% endblock %}

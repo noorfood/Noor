@@ -4,426 +4,381 @@
 {% block content %}
 
 <style>
-  .fg-hero {
-    background: linear-gradient(145deg, #0f172a, #1e293b);
-    border-radius: 14px;
-    padding: 1.75rem 2rem;
-    margin-bottom: 1.75rem;
-    border: 1px solid #334155;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  /* Premium Table & Handshake Specifics */
+  .handshake-status {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    text-align: center;
   }
-  .fg-hero-title { font-size: 1.5rem; font-weight: 800; color: #f1f5f9; margin: 0 0 0.25rem; }
-  .fg-hero-sub { font-size: 0.9rem; color: #94a3b8; }
-  .balance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-  .balance-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid #334155;
-    border-left: 4px solid #10b981;
-    border-radius: 10px;
-    padding: 1.1rem 1.25rem;
-    transition: transform .2s;
+  .handshake-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--slate-500);
   }
-  .balance-card:hover { transform: translateY(-2px); }
-  .balance-card.low { border-left-color: #f59e0b; }
-  .balance-card.empty { border-left-color: #ef4444; }
-  .balance-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #64748b; margin-bottom: .4rem; }
-  .balance-value { font-size: 2rem; font-weight: 900; color: #f1f5f9; font-family: 'Courier New', monospace; line-height: 1; }
-  .balance-value.zero { color: #ef4444; }
-  .balance-unit { font-size: 0.75rem; color: #475569; margin-top: .35rem; }
-
-  .section-header {
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.9rem 1.25rem;
-    border-radius: 8px 8px 0 0;
-    font-weight: 700; font-size: 0.92rem;
-  }
-  .section-header.pending-iss { background: linear-gradient(90deg,#0c4a6e,#0ea5e9); color: #fff; }
-  .section-header.pending-ret { background: linear-gradient(90deg,#7c2d12,#ea580c); color: #fff; }
-  .section-header.pending-rec { background: linear-gradient(90deg,#14532d,#16a34a); color: #fff; }
-  .section-header.history-rec { background: #f1f5f9; color: #1e293b; border-bottom: 1px solid #e2e8f0; }
-  .section-header.history-iss { background: #f1f5f9; color: #1e293b; border-bottom: 1px solid #e2e8f0; }
-
-  .person-block { display: flex; flex-direction: column; }
-  .person-channel { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #64748b; }
-  .person-name { font-size: 1rem; font-weight: 700; color: #0f172a; }
-
-  .btn-issue {
-    background: linear-gradient(135deg,#0ea5e9,#0284c7);
-    color: #fff; border: none; border-radius: 6px;
-    padding: .5rem 1rem; font-size: .85rem; font-weight: 600;
-    cursor: pointer; width: 100%; transition: opacity .2s;
-  }
-  .btn-issue:hover { opacity: .85; }
-  .btn-accept { background: linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; border-radius:6px; padding:.4rem .8rem; font-size:.8rem; font-weight:600; cursor:pointer; transition:opacity .2s; }
-  .btn-accept:hover { opacity:.85; }
-  .btn-reject { background: linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border:none; border-radius:6px; padding:.4rem .8rem; font-size:.8rem; font-weight:600; cursor:pointer; transition:opacity .2s; }
-  .btn-reject:hover { opacity:.85; }
-
-  .quick-actions {
-    display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-    padding: 1rem 1.25rem; margin-bottom: 1.5rem;
-  }
-  .quick-actions-label { font-weight: 700; color: #334155; font-size: .9rem; margin-right: auto; }
-
-  .pulse-badge {
-    display: inline-block; width: 8px; height: 8px; background: #0ea5e9;
-    border-radius: 50%; animation: pulse 1.5s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
 </style>
 
 {# ══════════════════════════════════════════════════════════ #}
 {# HERO HEADER + LIVE BALANCES                               #}
 {# ══════════════════════════════════════════════════════════ #}
+{# ════ HERO HEADER + LIVE BALANCES ════ #}
 {% if not current_user.is_general_manager %}
-<div class="fg-hero">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-    <div>
-      <div class="fg-hero-title">📦 Finished Goods Registry</div>
-      <div class="fg-hero-sub">Track packaged flour received from production and issued to sales.</div>
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📑 Digital Registry</span>
+            <h1 class="hero-title">Finished Goods Registry</h1>
+            <p class="hero-subtitle">Comprehensive ledger of all flour production receipts and sales issuances.</p>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: var(--emerald); font-weight: 800; display: flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                <span class="pulse-badge" style="background: var(--emerald); width: 6px; height: 6px;"></span>
+                LIVE INVENTORY SYNC
+            </div>
+            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem; font-style: italic;">
+                Last calculated: {% now "H:i" %}
+            </div>
+        </div>
     </div>
-    <div style="font-size:.8rem;color:#475569;text-align:right;">
-      <div style="color:#10b981;font-weight:700;font-size:.85rem;">●</div>
-      Calculated from immutable records
-    </div>
-  </div>
+</div>
 
-  <div class="balance-grid">
+<div class="balance-grid" style="margin-bottom: 2rem;">
     {% for key, data in balances.items %}
-    <div class="balance-card {% if data.qty == 0 %}empty{% elif data.qty < 10 %}low{% endif %}">
-      <div class="balance-label"><span class="badge badge-{{ data.material_val }}" style="margin-right:4px;">{{ data.material_label }}</span> {{ data.size_label }} Sacks</div>
-      <div class="balance-value {% if data.qty == 0 %}zero{% endif %}">{{ data.qty }}</div>
-      <div class="balance-unit">available in store</div>
+    <div class="card {% if data.qty == 0 %}border-rose{% elif data.qty < 10 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1rem;">
+        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.25rem;">
+            {{ data.material_label }} {{ data.size_label }}
+        </div>
+        <div class="{% if data.qty == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 1.5rem; font-weight: 900;">
+            {{ data.qty }} <small style="font-size: 0.75rem; color: var(--slate-400); font-weight: 600;">Sacks</small>
+        </div>
     </div>
-    {% empty %}
-    <div style="color:#94a3b8;grid-column:1/-1;">No balance data.</div>
     {% endfor %}
-  </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# QUICK ACTIONS                                             #}
 {# ══════════════════════════════════════════════════════════ #}
+{# ════ QUICK ACTIONS ════ #}
 {% if current_user.is_store_officer or current_user.is_manager_or_above %}
-<div class="quick-actions">
-  <span class="quick-actions-label">⚡ Quick Actions</span>
-  {% if current_user.is_store_officer %}
-  <a href="{% url 'finished_store:issue' %}" class="btn btn-secondary">Company Retail issueances →</a>
-  <a href="{% url 'finished_store:create_sm_collection' %}" class="btn btn-primary" style="background:#0ea5e9; border:none;">📦 Record Issueances to SM</a>
-  {% endif %}
-  <a href="{% url 'finished_store:list' %}" class="btn btn-secondary" style="margin-left:auto;">↻ Refresh</a>
+<div class="action-bar-modern" style="margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+        <span class="badge-soft badge-soft-primary" style="padding: 0.5rem 0.75rem;">⚡ Operations</span>
+        <div style="height: 20px; width: 1px; background: var(--slate-200);"></div>
+        {% if current_user.is_store_officer %}
+        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700);">🏢 Company Issue</a>
+        <a href="{% url 'finished_store:create_sm_collection' %}" class="btn-modern btn-modern-primary">📦 Record Issue to SM</a>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="." class="btn-modern" style="padding: 0.6rem;">↺</a>
+    </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# PENDING RECEIPTS FROM PRODUCTION                           #}
 {# ══════════════════════════════════════════════════════════ #}
+{# ════ PENDING RECEIPTS FROM PRODUCTION ════ #}
 {% if pending_receipts %}
-<div class="table-wrapper mb-16" style="border-radius:10px;overflow:hidden;border:1px solid #86efac;">
-  <div class="section-header pending-rec">
-    <span class="pulse-badge"></span>
-    <span>📥 Pending Receipts from Production — Awaiting Your Acknowledgment</span>
-    <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:.8rem;">{{ pending_receipts|length }} pending</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Production Reference</th>
-        <th>Production Officer</th>
-        <th>Material & Size</th>
-        <th class="num">Sacks Submitted</th>
-        <th style="min-width:280px;">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for rec in pending_receipts %}
-      <tr style="background:#f0fdf4;">
-        <td style="white-space:nowrap;">{{ rec.date }}</td>
-        <td style="font-family:monospace;font-size:.9rem;color:#15803d;">{{ rec.packaging_ref|default:"—" }}</td>
-        <td>
-          <div style="font-weight:700;color:#0f172a;">{{ rec.submitted_by.full_name|default:"—" }}</div>
-          <div style="font-size:.75rem;color:#64748b;">Production Officer</div>
-        </td>
-        <td>
-          <span class="badge badge-{{ rec.material_type }}">{{ rec.get_material_type_display|upper }}</span>
-          <strong>{{ rec.product_size }}</strong>
-        </td>
-        <td class="num font-bold" style="color:#16a34a;">+{{ rec.qty_received }}</td>
-        <td>
-          <form method="post" action="{% url 'finished_store:acknowledge_receipt' rec.pk %}" style="display:flex;gap:.5rem;align-items:center;">
-            {% csrf_token %}
-            <input type="text" name="rejection_note" placeholder="Reason (if rejecting)" style="padding:.4rem .6rem;font-size:.8rem;border:1.5px solid #cbd5e1;border-radius:5px;flex:1;min-width:120px;">
-            <button type="submit" name="action" value="accept" class="btn-accept">✓ Accept</button>
-            <button type="submit" name="action" value="reject" class="btn-reject" onclick="return confirm('Reject this delivery from Production?');">✕ Reject</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card mb-16" style="border: 1px solid var(--emerald); background: #f0fdf4;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span class="pulse-badge" style="background: var(--emerald);"></span>
+            New Production Receipts Pending Acceptance
+        </h3>
+        <span class="badge-soft badge-soft-success">{{ pending_receipts|length }} PENDING</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Ref #</th>
+                    <th>Officer</th>
+                    <th>Material</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th style="width: 320px;">Verification Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in pending_receipts %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--slate-700);">{{ rec.date }}</td>
+                    <td style="font-family: monospace; color: var(--blue);">{{ rec.packaging_ref|default:"No Ref" }}</td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--slate-800);">{{ rec.submitted_by.full_name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--slate-500);">Production Team</div>
+                    </td>
+                    <td>
+                        <span class="badge-soft {% if rec.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ rec.get_material_type_display|upper }}</span>
+                        <strong>{{ rec.product_size }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 800; color: var(--emerald); font-size: 1.1rem;">+{{ rec.qty_received }}</td>
+                    <td>
+                        <form method="post" action="{% url 'finished_store:acknowledge_receipt' rec.pk %}" style="display:flex; gap:0.5rem;">
+                            {% csrf_token %}
+                            <input type="text" name="rejection_note" placeholder="Optional note..." class="form-input" style="flex:1; padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                            <button type="submit" name="action" value="accept" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--emerald); color: #fff;">Accept</button>
+                            <button type="submit" name="action" value="reject" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--rose); color: #fff;" onclick="return confirm('Reject this delivery?');">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# PENDING RETURNS FROM SALES                                #}
 {# ══════════════════════════════════════════════════════════ #}
+{# ════ PENDING RETURNS FROM SALES ════ #}
 {% if pending_returns %}
-<div class="table-wrapper mb-16" style="border-radius:10px;overflow:hidden;border:1px solid #fed7aa;">
-  <div class="section-header pending-ret">
-    <span>⚠️ Pending Returns from Sales</span>
-    <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:.8rem;">{{ pending_returns|length }} awaiting</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Material & Size</th>
-        <th class="num">Sacks Returned</th>
-        <th>Returned By (Sales)</th>
-        <th style="min-width:260px;">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ret in pending_returns %}
-      <tr>
-        <td style="white-space:nowrap;">{{ ret.date }}</td>
-        <td>
-          <span class="badge badge-{{ ret.material_type }}">{{ ret.get_material_type_display|upper }}</span>
-          <strong>{{ ret.product_size }}</strong>
-        </td>
-        <td class="num font-bold text-danger">{{ ret.qty_returned }}</td>
-        <td style="color:#64748b;">{{ ret.returned_by.full_name|default:"—" }}</td>
-        <td>
-          <form method="post" action="{% url 'finished_store:acknowledge_return' ret.pk %}" style="display:flex;gap:.5rem;align-items:center;">
-            {% csrf_token %}
-            <input type="text" name="rejection_note" placeholder="Reason (if rejecting)" style="padding:.4rem .6rem;font-size:.8rem;border:1px solid #cbd5e1;border-radius:5px;flex:1;min-width:120px;">
-            <button type="submit" name="action" value="accept" class="btn-accept">✓ Accept</button>
-            <button type="submit" name="action" value="reject" class="btn-reject" onclick="return confirm('Reject this return?');">✕ Reject</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card mb-16" style="border: 1px solid var(--amber); background: #fffbeb;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            ⚠️ Sales Force Returns Awaiting Check-in
+        </h3>
+        <span class="badge-soft badge-soft-warning">{{ pending_returns|length }} AWAITING</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th>Returned By</th>
+                    <th style="width: 320px;">Registry Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ret in pending_returns %}
+                <tr>
+                    <td style="font-weight: 600; color: var(--slate-700);">{{ ret.date }}</td>
+                    <td>
+                        <span class="badge-soft {% if ret.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ ret.get_material_type_display|upper }}</span>
+                        <strong>{{ ret.product_size }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 800; color: var(--rose);">{{ ret.qty_returned }}</td>
+                    <td style="color: var(--slate-600); font-weight: 600;">{{ ret.returned_by.full_name }}</td>
+                    <td>
+                        <form method="post" action="{% url 'finished_store:acknowledge_return' ret.pk %}" style="display:flex; gap:0.5rem;">
+                            {% csrf_token %}
+                            <input type="text" name="rejection_note" placeholder="Verification note..." class="form-input" style="flex:1; padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+                            <button type="submit" name="action" value="accept" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--emerald); color: #fff;">Accept</button>
+                            <button type="submit" name="action" value="reject" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--rose); color: #fff;" onclick="return confirm('Reject this return?');">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# PENDING SALES ISSUANCES — HANDSHAKE QUEUE                 #}
 {# ══════════════════════════════════════════════════════════ #}
+{# ════ PENDING SALES ISSUANCES — HANDSHAKE QUEUE ════ #}
 {% if pending_issuances %}
-<div class="table-wrapper mb-16" style="border-radius:10px;overflow:hidden;border:1px solid #bae6fd;">
-  <div class="section-header pending-iss">
-    <span class="pulse-badge"></span>
-    <span>📦 Pending Issueances — Accepting Goods Queue</span>
-    <span style="background:rgba(255,255,255,.2);padding:2px 10px;border-radius:20px;font-size:.8rem;">{{ pending_issuances|length }} in queue</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>S/N</th>
-        <th>Sale Date</th>
-        <th>Material & Size</th>
-        <th class="num">Sacks to Issue</th>
-        <th>Sales Person</th>
-        <th>Channel</th>
-        <th>Sale Recorded By</th>
-        <th style="min-width:160px;">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for iss in pending_issuances %}
-      <tr style="background:#f0f9ff;">
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ iss.date }}</td>
-        <td>
-          <span class="badge badge-{{ iss.material_type }}">{{ iss.get_material_type_display|upper }}</span>
-          <strong>{{ iss.product_size }}</strong>
-        </td>
-        <td class="num font-bold" style="font-size:1.1rem;color:#0369a1;">{{ iss.qty_issued }}</td>
-        <td>
-          <div class="person-block">
-            <span class="person-channel">{{ iss.get_channel_display }}</span>
-            <span class="person-name">
-              {% if iss.sales_record and iss.sales_record.sales_person %}
-                {{ iss.sales_record.sales_person.name }}
-              {% elif iss.issued_to %}
-                {{ iss.issued_to.full_name }}
-              {% else %}—
-              {% endif %}
-            </span>
-          </div>
-        </td>
-        <td>
-          <span class="badge badge-draft">{{ iss.get_channel_display }}</span>
-        </td>
-        <td style="color:#64748b;font-size:.85rem;">
-          {% if iss.sales_record and iss.sales_record.recorded_by %}
-            {{ iss.sales_record.recorded_by.full_name }}
-          {% else %}—
-          {% endif %}
-        </td>
-        <td>
-          {% if iss.channel == 'sales_manager' %}
-            <div style="text-align:center;">
-              <span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; display:block; margin-bottom:4px;">⏱ PENDING SM</span>
-              <span style="font-size:0.7rem; color:#64748b; font-weight:700; text-transform:uppercase;">Waiting for Sales Manager</span>
-            </div>
-          {% elif iss.channel == 'company' %}
-            {% if current_user.role == 'manager' or current_user.role == 'md' or current_user.is_general_manager %}
-              <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
-                {% csrf_token %}
-                <button type="submit" name="action" value="accept" class="btn-issue" style="background:linear-gradient(135deg,#10b981,#059669);"
-                  onclick="return confirm('Authorize physical handover of {{ iss.qty_issued }} sack(s) to Company?');">
-                  ✓ Accepted
-                </button>
-              </form>
-            {% else %}
-              <div style="text-align:center;">
-                <span class="badge" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; display:block; margin-bottom:4px;">⏱ PENDING GM</span>
-                <span style="font-size:0.7rem; color:#64748b; font-weight:700; text-transform:uppercase;">Awaiting GM Approval</span>
-              </div>
-            {% endif %}
-          {% else %}
-            <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
-              {% csrf_token %}
-              <button type="submit" name="action" value="accept" class="btn-issue"
-                onclick="return confirm('Confirm physical handover of {{ iss.qty_issued }} sack(s) to the recipient?');">
-                ✓ Issue Goods
-              </button>
-            </form>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card mb-16">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #f0f9ff;">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--blue); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🔄</span> Physical Handover Queue
+        </h3>
+        <span class="badge-soft badge-soft-primary">{{ pending_issuances|length }} WAITING COLLECTION</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">S/N</th>
+                    <th>Approval Date</th>
+                    <th>Product</th>
+                    <th class="num">Sacks</th>
+                    <th>Authorized Recipient</th>
+                    <th>Channel</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for iss in pending_issuances %}
+                <tr>
+                    <td style="text-align: center;"><span style="font-weight: 800; color: var(--slate-400);">#{{ forloop.counter }}</span></td>
+                    <td><strong style="color: var(--navy);">{{ iss.date }}</strong></td>
+                    <td>
+                        <span class="{% if iss.material_type == 'maize' %}bg-amber{% else %}bg-purple{% endif %}" style="font-size: 0.7rem; color: #fff; border-radius: 6px; padding: 0.2rem 0.6rem; font-weight: 800; text-transform: uppercase;">
+                            {{ iss.get_material_type_display|upper }}
+                        </span>
+                        <strong style="color: var(--navy);">{{ iss.product_size }}</strong>
+                    </td>
+                    <td class="num"><strong style="color: var(--navy);">{{ iss.qty_issued }}</strong></td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--slate-800);">
+                            {% if iss.channel == 'company' and iss.buyer_name %}{{ iss.buyer_name }}
+                            {% elif iss.sales_record and iss.sales_record.sales_person %}{{ iss.sales_record.sales_person.name }}
+                            {% elif iss.issued_to %}{{ iss.issued_to.full_name }}
+                            {% else %}—{% endif %}
+                        </div>
+                    </td>
+                    <td><span class="badge-soft badge-soft-primary" style="font-size: 0.7rem; font-weight: 800;">{{ iss.get_channel_display|upper }}</span></td>
+                    <td style="text-align: right;">
+                        {% if iss.channel == 'sales_manager' %}
+                            <span class="badge-soft badge-soft-warning">AWAITING SM SIGNATURE</span>
+                        {% elif iss.channel == 'company' %}
+                            {% if current_user == iss.approver %}
+                                <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm physical handover?');">Release Goods</button>
+                                </form>
+                            {% else %}
+                                <span class="badge-soft badge-soft-warning">PENDING: {{ iss.approver.full_name|truncatechars:10 }}</span>
+                            {% endif %}
+                        {% else %}
+                            <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm physical handover?');">Release Goods</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
-<div style="background:linear-gradient(90deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;">
-  <span style="font-size:1.5rem;">✅</span>
-  <div>
-    <div style="font-weight:700;color:#166534;">No Pending Issuances</div>
-    <div style="font-size:.85rem;color:#15803d;">All sales orders have been physically collected by their recipients.</div>
-  </div>
+<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+    <span style="font-size: 1.5rem;">✅</span>
+    <div>
+        <div style="font-weight: 800; color: #166534;">Queue Clear</div>
+        <div style="font-size: 0.85rem; color: #15803d;">All authorized releases have been physically collected.</div>
+    </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# RECENT RECEIPTS FROM PRODUCTION                           #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="table-wrapper mb-16" style="border-radius:10px;overflow:hidden;">
-  <div class="section-header history-rec">
-    <span>📥 Received from Production</span>
-    <span style="font-size:.8rem;color:#64748b;margin-left:auto;">Most recent first</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>S/N</th>
-        <th>Date</th>
-        <th>Material & Size</th>
-        <th class="num">Qty Received</th>
-        <th>Finished Goods Received By</th>
-        {% if current_user.role == 'md' %}<th>Edit</th>{% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in receipts %}
-      <tr>
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ r.date }}</td>
-        <td>
-          <span class="badge badge-{{ r.material_type }}">{{ r.get_material_type_display|upper }}</span>
-          <strong>{{ r.product_size }}</strong>
-        </td>
-        <td class="num font-bold text-success">+{{ r.qty_received }}</td>
-        <td style="color:#64748b;">{{ r.received_by.full_name }}</td>
-        {% if current_user.role == 'md' %}
-        <td>
-          <a href="{% url 'data_explorer:edit' 'fgreceipt' r.pk %}" class="btn btn-sm btn-secondary" style="font-size:.75rem;padding:3px 8px;">✏</a>
-          <a href="{% url 'data_explorer:delete' 'fgreceipt' r.pk %}" class="btn btn-sm btn-secondary" style="font-size:.75rem;padding:3px 8px;color:#ef4444;" onclick="return confirm('Delete this receipt?');">🗑</a>
-        </td>
-        {% endif %}
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" class="table-empty">No finished goods received yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{# ════ RECENT RECEIPTS FROM PRODUCTION ════ #}
+<div class="card mb-16">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Received from Production (History)</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Date</th>
+                    <th>Material</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th>Received By</th>
+                    {% if current_user.role == 'md' %}<th style="text-align: center;">Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in receipts %}
+                <tr>
+                    <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
+                    <td style="font-weight: 600; color: var(--slate-700);">{{ r.date }}</td>
+                    <td>
+                        <span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.get_material_type_display|upper }}</span>
+                        <strong>{{ r.product_size }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 800; color: var(--emerald);">+{{ r.qty_received }}</td>
+                    <td style="color: var(--slate-600); font-weight: 600;">{{ r.received_by.full_name }}</td>
+                    {% if current_user.role == 'md' %}
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                            <a href="{% url 'data_explorer:edit' 'fgreceipt' r.pk %}" class="btn-modern" style="padding: 0.4rem; background: var(--slate-100); color: var(--slate-600);">✏</a>
+                            <a href="{% url 'data_explorer:delete' 'fgreceipt' r.pk %}" class="btn-modern" style="padding: 0.4rem; background: #fff1f2; color: var(--rose);" onclick="return confirm('Delete?');">🗑</a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No receipts recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {# ══════════════════════════════════════════════════════════ #}
 {# ISSUANCE HISTORY                                          #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="table-wrapper" style="border-radius:10px;overflow:hidden;">
-  <div class="section-header history-iss">
-    <span>📤 Store Handover History</span>
-    <span style="font-size:.8rem;color:#64748b;margin-left:auto;">Shows all issuances (pending + accepted)</span>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>S/N</th>
-        <th>Date</th>
-        <th>Material & Size</th>
-        <th class="num">Qty Issued</th>
-        <th>Sales Person</th>
-        <th>Channel</th>
-        <th>Issued By (FG Store)</th>
-        <th>Status</th>
-        {% if current_user.role == 'md' %}<th>Sale #</th><th>Edit</th>{% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in issuances %}
-      <tr {% if i.status == 'pending' %}style="background:#f0f9ff;"{% endif %}>
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ i.date }}</td>
-        <td>
-          <span class="badge badge-{{ i.material_type }}">{{ i.get_material_type_display|upper }}</span>
-          <strong>{{ i.product_size }}</strong>
-        </td>
-        <td class="num font-bold text-danger">-{{ i.qty_issued }}</td>
-        <td>
-          <div class="person-block">
-            <span class="person-channel">{{ i.get_channel_display }}</span>
-            <span style="font-weight:600;color:#0f172a;">
-              {% if i.sales_record and i.sales_record.sales_person %}{{ i.sales_record.sales_person.name }}
-              {% elif i.issued_to %}{{ i.issued_to.full_name }}
-              {% else %}—{% endif %}
-            </span>
-          </div>
-        </td>
-        <td><span class="badge badge-draft">{{ i.get_channel_display }}</span></td>
-        <td style="color:#64748b;font-size:.85rem;">{{ i.issued_by.full_name }}</td>
-        <td>
-          {% if i.status == 'accepted' %}
-          <span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;">✓ ISSUED</span>
-          {% elif i.status == 'pending' %}
-          <span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">⏱ PENDING</span>
-          {% else %}
-          <span class="badge badge-draft">{{ i.status|upper }}</span>
-          {% endif %}
-        </td>
-        {% if current_user.role == 'md' %}
-        <td style="font-family:monospace;font-size:.85rem;">
-          {% if i.sales_record %}<a href="{% url 'sales:receipt' i.sales_record.pk %}" style="color:#3b82f6;">#{{ i.sales_record.pk }}</a>{% else %}—{% endif %}
-        </td>
-        <td>
-          <a href="{% url 'data_explorer:edit' 'fgissuance' i.pk %}" class="btn btn-sm btn-secondary" style="font-size:.75rem;padding:3px 8px;">✏</a>
-          <a href="{% url 'data_explorer:delete' 'fgissuance' i.pk %}" class="btn btn-sm btn-secondary" style="font-size:.75rem;padding:3px 8px;color:#ef4444;" onclick="return confirm('Delete?');">🗑</a>
-        </td>
-        {% endif %}
-      </tr>
-      {% empty %}
-      <tr><td colspan="9" class="table-empty">No finished goods issued yet.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{# ════ ISSUANCE HISTORY ════ #}
+<div class="card">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Store Handover History</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>S/N</th>
+                    <th>Date</th>
+                    <th>Material</th>
+                    <th style="text-align: right;">Qty</th>
+                    <th>Recipient</th>
+                    <th>Channel</th>
+                    <th>Status</th>
+                    {% if current_user.role == 'md' %}<th style="text-align: center;">Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in issuances %}
+                <tr {% if i.status == 'pending' %}style="background: #f0f9ff;"{% endif %}>
+                    <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
+                    <td style="font-weight: 600; color: var(--slate-700);">{{ i.date }}</td>
+                    <td>
+                        <span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.get_material_type_display|upper }}</span>
+                        <strong>{{ i.product_size }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 800; color: var(--rose);">-{{ i.qty_issued }}</td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--slate-800);">
+                            {% if i.channel == 'company' and i.buyer_name %}
+                                {{ i.buyer_name }}
+                            {% elif i.sales_record and i.sales_record.sales_person %}
+                                {{ i.sales_record.sales_person.name }}
+                            {% elif i.issued_to %}
+                                {{ i.issued_to.full_name }}
+                            {% else %}—{% endif %}
+                        </div>
+                    </td>
+                    <td><span class="badge-soft badge-soft-primary" style="font-size: 0.75rem;">{{ i.get_channel_display }}</span></td>
+                    <td>
+                        {% if i.status == 'accepted' %}
+                        <span class="badge-soft badge-soft-success">✓ ISSUED</span>
+                        {% elif i.status == 'pending' %}
+                        <span class="badge-soft badge-soft-warning">⏱ PENDING</span>
+                        {% else %}
+                        <span class="badge-soft">{{ i.status|upper }}</span>
+                        {% endif %}
+                    </td>
+                    {% if current_user.role == 'md' %}
+                    <td style="text-align: center;">
+                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                            <a href="{% url 'data_explorer:edit' 'fgissuance' i.pk %}" class="btn-modern" style="padding: 0.4rem; background: var(--slate-100); color: var(--slate-600);">✏</a>
+                            <a href="{% url 'data_explorer:delete' 'fgissuance' i.pk %}" class="btn-modern" style="padding: 0.4rem; background: #fff1f2; color: var(--rose);" onclick="return confirm('Delete?');">🗑</a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No issuances recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock %}

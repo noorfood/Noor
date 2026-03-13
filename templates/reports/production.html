@@ -3,211 +3,181 @@
 {% block nav_rp_prod_md %}active{% endblock %}
 {% block nav_rp_prod %}active{% endblock %}
 {% block content %}
-<style>
-  .prod-hero {
-    background: linear-gradient(135deg, #1e1b4b, #312e81);
-    border-radius: 14px; padding: 2.25rem;
-    margin-bottom: 2rem; border: 1px solid #4338ca;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  }
-  .prod-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 1rem; }
-  .prod-hero-title span { color: #a5b4fc; font-size: .85rem; letter-spacing: 1px; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 6px; }
-  .prod-hero-sub { font-size: .95rem; color: #c7d2fe; margin-top: .6rem; max-width: 600px; }
+{# Standardized Production Report Styles #}
 
-  .filter-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 1.25rem 1.5rem; margin-bottom: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  }
-  .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; align-items: flex-end; }
-  .filter-group label { font-size: .75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .4rem; display: block; }
-  .filter-group input, .filter-group select {
-    width: 100%; padding: .6rem .75rem; border-radius: 8px; border: 1.5px solid #cbd5e1;
-    font-size: .9rem; transition: border-color .15s;
-  }
-  .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #6366f1; }
-
-  .summary-section { margin-bottom: 3rem; }
-  .section-subtitle { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .75rem; }
-  
-  .stats-grid-premium { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
-  .stat-card-premium {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem;
-    display: flex; flex-direction: column; position: relative; overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  }
-  .stat-card-premium::after {
-    content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%;
-  }
-  .stat-blue::after { background: #3b82f6; }
-  .stat-green::after { background: #10b981; }
-  .stat-amber::after { background: #f59e0b; }
-
-  .p-stat-label { font-size: .75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: .5rem; }
-  .p-stat-value { font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1; }
-  
-  .table-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-    overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    margin-bottom: 2.5rem;
-  }
-  .premium-list { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  .premium-list th {
-    background: #f8fafc; padding: 1rem; text-align: left;
-    font-size: .7rem; font-weight: 700; text-transform: uppercase;
-    color: #475569; border-bottom: 1px solid #e2e8f0;
-  }
-  .premium-list td { padding: 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
-  .premium-list tr:hover td { background: #fbfcfe; }
-  
-  .flag-tag { padding: 4px 10px; border-radius: 6px; font-weight: 800; font-size: .7rem; }
-  .tag-normal { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-  .tag-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-  .tag-critical { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-  .text-normal { color: #16a34a !important; }
-  .text-warning { color: #f59e0b !important; }
-  .text-critical { color: #ef4444 !important; }
-</style>
-
-<div class="prod-hero">
-  <h1 class="prod-hero-title">⚙️ Manufacturing Intelligence <span>REPORTS</span></h1>
-  <p class="prod-hero-sub">Deep-dive into milling efficiency, packaging yields, and critical loss tracking across the factory production floor.</p>
+<div class="page-hero" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(165, 180, 252, 0.1); color: #a5b4fc;">⚙️ Operational Audit</span>
+            <h1 class="hero-title" style="color: #fff;">Manufacturing Intelligence</h1>
+            <p class="hero-subtitle" style="color: #c7d2fe;">Deep-dive into milling efficiency, packaging yields, and critical loss tracking.</p>
+        </div>
+    </div>
 </div>
 
 {# Filters #}
-<div class="filter-card">
-  <form method="get" class="filter-grid">
-    <div class="filter-group">
-      <label>Date From</label>
-      <input type="date" name="date_from" value="{{ f_from }}">
-    </div>
-    <div class="filter-group">
-      <label>Date To</label>
-      <input type="date" name="date_to" value="{{ f_to }}">
-    </div>
-    <div class="filter-group">
-      <label>Material</label>
-      <select name="material">
-        <option value="">All Materials</option>
-        <option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
-        <option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Flag Level</label>
-      <select name="flag">
-        <option value="">All Flags</option>
-        <option value="normal" {% if f_flag == 'normal' %}selected{% endif %}>Normal</option>
-        <option value="warning" {% if f_flag == 'warning' %}selected{% endif %}>Warning</option>
-        <option value="critical" {% if f_flag == 'critical' %}selected{% endif %}>Critical</option>
-      </select>
-    </div>
-    <div style="grid-column: span 1; display: flex; gap: .5rem;">
-      <button type="submit" class="btn btn-primary" style="flex: 1; padding: .65rem;">Filter</button>
-      <a href="?" class="btn btn-secondary" style="padding: .65rem;">Reset</a>
-    </div>
-  </form>
+<div class="action-bar-modern" style="margin-bottom: 2rem;">
+    <form method="get" style="display: flex; align-items: flex-end; gap: 1rem; width: 100%; flex-wrap: wrap;">
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date From</label>
+            <input type="date" name="date_from" value="{{ f_from }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date To</label>
+            <input type="date" name="date_to" value="{{ f_to }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Material</label>
+            <select name="material" class="input-modern">
+                <option value="">All Materials</option>
+                <option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
+                <option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
+            </select>
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Flag Level</label>
+            <select name="flag" class="input-modern">
+                <option value="">All Flags</option>
+                <option value="normal" {% if f_flag == 'normal' %}selected{% endif %}>Normal</option>
+                <option value="warning" {% if f_flag == 'warning' %}selected{% endif %}>Warning</option>
+                <option value="critical" {% if f_flag == 'critical' %}selected{% endif %}>Critical</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn-modern btn-modern-primary">Apply Filters</button>
+            <a href="?" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200);">Reset</a>
+        </div>
+    </form>
 </div>
 
 {# Milling Summary #}
-<div class="summary-section">
-  <div class="section-subtitle">🌀 Milling Efficiency Summaries</div>
-  <div class="stats-grid-premium">
-    <div class="stat-card-premium stat-blue">
-      <div class="p-stat-label">Total Raw Input</div>
-      <div class="p-stat-value">{{ milling_totals.total_raw_kg|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
+<div style="margin-bottom: 3rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">🌀</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Milling Efficiency Summaries</h3>
     </div>
-    <div class="stat-card-premium stat-green">
-      <div class="p-stat-label">Bulk Powder Output</div>
-      <div class="p-stat-value">{{ milling_totals.total_powder_kg|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
+    
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Raw Input</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ milling_totals.total_raw_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Bulk Powder Output</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ milling_totals.total_powder_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--amber);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Milling Loss</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--rose);">{{ milling_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
     </div>
-    <div class="stat-card-premium stat-amber">
-      <div class="p-stat-label">Total Milling Loss</div>
-      <div class="p-stat-value" style="color: #d97706;">{{ milling_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
-    </div>
-  </div>
 
-  <div class="table-card">
-    <table class="premium-list">
-      <thead>
-        <tr>
-          <th>S/N</th><th>Date</th><th>Officer</th><th>Material</th><th>Shift</th>
-          <th class="num">Bags</th><th class="num">Raw KG</th>
-          <th class="num">Powder KG</th><th class="num">Loss KG</th>
-          <th class="num">Loss %</th><th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for b in milling %}
-        <tr>
-          <td style="font-family: monospace; font-weight: 700;">{{ forloop.counter }}</td>
-          <td style="white-space:nowrap;">{{ b.date }}</td>
-          <td>{{ b.production_officer.full_name }}</td>
-          <td><span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
-          <td>{{ b.shift|upper }}</td>
-          <td class="num">{{ b.bags_milled_new }}</td>
-          <td class="num">{{ b.total_raw_kg|floatformat:1 }}</td>
-          <td class="num font-bold">{{ b.bulk_powder_kg|floatformat:1 }}</td>
-          <td class="num" style="color: #d97706;">{{ b.loss_kg|floatformat:1 }}</td>
-          <td class="num font-bold {% if b.loss_pct >= 20 %}text-critical{% elif b.loss_pct >= 10 %}text-warning{% else %}text-normal{% endif %}">{{ b.loss_pct }}%</td>
-          <td>
-            <span class="flag-tag tag-{{ b.flag_level }}">{{ b.flag_level|upper }}</span>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="11" style="padding: 3rem; text-align: center; color: #94a3b8;">No milling batches match filters.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Batch Identity</th>
+              <th>Material</th>
+              <th>Shift Context</th>
+              <th class="num">Bags</th>
+              <th class="num">Raw Input (KG)</th>
+              <th class="num">Output (KG)</th>
+              <th class="num">Loss Data</th>
+              <th>Health Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in milling %}
+            <tr>
+              <td>
+                <div style="font-weight: 800; color: var(--navy);">Batch #{{ b.id|default:forloop.counter }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ b.date }} • {{ b.production_officer.full_name }}</div>
+              </td>
+              <td>
+                <span class="{% if b.material_type == 'maize' %}bg-warning-soft text-warning-heavy{% else %}bg-indigo-soft text-indigo-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                    {{ b.material_type|upper }}
+                </span>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: var(--slate-600); font-size: 0.8rem;">{{ b.shift|upper }} SHIFT</div>
+              </td>
+              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ b.bags_milled_new }}</td>
+              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ b.total_raw_kg|floatformat:1 }}</td>
+              <td class="num" style="font-weight: 800; color: var(--navy); font-family: 'JetBrains Mono', monospace;">{{ b.bulk_powder_kg|floatformat:1 }}</td>
+              <td class="num">
+                <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">{{ b.loss_kg|floatformat:1 }} KG</div>
+                <div class="font-bold {% if b.loss_pct >= 20 %}text-rose{% elif b.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ b.loss_pct }}% Efficiency Loss</div>
+              </td>
+              <td>
+                <span class="{% if b.flag_level == 'critical' %}bg-danger-soft text-danger-heavy{% elif b.flag_level == 'warning' %}bg-warning-soft text-warning-heavy{% else %}bg-success-soft text-success-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                    {{ b.flag_level|upper }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No milling batches match current filtration.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
 </div>
 
 {# Packaging Summary #}
-<div class="summary-section">
-  <div class="section-subtitle">📦 Packaging Yield Summaries</div>
-  <div class="stats-grid-premium">
-    <div class="stat-card-premium stat-blue">
-      <div class="p-stat-label">Powder Consumed</div>
-      <div class="p-stat-value">{{ packaging_totals.total_powder_used|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
+<div style="margin-bottom: 3rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">📦</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Packaging Yield Summaries</h3>
     </div>
-    <div class="stat-card-premium stat-green">
-      <div class="p-stat-label">Packed Output</div>
-      <div class="p-stat-value">{{ packaging_totals.total_output_kg|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
-    </div>
-    <div class="stat-card-premium stat-amber">
-      <div class="p-stat-label">Packaging Loss</div>
-      <div class="p-stat-value" style="color: #d97706;">{{ packaging_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: .9rem;">KG</small></div>
-    </div>
-  </div>
 
-  <div class="table-card">
-    <table class="premium-list">
-      <thead>
-        <tr>
-          <th>S/N</th><th>Date</th><th>Officer</th><th>Material</th><th>Shift</th>
-          <th class="num">Powder (KG)</th><th class="num">Sacks (10kg)</th>
-          <th class="num">Output (KG)</th><th class="num">Loss (KG)</th><th>Loss %</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in packaging %}
-        <tr>
-          <td style="font-family: monospace; font-weight: 700;">{{ forloop.counter }}</td>
-          <td style="white-space:nowrap;">{{ p.date }}</td>
-          <td>{{ p.production_officer.full_name }}</td>
-          <td><span class="badge badge-{{ p.material_type }}">{{ p.material_type|upper }}</span></td>
-          <td>{{ p.shift|upper }}</td>
-          <td class="num">{{ p.powder_used_kg|floatformat:1 }}</td>
-          <td class="num" style="font-weight: 900; color: #10b981;">+{{ p.qty_10kg }}</td>
-          <td class="num">{{ p.total_output_kg|floatformat:1 }}</td>
-          <td class="num">{{ p.loss_kg|floatformat:1 }}</td>
-          <td class="num font-bold {% if p.loss_pct >= 20 %}text-critical{% elif p.loss_pct >= 10 %}text-warning{% else %}text-normal{% endif %}">{{ p.loss_pct }}%</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="10" style="padding: 3rem; text-align: center; color: #94a3b8;">No packaging data available.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Powder Consumed</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ packaging_totals.total_powder_used|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Packed Output</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ packaging_totals.total_output_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
+        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--amber);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Packaging Loss</div>
+            <div style="font-size: 1.8rem; font-weight: 900; color: var(--rose);">{{ packaging_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
+        </div>
+    </div>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Batch Identity</th>
+              <th class="num">Powder Used</th>
+              <th class="num">Finished Sacks</th>
+              <th class="num">Output Yield</th>
+              <th class="num">Loss Analysis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in packaging %}
+            <tr>
+              <td>
+                <div style="font-weight: 800; color: var(--navy);">Pack Batch #{{ p.id|default:forloop.counter }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ p.date }} • {{ p.production_officer.full_name }}</div>
+              </td>
+              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ p.powder_used_kg|floatformat:1 }} KG</td>
+              <td class="num">
+                <div style="font-weight: 900; color: var(--emerald); font-size: 1.1rem;">+{{ p.qty_10kg }}</div>
+                <div style="font-size: 0.6rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">10KG FINISHED SACKS</div>
+              </td>
+              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ p.total_output_kg|floatformat:1 }} KG</td>
+              <td class="num">
+                <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">{{ p.loss_kg|floatformat:1 }} KG</div>
+                <div class="font-bold {% if p.loss_pct >= 20 %}text-rose{% elif p.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ p.loss_pct }}% Total Loss</div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No packaging yield data currently recorded.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -1,129 +1,89 @@
 {% extends 'base.html' %}
 {% block title %}Sales Team Performance — Noor Foods{% endblock %}
 {% block content %}
-<style>
-  .page-hero {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-    color: white; border-radius: 16px; padding: 2rem 2.5rem;
-    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.07);
-    display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;
-  }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .3rem; display: block; }
-  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
-  .hero-sub { color: #93c5fd; font-size: .88rem; max-width: 550px; }
-
-  .action-pills { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 2rem; }
-  .pill { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: .85rem; text-decoration: none; transition: all .2s; }
-  .pill-primary { background: #2563eb; color: #fff; }
-  .pill-primary:hover { background: #1d4ed8; }
-  .pill-success { background: #059669; color: #fff; }
-  .pill-success:hover { background: #047857; }
-  .pill-back { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-  .pill-back:hover { background: #e2e8f0; }
-
-  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
-  tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody tr:hover { background: #eff6ff; }
-  tbody td { padding: .85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  .num { text-align: right; font-family: monospace; }
-
-  .channel-badge { background: #eff6ff; color: #1d4ed8; padding: .2rem .6rem; border-radius: 10px; font-size: .75rem; font-weight: 700; }
-  .progress-bar { height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; width: 80px; display: inline-block; vertical-align: middle; margin-right: .4rem; }
-  .progress-fill { height: 100%; border-radius: 4px; }
-
-  .context-note { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 1rem 1.3rem; margin-bottom: 1.5rem; font-size: .85rem; color: #14532d; }
-</style>
-
-<div class="page-hero">
-  <div>
-    <span class="hero-label">📊 Performance Tracking</span>
-    <h1 class="hero-title">Sales Team Performance</h1>
-    <p class="hero-sub">Who is selling, who is outstanding, and who needs a push — pure performance visibility. <em>SalesPerson debts are not tracked here.</em></p>
-  </div>
-  {% if current_user.role == 'sales_manager' %}
-  <div style="display:flex;flex-direction:column;gap:.6rem;align-items:flex-end;">
-    <a href="{% url 'sales:record_distribution' %}" class="pill pill-primary">📦 Give Sacks to Team</a>
-    <a href="{% url 'sales:record_sales_result' %}" class="pill pill-success">✓ Record Sales Result</a>
-  </div>
-  {% endif %}
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(99, 102, 241, 0.1); color: #818cf8;">📊 Performance Intelligence</span>
+            <h1 class="hero-title" style="color: #fff;">Sales Team Performance</h1>
+            <p class="hero-subtitle" style="color: var(--slate-300);">Competitive visibility into secondary-market distribution and sales velocity.</p>
+        </div>
+        {% if current_user.role == 'sales_manager' %}
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+            <a href="{% url 'sales:record_distribution' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1.25rem;">📦 Issue Goods</a>
+            <a href="{% url 'sales:record_sales_result' %}" class="btn-modern" style="background: var(--emerald); color: #fff; padding: 0.5rem 1.25rem;">✓ Results</a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
-<div class="context-note">
-  ℹ️ <strong>Company Principle:</strong> The Sales Manager is the company's debtor. Sales Persons are internal to the SM's operations.
-  This view tracks performance only — no financial liability is created for Sales Persons here.
+<div style="background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem;">
+    <span style="font-size: 1.5rem;">ℹ️</span>
+    <div style="font-size: 0.85rem; color: var(--indigo-900); font-weight: 500;">
+        <strong>Strategic Note:</strong> Material liabilities reside with the Sales Manager. Sales People are internal field assets; this view tracks efficiency and output, not financial debt.
+    </div>
 </div>
 
-<div class="table-card">
-  <table>
-    <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Name</th>
-        <th>Channel</th>
-        <th class="num">Sacks Given</th>
-        <th class="num">Sacks Sold</th>
-        <th class="num">Pieces Sold</th>
-        <th class="num">Unsold (Sacks)</th>
-        {% if show_money %}
-        <th class="num">Commission</th>
-        <th class="num">Expected Money</th>
-        <th class="num">Outstanding Debt</th>
-        {% endif %}
-        <th>Performance</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in sp_rows %}
-      <tr>
-        <td><strong style="color:#1e3a5f;">{{ forloop.counter }}</strong></td>
-        <td><strong>{{ row.sp.name }}</strong></td>
-        <td><span class="channel-badge">{{ row.sp.get_channel_display }}</span></td>
-        <td class="num">{{ row.total_given }}</td>
-        <td class="num">{{ row.total_sold }}</td>
-        <td class="num">{{ row.total_pieces_sold }}</td>
-        <td class="num">
-          {% if row.unsold > 0 %}
-          <span style="color:#dc2626;font-weight:700;">{{ row.unsold|floatformat:1 }}</span>
-          {% else %}
-          <span style="color:#10b981;font-weight:700;">0</span>
-          {% endif %}
-        </td>
-        {% if show_money %}
-        <td class="num">₦{{ row.total_commission|floatformat:0 }}</td>
-        <td class="num" style="font-weight:700;">₦{{ row.total_net|floatformat:0 }}</td>
-        <td class="num" style="color:#dc2626;font-weight:700;">₦{{ row.total_outstanding|floatformat:0 }}</td>
-        {% endif %}
-        <td>
-          {% if row.total_given > 0 %}
-            {% widthratio row.total_sold row.total_given 100 as pct %}
-            <div style="display:flex;align-items:center;gap:.4rem;">
-              <div class="progress-bar">
-                <div class="progress-fill"
-                  style="width:{{ pct }}%;background:{% if pct|add:0 >= 80 %}#10b981{% elif pct|add:0 >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">
-                </div>
-              </div>
-              <span style="font-size:.85rem;font-weight:700;">{{ pct }}%</span>
-            </div>
-          {% else %}
-          <span style="color:#94a3b8;font-size:.82rem;">No distributions</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="{% if show_money %}10{% else %}7{% endif %}" style="text-align:center;color:#94a3b8;padding:3rem;">
-          No performance data yet.
-          {% if current_user.role == 'sales_manager' %}
-          <br><a href="{% url 'sales:record_distribution' %}" style="color:#3b82f6;font-weight:700;text-decoration:none;">Start by giving sacks to a team member →</a>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 2rem;">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th style="width: 60px;">Rank</th>
+                <th>Channel Representative</th>
+                <th>Channel</th>
+                <th class="num">M. Issued</th>
+                <th class="num">W. Issued</th>
+                <th class="num">M. Sold</th>
+                <th class="num">W. Sold</th>
+                <th class="num">Pieces</th>
+                <th class="num">Floor Bal</th>
+                {% if show_money %}
+                <th class="num">Commission</th>
+                <th class="num">Expected</th>
+                <th class="num">Gap</th>
+                {% endif %}
+                <th>Velocity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in sp_rows %}
+            <tr>
+                <td style="text-align: center;"><span style="font-weight: 800; color: var(--slate-400);">#{{ forloop.counter }}</span></td>
+                <td><strong style="color: var(--navy); font-size: 1.05rem;">{{ row.sp.name }}</strong></td>
+                <td><span style="font-size: 0.7rem; background: var(--slate-100); color: var(--slate-700); border-radius: 6px; padding: 0.2rem 0.6rem; font-weight: 800; text-transform: uppercase;">{{ row.sp.get_channel_display }}</span></td>
+                <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.maize_given }}</td>
+                <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.wheat_given }}</td>
+                <td class="num" style="color: var(--amber); font-weight: 800;">{{ row.maize_sold|floatformat:1 }}</td>
+                <td class="num" style="color: #8b5cf6; font-weight: 800;">{{ row.wheat_sold|floatformat:1 }}</td>
+                <td class="num" style="font-weight: 600;">{{ row.total_pieces_sold }}</td>
+                <td class="num">
+                    <span class="font-bold {% if row.unsold > 0 %}text-rose{% else %}text-emerald{% endif %}">
+                        {{ row.unsold|floatformat:1 }}
+                    </span>
+                </td>
+                {% if show_money %}
+                <td class="num" style="color: var(--emerald); font-weight: 700;">₦{{ row.total_commission|floatformat:0 }}</td>
+                <td class="num" style="color: var(--navy); font-weight: 800;">₦{{ row.total_net|floatformat:0 }}</td>
+                <td class="num" style="color: var(--rose); font-weight: 800;">₦{{ row.total_outstanding|floatformat:0 }}</td>
+                {% endif %}
+                <td>
+                    {% if row.total_given > 0 %}
+                    {% widthratio row.total_sold row.total_given 100 as pct %}
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                        <div style="height: 6px; background: var(--slate-100); border-radius: 3px; overflow: hidden; width: 60px;">
+                            <div style="height: 100%; width: {{ pct }}%;" class="{% if pct|add:0 >= 80 %}bg-emerald{% elif pct|add:0 >= 50 %}bg-amber{% else %}bg-rose{% endif %}"></div>
+                        </div>
+                        <span style="font-size: 0.8rem; font-weight: 800; min-width: 35px;">{{ pct }}%</span>
+                    </div>
+                    {% else %}
+                    <span style="font-size: 0.75rem; color: var(--slate-400); font-weight: 500;">Inactive</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="13" style="text-align:center; padding:3rem; color:var(--slate-400);">No performance metrics recorded for this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

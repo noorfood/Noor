@@ -3,44 +3,24 @@
 
 {% block content %}
 <style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 20px;
-        padding: 2.5rem;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        max-width: 800px;
-        margin: 2rem auto;
-    }
-    .form-header { margin-bottom: 2rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; }
-    .form-title { font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 0; }
-    .form-subtitle { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
-    
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-    .form-group { margin-bottom: 1.25rem; }
-    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 0.5rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
     .form-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0;
-        background: rgba(255,255,255,0.8); font-size: 0.95rem; font-weight: 600; color: #1e293b;
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
         transition: all 0.2s;
     }
-    .form-input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: #fff; }
-    
-    .btn-submit {
-        background: #0f172a; color: #fff; border: none; padding: 12px 32px; border-radius: 12px;
-        font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
-        cursor: pointer; transition: all 0.2s;
-    }
-    .btn-submit:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .form-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); background: #fff; }
 </style>
 
-<div class="glass-card">
-    <div class="form-header">
-        <h2 class="form-title">🏷️ Establish New Channel Price</h2>
-        <p class="form-subtitle">Define the strategic selling price for Sales Manager or Company Direct channels.</p>
+<div class="page-hero">
+    <div>
+        <span class="hero-badge">🏷️ Market Strategy</span>
+        <h1 class="hero-title">Establish New Channel Price</h1>
+        <p class="hero-subtitle">Define the strategic selling price for Sales Manager or Company Direct channels.</p>
     </div>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
 
     {% if error %}
     <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: #991b1b; font-size: 0.85rem; font-weight: 600;">
@@ -50,8 +30,8 @@
 
     <form method="post">
         {% csrf_token %}
-        <div class="form-grid">
-            <div class="form-group">
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
                 <label class="form-label">Target Channel</label>
                 <select name="channel" class="form-input" required>
                     <option value="">— Select Channel —</option>
@@ -60,7 +40,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
+            <div>
                 <label class="form-label">Material Category</label>
                 <select name="material_type" class="form-input" required>
                     <option value="">— Select Material —</option>
@@ -71,25 +51,25 @@
             </div>
         </div>
 
-        <div class="form-grid">
-            <div class="form-group">
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
                 <label class="form-label">Price Per Unit (₦)</label>
                 <input type="number" name="price_per_unit" min="0.01" step="0.01" class="form-input" placeholder="e.g. 25,000" required>
             </div>
-            <div class="form-group">
+            <div>
                 <label class="form-label">Effective Date</label>
                 <input type="date" name="effective_from" value="{{ today }}" class="form-input" required>
             </div>
         </div>
 
-        <div class="form-group">
+        <div style="margin-bottom: 1.5rem;">
             <label class="form-label">Strategic Notes (Optional)</label>
             <textarea name="notes" class="form-input" rows="3" placeholder="Context for this price adjustment..."></textarea>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <button type="submit" class="btn-submit">🔒 Commit Price Rule</button>
-            <a href="{% url 'pricing:list' %}" style="display: flex; align-items: center; text-decoration: none; color: #64748b; font-weight: 700; font-size: 0.85rem;">Cancel & Return</a>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn-modern btn-modern-primary">🔒 Commit Price Rule</button>
+            <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600);">Cancel & Return</a>
         </div>
     </form>
 </div>

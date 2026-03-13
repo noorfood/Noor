@@ -5,7 +5,7 @@ from accounts.mixins import get_current_user, role_required
 from audit.utils import log_action
 
 from procurement.models import RawMaterialReceipt, RawMaterialIssuance
-from cleaning.models import CleaningBatch, CleanRawReceipt
+from cleaning.models import CleanRawReceipt
 from clean_store.models import CleanRawIssuance, CleanRawReturn
 from production.models import MillingBatch, PackagingBatch
 from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance
@@ -24,7 +24,6 @@ MODEL_MAP = {
     'raw-issuances':      (RawMaterialIssuance, ['created_at', 'date', 'material_type', 'num_bags_issued', 'issued_to', 'issued_by']),
     
     # Cleaning
-    'cleaning-batches':   (CleaningBatch,        ['created_at', 'date', 'material_type', 'dirty_bags_used', 'clean_bags_produced', 'loss_kg', 'status']),
     'clean-receipts':     (CleanRawReceipt,      ['created_at', 'date', 'material_type', 'num_bags', 'received_by']),
     
     # Operations / Store
@@ -56,7 +55,7 @@ MODEL_MAP = {
 
 CATEGORIZED_MODELS = [
     ('Procurement', ['raw-receipts', 'raw-issuances']),
-    ('Cleaning', ['cleaning-batches', 'clean-receipts']),
+    ('Cleaning', ['clean-receipts']),
     ('Operations & Store', ['clean-issuances', 'clean-returns', 'milling-batches', 'packaging-batches', 'fg-receipts', 'fg-issuances']),
     ('Sales Management', ['sales-persons', 'sm-collections', 'sp-distributions', 'sp-results', 'sm-payments']),
     ('Reconciliation', ['money-receipts', 'recon-flags']),

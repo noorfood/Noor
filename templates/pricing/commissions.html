@@ -3,80 +3,56 @@
 {% block nav_pr_comm %}active{% endblock %}
 
 {% block content %}
-<style>
-    .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-    }
-    
-    .pricing-header {
-        display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;
-    }
-    
-    .config-nav {
-        display: flex; gap: 0.75rem; background: #f1f5f9; padding: 0.5rem; border-radius: 12px;
-    }
-    .config-nav-link {
-        padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
-        text-decoration: none; color: #64748b; transition: all 0.2s;
-    }
-    .config-nav-link:hover { color: #0f172a; background: rgba(255,255,255,0.5); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .config-nav-link.active { background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-    .comm-badge { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.1rem; color: #8b5cf6; }
-</style>
-
-<div class="pricing-header">
+<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
     <div>
-        <div class="page-title">Sales Team Commission Rules</div>
-        <div class="page-subtitle" style="max-width: 600px;">MD-defined unified commission percentages for the entire sales team. These are automatically applied during sales recording.</div>
-    </div>
-    <div class="config-nav">
-        <a href="{% url 'pricing:list' %}" class="config-nav-link">Pricing Strategy</a>
-        <a href="{% url 'pricing:commissions' %}" class="config-nav-link active">Commission Rules</a>
-        <a href="{% url 'pricing:targets' %}" class="config-nav-link">Sales Targets</a>
+        <span class="hero-badge">💸 Unified Team Incentives</span>
+        <h1 class="hero-title">Commission Rules</h1>
+        <p class="hero-subtitle">MD-defined unified commission percentages for the entire sales team. These are automatically applied during sales recording.</p>
     </div>
 </div>
 
-<div class="glass-panel">
+<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
+        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
+        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
+    </div>
+</div>
+
+<div style="margin-top: 2.5rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h4 style="margin:0; font-weight:800; color:#0f172a;">💸 Unified Team Incentives</h4>
-        <a href="{% url 'pricing:new_commission' %}" class="btn btn-primary" style="background:#8b5cf6; border-color:#8b5cf6; padding:10px 20px; border-radius:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">+ Set Team Rate</a>
+        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">💸 Unified Team Incentives</h4>
+        <a href="{% url 'pricing:new_commission' %}" class="btn-modern btn-modern-primary" style="background:var(--indigo); border-color:var(--indigo);">+ Set Team Rate</a>
     </div>
     
-    <div class="table-container" style="background:transparent; border:none; box-shadow:none;">
-        <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem;">
+    <div class="table-wrapper">
+        <table class="premium-table">
             <thead>
-                <tr style="background:#f8fafc;">
-                    <th style="padding:1rem; border-radius:10px 0 0 10px;">Channel</th>
-                    <th style="padding:1rem;">Material</th>
-                    <th style="padding:1rem;">Package Size</th>
-                    <th class="num" style="padding:1rem;">Commission %</th>
-                    <th style="padding:1rem;">Effective From</th>
-                    <th style="padding:1rem; border-radius:0 10px 10px 0;">Notes / Set By</th>
+                <tr>
+                    <th>Channel</th>
+                    <th>Material</th>
+                    <th>Package Size</th>
+                    <th style="text-align: right;">Commission %</th>
+                    <th>Effective From</th>
+                    <th>Notes / Set By</th>
                 </tr>
             </thead>
             <tbody>
                 {% for c in configs %}
-                <tr style="background:rgba(255,255,255,0.4); transition: transform 0.2s; cursor:default;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
-                    <td style="padding:1rem; border-radius:10px 0 0 10px;"><span class="badge badge-{{ c.channel }}">{{ c.get_channel_display }}</span></td>
-                    <td style="padding:1rem;"><span class="badge badge-{{ c.material_type }}">{{ c.get_material_type_display|upper }}</span></td>
-                    <td style="padding:1rem; font-weight:700; color:#1e293b;">{{ c.product_size }}</td>
-                    <td class="num" style="padding:1rem;"><span class="comm-badge">{{ c.commission_pct|floatformat:1 }}%</span></td>
-                    <td style="padding:1rem; font-size:0.85rem; color:#64748b; font-weight:600;">{{ c.effective_from|date:"M d, Y" }}</td>
-                    <td style="padding:1rem; border-radius:0 10px 10px 0;">
-                        <div style="font-size:0.85rem; color:#334155; font-weight:500;">{{ c.notes|default:"Standard commission rule." }}</div>
-                        <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; margin-top:2px;">By {{ c.created_by.full_name }}</div>
+                <tr>
+                    <td><span class="badge-soft {% if c.channel == 'promoter' %}badge-soft-info{% else %}badge-soft-warning{% endif %}">{{ c.get_channel_display }}</span></td>
+                    <td><strong style="color:var(--slate-800);">{{ c.get_material_type_display|upper }}</strong></td>
+                    <td style="font-weight:700; color:var(--slate-900);">{{ c.product_size }}</td>
+                    <td style="text-align: right; font-family: monospace; font-size: 1.25rem; font-weight: 800; color: var(--indigo);">{{ c.commission_pct|floatformat:1 }}%</td>
+                    <td style="font-size:0.9rem; color:var(--slate-600); font-weight:700;">{{ c.effective_from|date:"M d, Y" }}</td>
+                    <td>
+                        <div style="font-size:0.85rem; color:var(--slate-700); font-weight:600;">{{ c.notes|default:"Standard commission rule." }}</div>
+                        <div style="font-size:0.75rem; color:var(--slate-500); margin-top:4px;">By {{ c.created_by.full_name }}</div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr style="background:transparent;">
-                    <td colspan="6" style="text-align:center; padding:3rem; color:#94a3b8;">No commission rules configured. <a href="{% url 'pricing:new_commission' %}" style="color:#8b5cf6; font-weight:700;">Set the first rule</a>.</td>
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No commission rules configured. <a href="{% url 'pricing:new_commission' %}" style="color:var(--indigo); font-weight:700;">Set the first rule</a>.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -84,10 +60,7 @@
     </div>
 </div>
 
-<div style="margin-top:2rem; padding:1.25rem; border-radius:15px; background:rgba(79, 70, 229, 0.05); border:1px dashed #4f46e5; display:flex; gap:1rem; align-items:center;">
-    <div style="font-size:1.5rem;">ℹ️</div>
-    <div style="font-size:0.85rem; color:#3730a3; font-weight:500; line-height:1.5;">
-        Commission % is deducted from the gross sale total. The Sales Manager records only the <strong>net payable</strong> amount from each team member. Commission earnings belong to the Sales Person (Promoter or Driver).
-    </div>
+<div class="alert alert-info" style="margin-top:2rem;">
+    ℹ️ Commission % is deducted from the gross sale total. The Sales Manager records only the <strong>net payable</strong> amount from each team member. Commission earnings belong to the Sales Person (Promoter or Driver).
 </div>
 {% endblock %}

@@ -1,160 +1,114 @@
 {% extends 'base.html' %}
 {% block title %}Record Money Receipt — Noor Foods{% endblock %}
-{% block nav_rc_list %}active{% endblock %}
+{% block nav_rc_record %}active{% endblock %}
 {% block content %}
 
-<style>
-    .form-container {
-        max-width: 900px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 24px;
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
-        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-    }
-    .form-header {
-        background: #1e1b4b;
-        padding: 2.5rem;
-        color: white;
-    }
-    .form-header h2 { font-size: 1.75rem; font-weight: 900; margin: 0; letter-spacing: -0.5px; }
-    .form-header p { font-size: 0.95rem; opacity: 0.8; margin-top: 0.5rem; }
+{# Standardized Form Page Styles from global context #}
 
-    .form-body { padding: 3rem; }
-    
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-    .form-group { margin-bottom: 2rem; }
-    .label { display: block; font-size: 0.8rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 0.75rem; }
-    
-    input, select, textarea {
-        width: 100%;
-        padding: 1rem;
-        border-radius: 12px;
-        border: 1.5px solid #e2e8f0;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1e293b;
-        transition: all 0.2s;
-    }
-    input:focus, select:focus, textarea:focus {
-        outline: none;
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-    }
-
-    .info-banner {
-        background: #f0f9ff;
-        border: 1px solid #bae6fd;
-        padding: 1.25rem;
-        border-radius: 16px;
-        margin-bottom: 2.5rem;
-        display: flex;
-        gap: 1rem;
-        color: #0369a1;
-        font-size: 0.9rem;
-        line-height: 1.5;
-    }
-
-    .btn-submit {
-        background: #4f46e5;
-        color: white;
-        width: 100%;
-        padding: 1.25rem;
-        border-radius: 14px;
-        font-size: 1.1rem;
-        font-weight: 800;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-top: 1rem;
-    }
-    .btn-submit:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); }
-
-    .currency-input { position: relative; }
-    .currency-symbol { position: absolute; left: 1rem; top: 1rem; font-weight: 800; color: #94a3b8; }
-    .currency-input input { padding-left: 2.5rem; }
-</style>
-
-<div class="form-container">
-    <div class="form-header">
-        <h2>Record Money Receipt</h2>
-        <p>Log physical cash or transfers collected from sales personnel.</p>
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">💰 Financial Hub</span>
+            <h1 class="hero-title">Record Money Receipt</h1>
+            <p class="hero-subtitle">Log physical cash or transfers verified from sales personnel.</p>
+        </div>
     </div>
+</div>
 
     <div class="form-body">
         <form method="post">
             {% csrf_token %}
             
-            <div class="info-banner">
-                <span style="font-size: 1.5rem;">💡</span>
-                <div>
-                    <strong>Pro-Tip:</strong> Providing a <strong>Reconciliation Period</strong> allows the system to automatically check the received amount against the personnel's sales results for those dates.
-                </div>
-            </div>
+            <div class="action-bar-modern" style="background: #f0f9ff; border-left: 5px solid var(--blue); margin-bottom: 2.5rem;">
+    <div style="color: #0369a1; font-weight: 500; font-size: 0.9rem;">
+        <strong style="color: var(--navy);">Audit Tip:</strong> Specifying a <strong>Reconciliation Period</strong> enables automated cross-verification against sales logs.
+    </div>
+</div>
 
-            {% if error %}
-            <div style="background: #fef2f2; color: #991b1b; padding: 1.25rem; border-radius: 14px; margin-bottom: 2rem; border: 1px solid #fecaca; font-weight: 700;">
-                Error: {{ error }}
-            </div>
-            {% endif %}
+{% if error %}
+<div class="action-bar-modern" style="background: #fff1f2; border-left: 5px solid var(--rose); margin-bottom: 2rem;">
+    <div style="color: #9f1239; font-weight: 700;">⚠ Error: {{ error }}</div>
+</div>
+{% endif %}
 
-            <div class="form-grid">
+            <div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2.5rem;">
+    <div class="card" style="padding: 2rem;">
+        <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
+            Receipt Parameters
+        </h3>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
-                    <label class="label">Date Received</label>
-                    <input type="date" name="date" value="{{ today }}" required>
+                    <label class="form-label" for="date">Date Received</label>
+                    <input type="date" name="date" id="date" value="{{ today }}" required class="form-input">
                 </div>
                 <div class="form-group">
-                    <label class="label">From Personnel</label>
-                    <select name="sales_person_id" required>
+                    <label class="form-label" for="sales_person_id">Personnel Member</label>
+                    <select name="sales_person_id" id="sales_person_id" required class="form-input">
                         <option value="">Select Member...</option>
                         {% for sp in sales_persons %}
-                        <option value="{{ sp.pk }}">{{ sp.name }} ({{ sp.get_channel_display }})</option>
+                        <option value="{{ sp.pk }}" {% if preselected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>{{ sp.name }} ({{ sp.get_channel_display }})</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
 
-            <div class="form-grid" style="background: #f8fafc; padding: 2rem; border-radius: 20px; border: 1px solid #f1f5f9; margin-bottom: 2rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--slate-50); border-radius: 12px; border: 1px solid var(--slate-100);">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="label">Cash Received</label>
-                    <div class="currency-input">
-                        <span class="currency-symbol">₦</span>
-                        <input type="number" name="cash_received" step="0.01" placeholder="0.00">
-                    </div>
+                    <label class="form-label" for="cash_received">Cash (₦)</label>
+                    <input type="number" name="cash_received" id="cash_received" step="0.01" placeholder="0.00" class="form-input" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="label">Transfer Received</label>
-                    <div class="currency-input">
-                        <span class="currency-symbol">₦</span>
-                        <input type="number" name="transfer_received" step="0.01" placeholder="0.00">
+                    <label class="form-label" for="transfer_received">Transfer (₦)</label>
+                    <input type="number" name="transfer_received" id="transfer_received" step="0.01" placeholder="0.00" class="form-input" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
+                </div>
+            </div>
+
+            <div style="background: #fffbeb; padding: 1.5rem; border-radius: 16px; border: 1px solid #fef3c7; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 1rem 0; font-size: 0.7rem; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Reconciliation Correlation (Optional)</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="period_start">Start Date</label>
+                        <input type="date" name="period_start" id="period_start" class="form-input">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" for="period_end">End Date</label>
+                        <input type="date" name="period_end" id="period_end" class="form-input">
                     </div>
                 </div>
             </div>
 
-            <div style="background: #fffbeb; padding: 2rem; border-radius: 20px; border: 1px solid #fef3c7; margin-bottom: 2rem;">
-                <h4 style="margin: 0 0 1rem 0; font-size: 0.85rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Optional: Reconciliation Period</h4>
-                <div class="form-grid">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="label">Start Date</label>
-                        <input type="date" name="period_start">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="label">End Date</label>
-                        <input type="date" name="period_end">
-                    </div>
-                </div>
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="notes">Audit Remarks</label>
+                <textarea name="notes" id="notes" class="form-input" rows="3" placeholder="Additional receipt details..."></textarea>
             </div>
 
-            <div class="form-group">
-                <label class="label">Notes / Remarks</label>
-                <textarea name="notes" rows="3" placeholder="Any additional details..."></textarea>
+            <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--slate-100);">
+                <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.8rem 2rem;">
+                    Secure Receipt Record
+                </button>
+                <a href="/reconciliation/dashboard/" class="btn-modern" style="padding: 0.8rem 2rem; background: var(--slate-100); color: var(--slate-600);">
+                    Cancel
+                </a>
             </div>
+        </form>
+    </div>
 
-            <button type="submit" class="btn-submit">Confirm and Save Receipt</button>
-            <div style="text-align: center; margin-top: 1.5rem;">
-                <a href="/reconciliation/dashboard/" style="color: #64748b; font-weight: 700; font-size: 0.9rem; text-decoration: none;">Cancel and Return</a>
-            </div>
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card" style="padding: 1.5rem; background: #f8fafc; border: 1px dashed var(--slate-300);">
+            <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; text-transform: uppercase;">
+                Verification Guide
+            </h4>
+            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--slate-600); display: flex; flex-direction: column; gap: 0.75rem;">
+                <li>Verify transfer success on banking portal before logging.</li>
+                <li>Count physical cash twice for accuracy.</li>
+                <li>Ensure the personnel name matches the depositor.</li>
+            </ul>
+        </div>
+    </div>
+</div>
         </form>
     </div>
 </div>

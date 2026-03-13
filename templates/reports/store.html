@@ -3,144 +3,97 @@
 {% block nav_rp_store_md %}active{% endblock %}
 {% block nav_rp_store %}active{% endblock %}
 {% block content %}
-<style>
-  .store-hero {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-radius: 14px; padding: 2rem 2.5rem;
-    margin-bottom: 2.5rem; border: 1px solid #334155;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  }
-  .store-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 1rem; }
-  .store-hero-sub { font-size: 0.95rem; color: #94a3b8; margin-top: 0.5rem; max-width: 600px; }
+{# Standardized Store Inventory Styles #}
 
-  .inventory-section { margin-bottom: 3.5rem; }
-  .section-header-custom {
-    display: flex; align-items: center; gap: 1rem;
-    margin-bottom: 1.5rem; padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
-  }
-  .section-title-custom { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: .75rem; }
-
-  .modern-stats-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1.5rem; margin-bottom: 1.5rem;
-  }
-  .modern-stat-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    display: flex; flex-direction: column; position: relative; overflow: hidden;
-  }
-  .modern-stat-card::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
-  }
-  .stat-raw::before { background: #64748b; }
-  .stat-clean::before { background: #10b981; }
-  
-  .modern-stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; }
-  .modern-stat-value { font-size: 2.25rem; font-weight: 900; color: #0f172a; line-height: 1; }
-  .modern-stat-unit { font-size: 0.75rem; color: #94a3b8; margin-top: 0.4rem; font-weight: 600; }
-  
-  .text-danger-custom { color: #ef4444 !important; }
-  .text-warning-custom { color: #f59e0b !important; }
-
-  .premium-table-wrapper {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  }
-  .premium-table { width: 100%; border-collapse: collapse; }
-  .premium-table th {
-    background: #f8fafc; padding: 1rem 1.25rem; text-align: left;
-    font-size: .75rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: .5px; color: #475569; border-bottom: 1px solid #e2e8f0;
-  }
-  .premium-table td { padding: 1.25rem; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: .95rem; }
-  .premium-table tr:last-child td { border-bottom: none; }
-  .premium-table tr:hover td { background: #fbfcfe; }
-</style>
-
-<div class="store-hero">
-  <h1 class="store-hero-title">🏬 Store Inventory Balances</h1>
-  <p class="store-hero-sub">Live snapshot of all stock levels across the factory pipeline — from raw intake to finished export goods.</p>
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏬 Live Inventory Audit</span>
+            <h1 class="hero-title" style="color: #fff;">Store Inventory Balances</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">Real-time snapshot of stock levels across the factory pipeline — from intake to finished export goods.</p>
+        </div>
+    </div>
 </div>
 
 {# RAW MATERIAL SECTION #}
-<div class="inventory-section">
-  <div class="section-header-custom">
-    <div class="section-title-custom">📦 Raw Material Store <span style="font-weight: 400; color: #64748b; font-size: .9rem;">— Dirty Stock</span></div>
-  </div>
-  <div class="modern-stats-grid">
-    <div class="modern-stat-card stat-raw">
-      <div class="modern-stat-label">🌽 Maize Balance</div>
-      <div class="modern-stat-value {% if dirty_raw.maize == 0 %}text-danger-custom{% endif %}">{{ dirty_raw.maize }}</div>
-      <div class="modern-stat-unit">100kg bags on hand</div>
+<div style="margin-bottom: 3.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">📦</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Raw Material Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Unprocessed Intake</small></h3>
     </div>
-    <div class="modern-stat-card stat-raw">
-      <div class="modern-stat-label">🌾 Wheat Balance</div>
-      <div class="modern-stat-value {% if dirty_raw.wheat == 0 %}text-danger-custom{% endif %}">{{ dirty_raw.wheat }}</div>
-      <div class="modern-stat-unit">100kg bags on hand</div>
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="padding: 2rem; border-left: 4px solid var(--slate-400);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">🌽 Maize Balance</div>
+            <div class="font-bold {% if dirty_raw.maize == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ dirty_raw.maize }}</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">100kg Bags On Hand</div>
+        </div>
+        <div class="card" style="padding: 2rem; border-left: 4px solid var(--slate-400);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">🌾 Wheat Balance</div>
+            <div class="font-bold {% if dirty_raw.wheat == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ dirty_raw.wheat }}</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">100kg Bags On Hand</div>
+        </div>
     </div>
-  </div>
 </div>
 
 {# CLEAN RAW SECTION #}
-<div class="inventory-section">
-  <div class="section-header-custom">
-    <div class="section-title-custom">🧺 Clean Raw Store <span style="font-weight: 400; color: #64748b; font-size: .9rem;">— Post-Cleaning</span></div>
-  </div>
-  <div class="modern-stats-grid">
-    <div class="modern-stat-card stat-clean">
-      <div class="modern-stat-label">Clean Maize</div>
-      <div class="modern-stat-value {% if clean_maize == 0 %}text-warning-custom{% endif %}">{{ clean_maize }}</div>
-      <div class="modern-stat-unit">bags ready for production</div>
+<div style="margin-bottom: 3.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">🧺</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Clean Raw Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Post-Cleaning / Production Ready</small></h3>
     </div>
-    <div class="modern-stat-card stat-clean">
-      <div class="modern-stat-label">Clean Wheat</div>
-      <div class="modern-stat-value {% if clean_wheat == 0 %}text-warning-custom{% endif %}">{{ clean_wheat }}</div>
-      <div class="modern-stat-unit">bags ready for production</div>
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+        <div class="card" style="padding: 2rem; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Clean Maize</div>
+            <div class="font-bold {% if clean_maize == 0 %}text-amber{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ clean_maize }}</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">Bags ready for milling</div>
+        </div>
+        <div class="card" style="padding: 2rem; border-left: 4px solid var(--emerald);">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Clean Wheat</div>
+            <div class="font-bold {% if clean_wheat == 0 %}text-amber{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ clean_wheat }}</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">Bags ready for milling</div>
+        </div>
     </div>
-  </div>
 </div>
 
 {# FINISHED GOODS SECTION #}
-<div class="inventory-section">
-  <div class="section-header-custom">
-    <div class="section-title-custom">🏭 Finished Goods Store <span style="font-weight: 400; color: #64748b; font-size: .9rem;">— Ready for Sale</span></div>
-  </div>
-  <div class="premium-table-wrapper">
-    <table class="premium-table">
-      <thead>
-        <tr>
-          <th>S/N</th>
-          <th>Product Size</th>
-          <th class="num">Maize (Sacks)</th>
-          <th class="num">Wheat (Sacks)</th>
-          <th class="num">Net Balance</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for size, maize_in, wheat_in, net in fg_rows %}
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td><strong style="color: #0f172a;">{{ size }}</strong></td>
-          <td class="num">{{ maize_in }}</td>
-          <td class="num">{{ wheat_in }}</td>
-          <td class="num" style="font-weight: 900; font-family: monospace; font-size: 1.1rem; color: {% if net == 0 %}#f59e0b{% else %}#10b981{% endif %};">
-            {{ net }}
-          </td>
-          <td>
-            {% if net == 0 %}
-            <span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #ffedd5;">OUT OF STOCK</span>
-            {% else %}
-            <span class="badge" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;">IN STOCK</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" style="padding: 3rem; text-align: center; color: #94a3b8;">No finished goods data available.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">🏭</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Finished Goods Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Packaging Optimized / Ready for Departure</small></h3>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>SKU / Product Size</th>
+              <th class="num">Maize (Sacks)</th>
+              <th class="num">Wheat (Sacks)</th>
+              <th class="num">Consolidated Balance</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for size, maize_in, wheat_in, net in fg_rows %}
+            <tr>
+              <td><strong style="color: var(--navy); font-size: 1.1rem;">{{ size }}</strong></td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ maize_in }}</td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ wheat_in }}</td>
+              <td class="num font-bold {% if net == 0 %}text-amber{% else %}text-emerald{% endif %}" style="font-family: 'JetBrains Mono', monospace; font-size: 1.2rem;">
+                {{ net }}
+              </td>
+              <td>
+                {% if net == 0 %}
+                <span style="font-size: 0.65rem; font-weight: 900; background: #fff7ed; color: #c2410c; padding: 4px 12px; border-radius: 6px; text-transform: uppercase; border: 1px solid #ffedd5;">OUT OF STOCK</span>
+                {% else %}
+                <span style="font-size: 0.65rem; font-weight: 900; background: #f0fdf4; color: #166534; padding: 4px 12px; border-radius: 6px; text-transform: uppercase; border: 1px solid #bbf7d0;">AVAILABLE</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No finished goods currently in tactical inventory.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -71,147 +71,133 @@
   .history-card { background: #fff; border-radius: 14px; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.05); overflow: hidden; }
 </style>
 
-<div class="thresh-hero" style="position:relative;z-index:1;">
-  <span class="hero-label">⚙️ MD Configuration</span>
-  <h1 class="hero-title">Production Loss Thresholds</h1>
-  <p class="hero-sub">
-    Set the acceptable loss ranges for milling and packaging. The system will automatically classify
-    every batch as Normal, Warning, or Critical based on your active thresholds.
-  </p>
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa;">⚙️ Global Configuration</span>
+            <h1 class="hero-title" style="color: #fff;">Production Loss Thresholds</h1>
+            <p class="hero-subtitle" style="color: var(--slate-300);">Define operational tolerance for milling and packaging yield variation.</p>
+        </div>
+    </div>
 </div>
 
 {# LEGEND #}
-<div class="legend-row">
-  <div class="legend-card normal">
-    <div class="legend-icon">✅</div>
-    <div class="legend-label normal">Normal</div>
-    <div class="legend-desc">Loss is within the expected operational range. No action required.</div>
+<div class="balance-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 3rem; gap: 1.25rem;">
+  <div class="balance-card" style="border-left: 4px solid var(--emerald);">
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✅</div>
+    <div class="balance-label" style="color: var(--emerald);">Optimal Yield</div>
+    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.25rem;">Loss within benchmark range. Efficiency is maximized.</div>
   </div>
-  <div class="legend-card warning">
-    <div class="legend-icon">⚠️</div>
-    <div class="legend-label warning">Warning</div>
-    <div class="legend-desc">Loss exceeds the normal threshold. Manager review is recommended.</div>
+  <div class="balance-card" style="border-left: 4px solid var(--amber);">
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚠️</div>
+    <div class="balance-label" style="color: var(--amber);">Warning Variance</div>
+    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.25rem;">Exceeds baseline target. Manager oversight advised.</div>
   </div>
-  <div class="legend-card critical">
-    <div class="legend-icon">🚨</div>
-    <div class="legend-label critical">Critical</div>
-    <div class="legend-desc">Loss is dangerously high. Immediate management escalation required.</div>
+  <div class="balance-card" style="border-left: 4px solid var(--rose);">
+    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🚨</div>
+    <div class="balance-label" style="color: var(--rose);">Critical Deviation</div>
+    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.25rem;">Dangerous yield loss. Immediate operational audit required.</div>
   </div>
 </div>
 
 {# SET NEW THRESHOLD FORM #}
-<div class="form-card">
-  <h3 class="section-header">📋 Set New Threshold</h3>
+<div class="form-card" style="margin-bottom: 3rem;">
+  <div class="action-bar-modern" style="margin-bottom: 1.5rem;">
+    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📋 Configure New Performance Baseline</h3>
+  </div>
 
-  <div class="threshold-note">
-    ℹ️ New thresholds are versioned by <strong>Effective From</strong> date.
-    The most recent threshold before a batch's date will be used automatically.
-    Existing batches are not retroactively re-flagged.
+  <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.75rem;">
+    <span style="font-size: 1.25rem;">ℹ️</span>
+    <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 500;">New thresholds are versioned. Future batches will automatically reference the most recent effective configuration.</p>
   </div>
 
   {% if error %}
-  <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.85rem 1rem;margin-bottom:1.25rem;color:#991b1b;font-weight:600;">
+  <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:1rem; margin-bottom:1.5rem; color:#991b1b; font-weight:700;">
     ❌ {{ error }}
   </div>
   {% endif %}
 
   <form method="post">
     {% csrf_token %}
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Material Type *</label>
-        <select name="material_type" required>
-          <option value="maize">🌽 Maize</option>
-          <option value="wheat">🌾 Wheat</option>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+      <div class="form-group-modern">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Material Stream</label>
+        <select name="material_type" required style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;">
+          <option value="maize">🌽 Maize Processing</option>
+          <option value="wheat">🌾 Wheat Processing</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Normal Max Loss % *</label>
-        <input type="number" name="normal_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0" required>
-        <div class="pct-hint">Loss at or below this % → ✅ Normal</div>
+      <div class="form-group-modern">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Normal Limit (%)</label>
+        <input type="number" name="normal_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0" required style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;">
+        <p style="font-size: 0.7rem; color: var(--slate-400); margin-top: 0.4rem;">Loss ≤ this % → ✅ Normal</p>
       </div>
-      <div class="form-group">
-        <label>Warning Max Loss % *</label>
-        <input type="number" name="warning_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 19.0" required>
-        <div class="pct-hint">Loss between Normal Max and this % → ⚠️ Warning. Above this → 🚨 Critical</div>
+      <div class="form-group-modern">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Warning Limit (%)</label>
+        <input type="number" name="warning_max_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 19.0" required style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;">
+        <p style="font-size: 0.7rem; color: var(--slate-400); margin-top: 0.4rem;">Above this → 🚨 Critical Hazard</p>
       </div>
-      <div class="form-group">
-        <label>Expected Loss % (Benchmark)</label>
-        <input type="number" name="expected_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0">
-        <div class="pct-hint">Informational benchmark, not used for flagging</div>
+      <div class="form-group-modern">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Benchmark Goal (%)</label>
+        <input type="number" name="expected_loss_pct" min="0" max="100" step="0.1" placeholder="e.g. 9.0" style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;">
+        <p style="font-size: 0.7rem; color: var(--slate-400); margin-top: 0.4rem;">Informational Target Only</p>
       </div>
-      <div class="form-group">
-        <label>Effective From *</label>
-        <input type="date" name="effective_from" value="{{ today }}" required>
-        <div class="pct-hint">All batches on/after this date use this threshold</div>
+      <div class="form-group-modern">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Effective Activation</label>
+        <input type="date" name="effective_from" value="{{ today }}" required style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;">
       </div>
-      <div class="form-group" style="grid-column: 1 / -1;">
-        <label>Notes (Optional)</label>
-        <textarea name="notes" rows="2" placeholder="Reason for change, seasonal adjustment, etc."></textarea>
+      <div class="form-group-modern" style="grid-column: 1 / -1;">
+        <label style="display:block; font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--slate-500); margin-bottom:0.5rem;">Adjustment Context</label>
+        <textarea name="notes" rows="2" placeholder="Reason for adjusting thresholds..." style="width:100%; padding:0.75rem; border:1px solid var(--slate-200); border-radius:8px;"></textarea>
       </div>
     </div>
-    <div style="margin-top: 1.5rem; display: flex; gap: .75rem;">
-      <button type="submit" class="btn btn-primary" style="background:#0f172a; border-color:#0f172a; padding: .65rem 1.75rem; font-weight: 700;">
-        💾 Save New Threshold
+    <div style="display: flex; gap: 1rem;">
+      <button type="submit" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.85rem 2rem; font-weight: 800;">
+        Commit Threshold Policy
       </button>
-      <a href="{% url 'production:dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <a href="{% url 'production:dashboard' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-600); padding: 0.85rem 2rem; text-align: center;">
+        Return to Ops
+      </a>
     </div>
   </form>
 </div>
 
 {# THRESHOLD HISTORY TABLE #}
-<div class="history-card">
-  <div class="section-header" style="padding: 1.25rem 1.5rem; margin: 0; border-bottom: 1px solid var(--border); background: #f8fafc;">
-    📜 Threshold History
-    <span style="font-weight: 400; font-size: .82rem; color: var(--muted); margin-left: .5rem;">Most recent is active for new batches</span>
-  </div>
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Material</th>
-          <th>Effective From</th>
-          <th class="num">Normal Max %</th>
-          <th class="num">Warning Max %</th>
-          <th class="num">Expected %</th>
-          <th>Set By</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for thresh in thresholds %}
-        <tr>
-          <td>
-            {% if thresh.material_type == 'maize' %}🌽{% else %}🌾{% endif %}
-            <strong>{{ thresh.material_type|upper }}</strong>
-            {% if forloop.first %}<span class="active-badge">Active</span>{% endif %}
-          </td>
-          <td style="white-space:nowrap;">{{ thresh.effective_from }}</td>
-          <td class="num">
-            <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-family:monospace;font-weight:700;">
-              ≤ {{ thresh.normal_max_loss_pct }}%
-            </span>
-          </td>
-          <td class="num">
-            <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:4px;font-family:monospace;font-weight:700;">
-              ≤ {{ thresh.warning_max_loss_pct }}%
-            </span>
-          </td>
-          <td class="num">
-            <span style="font-family:monospace;color:var(--muted);">{{ thresh.expected_loss_pct }}%</span>
-          </td>
-          <td>{{ thresh.created_by.full_name }}</td>
-          <td style="font-size:.82rem;color:var(--muted);">{{ thresh.notes|default:"—"|truncatechars:50 }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="7" style="text-align:center;padding:3rem;color:var(--muted);">
-            No thresholds configured yet. Batches will use the <strong>default 9% / 19%</strong> thresholds until you set custom ones above.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
+<div class="action-bar-modern" style="margin-bottom: 1.5rem;">
+    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📜 Threshold Configuration History</h3>
+</div>
+
+<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>Stream</th>
+                <th>Effective From</th>
+                <th class="num">Normal Cap</th>
+                <th class="num">Warning Cap</th>
+                <th class="num">Benchmark</th>
+                <th>Architect</th>
+                <th>Context</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for thresh in thresholds %}
+            <tr>
+                <td>
+                    <strong style="color: var(--navy);">{% if thresh.material_type == 'maize' %}🌽 MAIZE{% else %}🌾 WHEAT{% endif %}</strong>
+                    {% if forloop.first %}<span class="badge-soft badge-soft-success" style="margin-left: 0.5rem;">ACTIVE</span>{% endif %}
+                </td>
+                <td><span style="font-family: inherit; font-weight: 600; color: var(--slate-600);">{{ thresh.effective_from }}</span></td>
+                <td class="num"><span class="badge-soft badge-soft-success" style="font-family: monospace; font-weight: 800;">≤ {{ thresh.normal_max_loss_pct }}%</span></td>
+                <td class="num"><span class="badge-soft badge-soft-warning" style="font-family: monospace; font-weight: 800;">≤ {{ thresh.warning_max_loss_pct }}%</span></td>
+                <td class="num"><span style="color: var(--slate-400); font-family: monospace;">{{ thresh.expected_loss_pct }}%</span></td>
+                <td><strong style="color: var(--navy);">{{ thresh.created_by.full_name }}</strong></td>
+                <td><span style="font-size: 0.8rem; color: var(--slate-500);">{{ thresh.notes|default:"No context"|truncatechars:40 }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="text-align:center; padding:3rem; color:var(--slate-400);">No custom thresholds configured. System using fallback 9%/19% targets.</td></tr>
+            {% endfor %}
+        </tbody>
     </table>
-  </div>
 </div>
 {% endblock %}

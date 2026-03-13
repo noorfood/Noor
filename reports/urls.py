@@ -11,5 +11,6 @@ urlpatterns = [
     path('sales/', views.sales_report, name='sales'),
     path('outstanding/', views.outstanding_report, name='outstanding'),
     path('flow/', views.company_flow, name='flow'),
+    path('financial-summary/', views.financial_summary, name='financial_summary'),
 ]
 

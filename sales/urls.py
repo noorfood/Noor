@@ -32,6 +32,11 @@ urlpatterns = [
     # ── Company Direct Sales & Brand (GM only — separate flow) ────────────
     path('company-sale/new/', views.record_company_sale, name='record_company_sale'),
     path('bran-sale/new/', views.record_bran_sale, name='record_bran_sale'),
+    
+    # ── GM Factory-Gate Direct Sales & MD Confirmation ─────────────────────
+    path('direct-sale/new/', views.record_direct_sale, name='record_direct_sale'),
+    path('direct-sales/', views.list_direct_sales, name='list_direct_sales'),
+    path('direct-sale/<int:pk>/confirm/', views.md_confirm_direct_sale, name='md_confirm_direct_sale'),
 
     # ── Legacy routes (historical SalesRecord / SalesPayment viewing) ──────
     path('list/', views.list_sales, name='list'),

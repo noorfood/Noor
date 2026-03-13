@@ -3,68 +3,52 @@
 {% block nav_cs_issue %}active{% endblock %}
 {% block content %}
 <style>
-    .cs-hero {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        padding: 2rem; border-radius: 12px; margin-bottom: 2rem;
-        color: white; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
+        transition: all 0.2s;
     }
-    .balance-grid {
-        display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem;
-    }
-    .balance-card {
-        background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px);
-        padding: 1.25rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .balance-card .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; opacity: 0.9; margin-bottom: 0.5rem; }
-    .balance-card .value { font-size: 1.75rem; font-weight: 800; }
-    
-    .form-container {
-        display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;
-    }
-    .sidebar-info {
-        background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px;
-    }
-    .info-item { margin-bottom: 1rem; }
-    .info-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-    .info-item span { font-size: 1rem; color: #1e293b; font-weight: 500; }
+    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); background: #fff; }
 </style>
 
-<div class="cs-hero">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <h1 style="margin:0; font-size:1.75rem;">📤 Issue to Production</h1>
-            <p style="margin:0.5rem 0 0 0; opacity:0.9;">Release clean grain bags to the Manufacturing department.</p>
+            <span class="hero-badge" style="background: rgba(59, 130, 246, 0.1); color: var(--blue);">📤 Outbound</span>
+            <h1 class="hero-title">Issue to Production</h1>
+            <p class="hero-subtitle">Release clean grain bags to the Manufacturing department.</p>
         </div>
-        <a href="/clean-store/list/" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:none;">View Clean Registry</a>
+        <a href="/clean-store/list/" class="btn-modern" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);">View Clean Registry</a>
     </div>
+</div>
 
-    <div class="balance-grid">
-        <div class="balance-card">
-            <div class="label">Available Clean Maize</div>
-            <div class="value">{{ balance_maize }} <small style="font-size:0.5em; opacity:0.7;">Bags</small></div>
-        </div>
-        <div class="balance-card">
-            <div class="label">Available Clean Wheat</div>
-            <div class="value">{{ balance_wheat }} <small style="font-size:0.5em; opacity:0.7;">Bags</small></div>
-        </div>
+<div class="balance-grid" style="margin-bottom: 2rem;">
+    <div class="card" style="padding: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Available Clean Maize</div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_maize }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
+    </div>
+    <div class="card" style="padding: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Available Clean Wheat</div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_wheat }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
     </div>
 </div>
 
 {% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
 
-<div class="form-container">
-    <div class="form-card" style="padding:2rem;">
+<div class="layout-grid" style="grid-template-columns: 1fr 300px; gap: 2rem; align-items: start;">
+    <div class="card" style="padding:2rem;">
         <form method="post">
             {% csrf_token %}
             
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Issuance Date*</label>
-                    <input type="date" name="date" value="{{ today }}" required class="form-control">
+            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div>
+                    <label class="form-label">Issuance Date*</label>
+                    <input type="date" name="date" value="{{ today }}" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Material Type*</label>
-                    <select name="material_type" required class="form-control">
+                <div>
+                    <label class="form-label">Material Type*</label>
+                    <select name="material_type" required class="form-input">
                         <option value="">— Select Material —</option>
                         {% for val, label in material_choices %}
                         <option value="{{ val }}">{{ label|upper }}</option>
@@ -73,14 +57,14 @@
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Quantity (100kg Bags)*</label>
-                    <input type="number" name="num_bags" min="1" placeholder="e.g. 20" required class="form-control">
+            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div>
+                    <label class="form-label">Quantity (100kg Bags)*</label>
+                    <input type="number" name="num_bags" min="1" placeholder="e.g. 20" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Issue To (Prod Officer)*</label>
-                    <select name="issued_to_id" required class="form-control">
+                <div>
+                    <label class="form-label">Issue To (Prod Officer)*</label>
+                    <select name="issued_to_id" required class="form-input">
                         <option value="">— Select Officer —</option>
                         {% for p in prod_officers %}
                         <option value="{{ p.pk }}">{{ p.full_name }}</option>
@@ -89,36 +73,36 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:2rem;">
-                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Operation Notes</label>
-                <textarea name="notes" rows="3" placeholder="Reference production batch or specific instructions..." class="form-control"></textarea>
+            <div style="margin-bottom:2rem;">
+                <label class="form-label">Operation Notes</label>
+                <textarea name="notes" rows="3" placeholder="Reference production batch or specific instructions..." class="form-input"></textarea>
             </div>
 
-            <div style="display:flex; align-items:center; gap:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
-                <button type="submit" class="btn btn-primary btn-lg" style="padding:10px 24px; font-weight:700;">
+            <div style="display:flex; align-items:center; gap:1rem; padding-top:1.5rem; border-top:1px solid var(--slate-100);">
+                <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--blue); border-color: var(--blue); padding: 0.75rem 1.75rem;">
                     Confirm & Release Bags
                 </button>
-                <span style="color:#64748b; font-size:0.85rem;">⚠️ Stock is deducted immediately from Clean Store.</span>
+                <span style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">⚠️ Stock is deducted immediately from Clean Store.</span>
             </div>
         </form>
     </div>
 
-    <div class="sidebar-info">
-        <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #0f172a;">Identity & Security</h3>
+    <div class="card" style="padding: 1.5rem; background: var(--slate-50); border: 1px solid var(--slate-200);">
+        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.1rem; color: var(--navy); font-weight: 800;">Identity & Security</h3>
         
-        <div class="info-item">
-            <label>Issuing Store Officer</label>
-            <span>{{ current_user.full_name }}</span>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Issuing Store Officer</label>
+            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">{{ current_user.full_name }}</span>
         </div>
         
-        <div class="info-item">
-            <label>Role</label>
-            <span style="text-transform: capitalize;">{{ current_user.role }}</span>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Role</label>
+            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700; text-transform: capitalize;">{{ current_user.role }}</span>
         </div>
         
-        <hr style="border:0; border-top:1px solid #e2e8f0; margin:1.5rem 0;">
+        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1.5rem 0;">
         
-        <p style="font-size:0.8rem; color:#64748b; line-height:1.5;">
+        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6; font-weight: 500;">
             By saving this issuance, you affirm that the clean grain has been physically moved to the manufacturing floor. The Production Officer will be held accountable for this stock upon receipt.
         </p>
     </div>

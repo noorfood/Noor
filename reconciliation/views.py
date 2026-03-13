@@ -17,8 +17,10 @@ def dashboard(request):
     flags = ReconciliationFlag.objects.filter(resolved=False).order_by('-date', '-created_at')[:5]
 
     # Overall Stats
-    # Actual money collected from personnel
-    total_actual = MoneyReceipt.objects.aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
+    # Actual money collected from personnel: Remittances + Initial Handovers
+    remittances = MoneyReceipt.objects.aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
+    initial_handovers = SalesResult.objects.aggregate(t=Sum('amount_returned'))['t'] or 0
+    total_actual = float(remittances) + float(initial_handovers)
     
     # Expected money from sales results
     total_expected = SalesResult.objects.aggregate(t=Sum('net_due_to_company'))['t'] or 0
@@ -38,6 +40,7 @@ def record_money(request):
     user = get_current_user(request)
     sales_persons = SalesPerson.objects.filter(status='active').order_by('name')
     error = None
+    preselected_sp_id = request.GET.get('sp')
 
     if request.method == 'POST':
         try:
@@ -112,6 +115,7 @@ def record_money(request):
         'current_user': user,
         'sales_persons': sales_persons,
         'error': error,
+        'preselected_sp_id': preselected_sp_id,
         'today': datetime.date.today().isoformat(),
     })
 
@@ -133,15 +137,28 @@ def list_view(request):
     persons_qs = SalesPerson.objects.all().order_by('name')
     if f_sp:
         persons_qs = persons_qs.filter(pk=f_sp)
+    elif user.role == 'sales_manager':
+        # SM only sees their own team — persons they have distributed to or recorded results for
+        my_sp_ids = list(
+            SalesDistributionRecord.objects.filter(recorded_by=user).values_list('sales_person_id', flat=True).distinct()
+        )
+        persons_qs = persons_qs.filter(pk__in=my_sp_ids)
 
     for sp in persons_qs:
-        # 1. Finance
-        expected_finance = float(SalesResult.objects.filter(sales_person=sp).aggregate(t=Sum('net_due_to_company'))['t'] or 0)
-        actual_finance   = float(MoneyReceipt.objects.filter(sales_person=sp).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0)
+        # 1. Finance (Include initial handovers from SalesResult)
+        results_qs = SalesResult.objects.filter(sales_person=sp)
+        expected_finance = float(results_qs.aggregate(t=Sum('net_due_to_company'))['t'] or 0)
         
-        # 2. Stock
-        total_given = SalesDistributionRecord.objects.filter(sales_person=sp).aggregate(t=Sum('qty_given'))['t'] or 0
-        total_sold  = SalesResult.objects.filter(sales_person=sp).aggregate(t=Sum('qty_sold'))['t'] or 0
+        remitted = float(MoneyReceipt.objects.filter(sales_person=sp).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0)
+        initial_paid = float(results_qs.aggregate(t=Sum('amount_returned'))['t'] or 0)
+        actual_finance = remitted + initial_paid
+        
+        # 2. Stock (Use piece conversion 10:1)
+        total_given = float(SalesDistributionRecord.objects.filter(sales_person=sp).aggregate(t=Sum('qty_given'))['t'] or 0)
+        
+        # We iterate over results to get piece-accurate totals
+        total_sold  = sum(r.equivalent_sacks_sold for r in results_qs)
+        total_ret   = sum(r.equivalent_sacks_returned for r in results_qs)
         
         if expected_finance == 0 and total_given == 0:
             continue # Skip if no activity
@@ -153,7 +170,8 @@ def list_view(request):
             'finance_diff': expected_finance - actual_finance,
             'total_given': total_given,
             'total_sold': total_sold,
-            'stock_diff': total_given - total_sold,
+            'total_ret': total_ret,
+            'stock_diff': total_given - total_sold - total_ret,
             'status': 'settled' if (expected_finance - actual_finance) <= 0.01 else 'pending',
         })
 
@@ -162,6 +180,7 @@ def list_view(request):
     grand_actual   = sum(r['actual_finance'] for r in rows)
     grand_given    = sum(r['total_given'] for r in rows)
     grand_sold     = sum(r['total_sold'] for r in rows)
+    grand_ret      = sum(r['total_ret'] for r in rows)
 
     return render(request, 'reconciliation/list.html', {
         'current_user': user,
@@ -173,7 +192,7 @@ def list_view(request):
         'grand_diff': grand_expected - grand_actual,
         'grand_given': grand_given,
         'grand_sold': grand_sold,
-        'grand_stock_diff': grand_given - grand_sold,
+        'grand_stock_diff': grand_given - grand_sold - grand_ret,
     })
 
 

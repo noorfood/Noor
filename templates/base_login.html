@@ -1,15 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | NOOR FOODS QUALITY SERVICES NIG LTD</title>
+    <title>Login | Noor Foods System</title>
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css">
-</head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
 
+        /* Abstract decorative background rings */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        body::before {
+            width: 80vw;
+            height: 80vw;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.08) 0%, transparent 60%);
+            top: -40vw;
+            right: -20vw;
+            z-index: 0;
+        }
+        body::after {
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+            bottom: -30vw;
+            left: -10vw;
+            z-index: 0;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
 <body>
     {% block content %}{% endblock %}
 </body>
-
 </html>

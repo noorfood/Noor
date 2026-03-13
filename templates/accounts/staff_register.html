@@ -2,14 +2,18 @@
 {% block title %}Register Staff{% endblock %}
 {% block nav_md_staff %}active{% endblock %}
 {% block content %}
-<div class="page-header">
-    <div class="page-title">Register New Staff</div>
-    <div class="page-subtitle">Create a new user account and assign their system role.</div>
+<div class="page-hero">
+    <div>
+        <span class="hero-badge">🛡️ Administration / Personnel</span>
+        <h1 class="hero-title">Register New Staff</h1>
+        <p class="hero-subtitle">Create a new user account and assign their system role.</p>
+    </div>
 </div>
 
 {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-<div class="form-card">
+<div class="layout-grid">
+    <div class="card">
     <form method="POST">
         {% csrf_token %}
         <div class="form-section-title">Personal Details</div>
@@ -61,11 +65,21 @@
             </div>
         </div>
 
-        <div class="form-row mt-24">
-            <button type="submit" class="btn btn-primary">Register Staff</button>
-            <a href="{% url 'accounts:staff_list' %}" class="btn btn-secondary" style="margin-left: 12px;">Cancel</a>
+        <div class="form-actions mt-24">
+            <button type="submit" class="btn-modern btn-modern-primary">Register Staff</button>
+            <a href="{% url 'accounts:staff_list' %}" class="btn-modern" style="background: var(--slate-200); color: var(--slate-800); margin-left: 12px;">Cancel</a>
         </div>
     </form>
+    </div>
+    
+    <div class="sidebar-card">
+        <h3 style="margin-top:0; font-size:0.95rem; font-weight:800; color:var(--navy);">Role Information</h3>
+        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6;">
+            <strong>Administrators (MD)</strong> have full access to all logs, dashboards, and system settings.<br><br>
+            <strong>General Managers</strong> handle pricing, sales confirmation, and operational oversight.<br><br>
+            <strong>Store Officers</strong> manage physical inventory movement. They MUST be assigned to a specific store domain (Raw or Finished).
+        </p>
+    </div>
 </div>
 
 <script>

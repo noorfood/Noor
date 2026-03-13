@@ -13,4 +13,7 @@ urlpatterns = [
     # Sales targets
     path('targets/', views.list_targets, name='targets'),
     path('targets/new/', views.new_target, name='new_target'),
+    # Operational expenses
+    path('expenses/', views.list_expenses, name='expenses'),
+    path('expenses/new/', views.new_expense, name='new_expense'),
 ]

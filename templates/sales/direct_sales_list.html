@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Factory-Gate Direct Sales — Noor Foods{% endblock %}
+{% block nav_comp_sales %}active{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div>
+    <span class="hero-badge">🧾 Factory-Gate Direct Sales</span>
+    <h1 class="hero-title">Direct Sales Ledger</h1>
+    <p class="hero-subtitle">Complete ledger of company direct sales. All sales require MD confirmation.</p>
+  </div>
+  {% if current_user.role == 'manager' %}
+  <div>
+    <a href="{% url 'sales:record_direct_sale' %}" class="btn-modern btn-modern-primary">+ Record Direct Sale</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if pending_count > 0 and current_user.role == 'md' %}
+<div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; padding:1rem 1.5rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+  <div>
+    <div style="font-weight:800; color:#b45309;">⚠️ {{ pending_count }} Sales Pending Confirmation</div>
+    <div style="font-size:0.85rem; color:#92400e;">The General Manager has recorded sales that need your approval to finalize in the ledger.</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="table-wrapper">
+  <table class="premium-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Customer</th>
+        <th>Product</th>
+        <th style="text-align: right;">Value (₦)</th>
+        <th style="text-align: right;">Total Paid (₦)</th>
+        <th style="text-align: right;">Outstanding</th>
+        <th>Status</th>
+        {% if current_user.role == 'md' %}<th>Action</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sales %}
+      <tr {% if s.status == 'pending_md' %}style="background: var(--slate-50);"{% endif %}>
+        <td style="white-space:nowrap; font-weight:700; color:var(--slate-600);">{{ s.date }}</td>
+        <td>
+          <div style="font-weight:800; color:var(--navy); font-size: 1.1rem;">{{ s.buyer_name }}</div>
+          <div style="font-size:0.8rem; color:var(--slate-500); margin-top:2px;">GM: {{ s.recorded_by.full_name }}</div>
+        </td>
+        <td>
+          <span class="badge-soft badge-soft-info">{{ s.get_material_type_display|upper }}</span>
+          <strong style="margin-left:4px; color:var(--slate-800);">{{ s.qty_sold }}</strong> <span style="font-size: 0.85rem; color: var(--slate-500);">sacks</span>
+        </td>
+        <td style="text-align: right; font-family: monospace; font-size:1.15rem; font-weight: 800; color:var(--slate-800);">{{ s.total_sale_value|floatformat:0 }}</td>
+        <td style="text-align: right; font-family: monospace; font-size:1.15rem; font-weight: 800; color:var(--emerald);">{{ s.total_received|floatformat:0 }}</td>
+        <td class="{% if s.outstanding > 0 %}text-rose{% else %}text-slate-400{% endif %}" style="text-align: right; font-family: monospace; font-size:1.15rem; font-weight: 800;">{{ s.outstanding|floatformat:0 }}</td>
+        <td>
+          {% if s.status == 'pending_md' %}
+            <span class="badge-soft badge-soft-warning">⏱ PENDING MD</span>
+          {% elif s.status == 'confirmed' %}
+            <span class="badge-soft badge-soft-success">✓ CONFIRMED</span>
+          {% elif s.status == 'rejected' %}
+            <span class="badge-soft badge-soft-danger">✕ REJECTED</span>
+          {% endif %}
+        </td>
+        {% if current_user.role == 'md' %}
+        <td>
+          {% if s.status == 'pending_md' %}
+            <a href="{% url 'sales:md_confirm_direct_sale' s.pk %}" class="btn-modern btn-modern-primary" style="font-size:0.8rem; padding:0.3rem 0.8rem;">Review →</a>
+          {% else %}
+            <span style="font-size:0.85rem; color:var(--slate-400); font-weight: 600;">Closed</span>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="{% if current_user.role == 'md' %}8{% else %}7{% endif %}" style="text-align:center; padding:3rem; color:var(--slate-400);">No factory-gate direct sales have been recorded.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

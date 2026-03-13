@@ -13,20 +13,11 @@
   .hero-sub { color: #93c5fd; font-size: .9rem; }
 
   .metrics-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-  .metric { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.1rem 1.3rem; border-left: 4px solid #3b82f6; }
+  .metric { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.1rem 1.3rem; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
   .metric.warn { border-left-color: #f59e0b; }
   .metric.danger { border-left-color: #ef4444; }
   .metric-label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: #64748b; margin-bottom: .35rem; }
   .metric-value { font-size: 1.5rem; font-weight: 900; font-family: monospace; color: #0f172a; }
-
-  .table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  thead th { background: #0f172a; color: #fff; padding: .8rem 1rem; text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
-  tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody tr:hover { background: #eff6ff; }
-  tbody td { padding: .85rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  .num { text-align: right; font-family: monospace; }
 
   .badge-ok   { background: #d1fae5; color: #065f46; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
   .badge-pend { background: #fef3c7; color: #92400e; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
@@ -36,10 +27,8 @@
   .section-header { font-size: 1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0; }
   .action-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
   .btn-pill { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: .88rem; text-decoration: none; transition: all .2s; }
-  .btn-primary-pill   { background: #2563eb; color: #fff; }
+  .btn-primary-pill   { background: #2563eb; color: #fff; box-shadow: 0 2px 6px rgba(37,99,235,0.2); }
   .btn-primary-pill:hover { background: #1d4ed8; }
-  .btn-success-pill   { background: #059669; color: #fff; }
-  .btn-success-pill:hover { background: #047857; }
   .btn-back   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
   .btn-back:hover { background: #e2e8f0; }
 </style>
@@ -47,7 +36,7 @@
 <div class="page-hero">
   <span class="hero-label">📦 Goods Registry</span>
   <h1 class="hero-title">My Collections from FG Store</h1>
-  <p class="hero-sub">Goods the FG Store has recorded as collected by you. Accept or reject each one.</p>
+  <p class="hero-sub">Goods the Finished Goods Store has recorded as collected by you. Accept or reject each one.</p>
 </div>
 
 {% if current_user.role == 'sales_manager' %}
@@ -76,20 +65,20 @@
 
 <div class="section-header">📋 All Collections</div>
 
-<div class="table-card">
+<div class="table-wrapper" style="box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
   <table>
-    <thead>
+    <thead style="background: #1e293b;">
       <tr>
-        <th>S/N</th>
-        <th>Date</th>
-        <th>Material</th>
-        <th class="num">Quantity</th>
-        <th class="num">Price/Sack</th>
-        <th class="num">Total Value</th>
-        <th>Status</th>
-        {% if current_user.role != 'sales_manager' %}<th>Sales Manager</th>{% endif %}
-        <th>Store Officer</th>
-        <th>Action</th>
+        <th style="color: #f8fafc; border-bottom: none;">S/N</th>
+        <th style="color: #f8fafc; border-bottom: none;">Date</th>
+        <th style="color: #f8fafc; border-bottom: none;">Material</th>
+        <th class="num" style="color: #f8fafc; border-bottom: none;">Quantity</th>
+        <th class="num" style="color: #f8fafc; border-bottom: none;">Price/Sack</th>
+        <th class="num" style="color: #f8fafc; border-bottom: none;">Total Value</th>
+        <th style="color: #f8fafc; border-bottom: none;">Status</th>
+        {% if current_user.role != 'sales_manager' %}<th style="color: #f8fafc; border-bottom: none;">Sales Manager</th>{% endif %}
+        <th style="color: #f8fafc; border-bottom: none;">Store Officer</th>
+        <th style="color: #f8fafc; border-bottom: none;">Action</th>
       </tr>
     </thead>
     <tbody>
@@ -98,7 +87,7 @@
         <td>{{ forloop.counter }}</td>
         <td>{{ c.date }}</td>
         <td><span class="mat-badge">{{ c.material_type|upper }}</span></td>
-        <td class="num"><strong>{{ c.qty_sacks }}</strong></td>
+        <td class="num" style="font-size: 1.1rem; color: #0f172a;"><strong>{{ c.qty_sacks }}</strong></td>
         <td class="num">{% if c.price_per_sack %}₦{{ c.price_per_sack|floatformat:0 }}{% else %}—{% endif %}</td>
         <td class="num">{% if c.total_value %}₦{{ c.total_value|floatformat:0 }}{% else %}—{% endif %}</td>
         <td>

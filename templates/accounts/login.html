@@ -1,31 +1,140 @@
 {% extends 'base_login.html' %}
 {% block content %}
+<style>
+    .login-card {
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 6px;
+        background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+    }
+    .login-logo { text-align: center; margin-bottom: 2.5rem; }
+    .login-logo-title {
+        font-size: 1.25rem;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+    }
+    .login-logo-sub {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 0.5rem;
+    }
+    .login-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.85rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        color: #1e293b;
+        background: #f8fafc;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(79,70,229,0.1);
+    }
+    .btn-login {
+        width: 100%;
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+        margin-top: 1rem;
+    }
+    .btn-login:hover {
+        background: #4338ca;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(79,70,229,0.4);
+    }
+    .error-box {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+    }
+    .footer-text {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+</style>
+
 <div class="login-wrapper">
     <div class="login-card">
         <div class="login-logo">
-            <div class="login-logo-title">NOOR FOODS QUALITY SERVICES NIG LTD</div>
-            <div class="login-logo-sub">Production Accountability System</div>
+            <div class="login-logo-title">Noor Foods Quality Services Nig Ltd</div>
+            <div class="login-logo-sub">Enterprise System</div>
         </div>
-        <h2>Sign In</h2>
+        
+        <h2 class="login-title">Secure Sign In</h2>
+        
         {% if error %}
-        <div class="alert alert-error">{{ error }}</div>
+        <div class="error-box">
+            ⚠️ {{ error }}
+        </div>
         {% endif %}
+        
         <form method="post">
             {% csrf_token %}
-            <div class="form-row">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" autocomplete="username" autofocus required>
+            <div class="form-group">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" id="username" name="username" class="form-control" autocomplete="username" autofocus required placeholder="Enter your username">
             </div>
-            <div class="form-row">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" autocomplete="current-password" required placeholder="Enter your password">
             </div>
-            <div class="form-row mt-24">
-                <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
-            </div>
+            <button type="submit" class="btn-login">Sign In &rarr;</button>
         </form>
-        <div class="mt-16 text-muted text-center" style="font-size:11px;">
-            This system records every action. Use responsibly.
+        
+        <div class="footer-text">
+            Protected System · All actions are logged and audited.
         </div>
     </div>
 </div>

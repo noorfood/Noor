@@ -623,9 +623,44 @@ tr.flag-critical td {
 .text-right { text-align: right; }
 .text-center { text-align: center; }
 .text-muted { color: var(--text-muted); }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
-.text-success { color: var(--success); }
+.text-danger, .text-rose { color: var(--rose); }
+.text-warning, .text-amber { color: var(--amber); }
+.text-success, .text-emerald { color: var(--emerald); }
+.text-success-heavy { color: #166534; }
+.text-danger-heavy { color: #991b1b; }
+.text-warning-heavy { color: #92400e; }
+.text-indigo-heavy { color: #5b21b6; }
+.text-emerald-heavy { color: #065f46; }
+.text-blue-heavy { color: #1e3a8a; }
+.text-navy { color: var(--navy); }
+.text-slate-400 { color: var(--slate-400); }
+.text-slate-500 { color: var(--slate-500); }
+
+/* Background Utilities */
+.bg-rose { background-color: var(--rose) !important; }
+.bg-amber { background-color: var(--amber) !important; }
+.bg-emerald { background-color: var(--emerald) !important; }
+.bg-success-soft { background-color: #f0fdf4 !important; }
+.bg-danger-soft { background-color: #fff1f2 !important; }
+.bg-warning-soft { background-color: #fef3c7 !important; }
+.bg-indigo-soft { background-color: #ede9fe !important; }
+.bg-indigo-light { background-color: #eef2ff !important; }
+.bg-info-soft { background-color: #eff6ff !important; }
+.bg-rose-light { background-color: #fff1f2 !important; }
+.bg-rose-light { background-color: #fff1f2 !important; }
+.bg-amber-light { background-color: #fffbeb !important; }
+.bg-purple { background-color: #8b5cf6 !important; }
+.bg-emerald-gradient { background: linear-gradient(90deg, var(--emerald) 0%, #34d399 100%) !important; }
+.bg-amber-gradient { background: linear-gradient(90deg, var(--amber-light), #fff) !important; }
+.bg-navy { background-color: var(--navy) !important; }
+.border-rose { border-left: 4px solid var(--rose) !important; }
+.border-amber { border-left: 4px solid var(--amber) !important; }
+.border-emerald { border-left: 4px solid var(--emerald) !important; }
+.border-rose-heavy { border: 2px solid var(--rose) !important; }
+.border-emerald-heavy { border: 2px solid var(--emerald) !important; }
+
+/* Flag Utilities */
+.resolved-flag { opacity: 0.7; border-style: dashed !important; }
 .font-bold { font-weight: 700; }
 .mt-0 { margin-top: 0; }
 .mt-16 { margin-top: 16px; }
@@ -746,3 +781,223 @@ tr.flag-critical td {
 .badge-active { background: var(--success-light); color: var(--success); }
 .badge-driver { background: #E8EAF6; color: #3949AB; }
 .badge-promoter { background: #F3E5F5; color: #7B1FA2; }
+
+/* ══════════ NEW PREMIUM DESIGN SYSTEM (2025) ══════════ */
+:root {
+    --navy: #0f172a;
+    --navy-mid: #1e293b;
+    --indigo: #4f46e5;
+    --indigo-light: #e0e7ff;
+    --emerald: #10b981;
+    --emerald-light: #d1fae5;
+    --amber: #f59e0b;
+    --amber-light: #fef3c7;
+    --rose: #e11d48;
+    --rose-light: #ffe4e6;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+}
+
+/* Base Overrides for New Font */
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--slate-50);
+    color: var(--slate-800);
+}
+
+/* 1. Page Hero Banner */
+.page-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+    border-radius: 16px;
+    padding: 2.25rem 2.5rem;
+    margin-bottom: 2rem;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.page-hero::after {
+    content: "";
+    position: absolute;
+    top: -50%; right: -5%;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(79,70,229,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero-badge {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #818cf8;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+.hero-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -0.02em;
+}
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* 2. Unified Grids & Layouts */
+.layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+    align-items: start;
+}
+@media (max-width: 900px) {
+    .layout-grid { grid-template-columns: 1fr; }
+}
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+/* 3. Standard Cards */
+.card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid var(--slate-200);
+    padding: 2rem;
+}
+.sidebar-card {
+    background: var(--slate-50);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--slate-200);
+}
+.balance-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid var(--slate-200);
+    border-left: 4px solid var(--indigo);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.balance-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--slate-800);
+    opacity: 0.7;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}
+.balance-value {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--slate-900);
+    line-height: 1;
+}
+
+/* 4. Action / Filter Bar */
+.action-bar-modern {
+    background: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--slate-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* 5. Premium Buttons */
+.btn-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+.btn-modern-primary {
+    background: var(--indigo);
+    color: white;
+    box-shadow: 0 4px 12px rgba(79,70,229,0.25);
+}
+.btn-modern-primary:hover {
+    background: #4338ca;
+    transform: translateY(-1px);
+}
+.btn-modern-success {
+    background: var(--emerald);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16,185,129,0.25);
+}
+/* 6. Premium Tables */
+.table-wrapper {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--slate-200);
+    overflow-x: auto;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.premium-table th {
+    background: var(--slate-50);
+    padding: 1.25rem 1.5rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--slate-800);
+    border-bottom: 2px solid var(--slate-200);
+    text-align: left;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+.premium-table td {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--slate-100);
+    font-size: 0.95rem;
+    color: var(--slate-900);
+    vertical-align: middle;
+}
+.premium-table tbody tr:hover td {
+    background: var(--slate-50);
+}
+.premium-table tbody tr:last-child td {
+    border-bottom: none;
+}
+/* Unified Badges */
+.badge-soft {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+}
+.badge-soft-success { background: var(--emerald-light); color: #047857; }
+.badge-soft-warning { background: var(--amber-light); color: #b45309; }
+.badge-soft-danger { background: var(--rose-light); color: #be123c; }
+.badge-soft-info { background: var(--indigo-light); color: #4338ca; }
+.badge-soft-neutral { background: var(--slate-100); color: var(--slate-800); }

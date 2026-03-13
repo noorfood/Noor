@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Set Purchase Cost — Noor Foods{% endblock %}
+{% block nav_proc_list %}active{% endblock %}
+{% block content %}
+<style>
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
+        transition: all 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); background: #fff; }
+</style>
+
+<div class="card" style="max-width: 600px; margin: 2rem auto; padding: 2.5rem;">
+  <div style="margin-bottom: 2rem; border-bottom: 2px solid var(--slate-100); padding-bottom: 1.5rem;">
+    <h2 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.5rem;">💰 Record Purchase Cost</h2>
+    <p style="margin: 0.5rem 0 0; color: var(--slate-500); font-weight: 500;">Enter the approved cost per bag for this receipt.</p>
+  </div>
+
+  <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:12px; padding:1.5rem; margin-bottom:2rem;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+      <div>
+        <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase; font-weight:800; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Receipt #{{ receipt.pk }}</div>
+        <div style="font-weight:800; color:var(--slate-800); font-size:1.1rem;">{{ receipt.supplier }}</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase; font-weight:800; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Material Received</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="badge-soft {% if receipt.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ receipt.material_type|upper }}</span> 
+          <strong style="font-size:1.1rem; color:var(--navy);">{{ receipt.num_bags }} bags</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div style="margin-bottom: 2.5rem;">
+      <label class="form-label">Cost per Bag (₦)</label>
+      <input type="number" step="0.01" name="cost_per_bag" class="form-input" required placeholder="e.g. 15000">
+      <small style="color:var(--slate-500); display:block; margin-top:0.5rem; font-weight: 500;">The total cost will automatically calculate based on {{ receipt.num_bags }} bags.</small>
+    </div>
+
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--blue); border-color: var(--blue); padding: 0.75rem 1.75rem;">Approve Cost</button>
+      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600); padding: 0.75rem 1.75rem;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

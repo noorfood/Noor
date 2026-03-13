@@ -2,115 +2,71 @@
 {% block title %}My Sales Team — Noor Foods{% endblock %}
 {% block content %}
 <style>
-  .page-hero {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-    color: white; border-radius: 16px; padding: 2rem 2.5rem;
-    margin-bottom: 2rem; box-shadow: 0 10px 24px rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.07);
-    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
-  }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: .72rem; font-weight: 700; color: #60a5fa; margin-bottom: .3rem; display: block; }
-  .hero-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 .25rem; }
-  .hero-sub { color: #93c5fd; font-size: .88rem; max-width: 540px; }
-
-  .add-btn {
-    background: #10b981; color: #fff; padding: .75rem 1.5rem; border-radius: 8px;
-    font-weight: 800; font-size: .9rem; text-decoration: none; white-space: nowrap;
-    box-shadow: 0 4px 12px rgba(16,185,129,.25); transition: all .2s;
-  }
-  .add-btn:hover { background: #059669; transform: translateY(-1px); }
-
-  .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
-
   .member-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    background: #fff; border: 1px solid var(--slate-200); border-radius: 16px;
+    padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     transition: transform .2s, box-shadow .2s, border-color .2s; position: relative;
-    cursor: pointer; text-decoration: none; display: block; color: inherit;
+    cursor: pointer; text-decoration: none; display: flex; flex-direction: column; color: inherit;
   }
-  .member-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.1); border-color: #3b82f6; }
+  .member-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.1); border-color: var(--indigo); }
   .member-card .view-hint {
     position: absolute; top: 1.25rem; right: 1.25rem;
-    background: #eff6ff; color: #3b82f6; border-radius: 8px;
-    padding: .2rem .55rem; font-size: .72rem; font-weight: 700;
+    background: var(--indigo-light); color: var(--indigo); border-radius: 8px;
+    padding: .2rem .55rem; font-size: .72rem; font-weight: 800;
     opacity: 0; transition: opacity .2s;
   }
   .member-card:hover .view-hint { opacity: 1; }
-
-  .channel-pill {
-    display: inline-block; font-size: .7rem; font-weight: 800; text-transform: uppercase;
-    letter-spacing: .05em; padding: .25rem .65rem; border-radius: 20px;
-    margin-bottom: .75rem;
-  }
-  .channel-promoter { background: #eff6ff; color: #1d4ed8; }
-  .channel-driver    { background: #fef9c3; color: #92400e; }
-
-  .member-name { font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: .25rem; }
-  .member-phone { font-size: .82rem; color: #64748b; margin-bottom: 1.25rem; }
-
-  .stat-belt { display: flex; gap: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1.1rem; margin-top: 1.1rem; }
-  .stat-item .stat-label { font-size: .65rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: .2rem; }
-  .stat-item .stat-val { font-size: 1.1rem; font-weight: 800; color: #0f172a; font-family: monospace; }
-
-  .member-actions { display: flex; gap: .75rem; margin-top: 1.25rem; }
-  .btn-give { background: #1e3a5f; color: #fff; padding: .45rem 1rem; border-radius: 8px; font-size: .82rem; font-weight: 700; text-decoration: none; transition: all .2s; }
-  .btn-give:hover { background: #0f172a; }
-  .btn-perf { background: #f1f5f9; color: #374151; padding: .45rem 1rem; border-radius: 8px; font-size: .82rem; font-weight: 700; text-decoration: none; border: 1px solid #e2e8f0; transition: all .2s; }
-  .btn-perf:hover { background: #e2e8f0; }
-
-  .inactive-badge { position: absolute; top: 1.25rem; right: 1.25rem; background: #fee2e2; color: #991b1b; border-radius: 10px; padding: .2rem .6rem; font-size: .72rem; font-weight: 700; }
-
-  .empty-state { grid-column: 1/-1; background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 14px; padding: 4rem; text-align: center; }
-  .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
 </style>
 
 <div class="page-hero">
   <div>
-    <span class="hero-label">👥 Sales Team</span>
+    <span class="hero-badge">👥 Sales Team</span>
     <h1 class="hero-title">My Sales Team</h1>
-    <p class="hero-sub">Manage your promoters and drivers. All financial accountability remains with you as the Sales Manager.</p>
+    <p class="hero-subtitle">Manage your promoters and drivers. All financial accountability remains with you as the Sales Manager.</p>
   </div>
-  <a href="{% url 'sales:add_salesperson' %}" class="add-btn">+ Add Team Member</a>
+  <a href="{% url 'sales:add_salesperson' %}" class="btn-modern btn-modern-success">+ Add Team Member</a>
 </div>
 
-<div class="team-grid">
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
   {% for sp in persons %}
   <div onclick="window.location.href='{% url 'sales:sp_detail' sp.pk %}';" class="member-card">
     {# Hover hint #}
     <span class="view-hint">View History →</span>
 
     {% if sp.status != 'active' %}
-    <div class="inactive-badge">Inactive</div>
+    <div style="position: absolute; top: 1.25rem; right: 1.25rem;" class="badge-soft badge-soft-danger">Inactive</div>
     {% endif %}
 
-    <div class="channel-pill {% if sp.channel == 'promoter' %}channel-promoter{% else %}channel-driver{% endif %}">
+    <div>
+    <span class="badge-soft {% if sp.channel == 'promoter' %}badge-soft-info{% else %}badge-soft-warning{% endif %}" style="margin-bottom: 0.75rem;">
       {{ sp.get_channel_display }}
+    </span>
     </div>
-    <div class="member-name">{{ sp.name }}</div>
-    <div class="member-phone">📞 {{ sp.phone|default:"No phone recorded" }}</div>
+    <div style="font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 0.25rem;">{{ sp.name }}</div>
+    <div style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1.25rem;">📞 {{ sp.phone|default:"No phone recorded" }}</div>
 
-    <div class="stat-belt">
-      <div class="stat-item">
-        <div class="stat-label">Total Distributed</div>
-        <div class="stat-val">{{ sp.distributions.count }} batches</div>
+    <div style="display: flex; gap: 1rem; border-top: 1px solid var(--slate-100); padding-top: 1.1rem; margin-top: auto;">
+      <div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; margin-bottom: 0.2rem;">Total Distributed</div>
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--slate-900); font-family: monospace;">{{ sp.distributions.count }} <span style="font-size: 0.8rem; color: var(--slate-500); font-family: sans-serif; font-weight: 600;">batches</span></div>
       </div>
-      <div class="stat-item">
-        <div class="stat-label">Active Since</div>
-        <div class="stat-val" style="font-size:.85rem;">{{ sp.created_at|date:"b Y" }}</div>
+      <div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; margin-bottom: 0.2rem;">Active Since</div>
+        <div style="font-size: 0.95rem; font-weight: 700; color: var(--slate-800);">{{ sp.created_at|date:"b Y" }}</div>
       </div>
     </div>
 
-    <div class="member-actions" onclick="event.stopPropagation();">
-      <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-give">📦 Give Goods</a>
-      <a href="{% url 'sales:record_sales_result' %}?sp={{ sp.pk }}" class="btn-perf">✓ Record Sale</a>
+    <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;" onclick="event.stopPropagation();">
+      <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-modern btn-modern-primary" style="padding: 0.45rem 1rem; font-size: 0.8rem;">📦 Give Goods</a>
+      <a href="{% url 'sales:record_sales_result' %}?sp={{ sp.pk }}" class="btn-modern" style="padding: 0.45rem 1rem; font-size: 0.8rem; background: var(--slate-100); color: var(--slate-800);">✓ Record Sale</a>
     </div>
   </div>
   {% empty %}
-  <div class="empty-state">
-    <div class="empty-icon">👥</div>
-    <h3 style="color:#475569;margin-bottom:.5rem;">No Team Members Registered</h3>
-    <p style="color:#94a3b8;margin-bottom:2rem;">You haven't added any promoters or drivers yet.</p>
-    <a href="{% url 'sales:add_salesperson' %}" class="add-btn">+ Register Your First Member</a>
+  <div style="grid-column: 1/-1; background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: 16px; padding: 4rem; text-align: center;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+    <h3 style="color:var(--slate-700);margin-bottom:.5rem;font-weight:800;">No Team Members Registered</h3>
+    <p style="color:var(--slate-500);margin-bottom:2rem;">You haven't added any promoters or drivers yet.</p>
+    <a href="{% url 'sales:add_salesperson' %}" class="btn-modern btn-modern-success">+ Register Your First Member</a>
   </div>
   {% endfor %}
 </div>

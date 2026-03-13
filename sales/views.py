@@ -8,9 +8,11 @@ from audit.utils import log_action
 from sales.models import (
     SalesRecord, SalesPerson, SalesPayment, CompanyRetailLedger,
     SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment,
+    DirectSalePayment,
 )
 from pricing.models import PriceConfig, CommissionConfig
 from finished_store.models import FinishedGoodsIssuance, FinishedGoodsReturn
+from reconciliation.models import MoneyReceipt
 import datetime
 
 
@@ -379,6 +381,17 @@ def record_distribution(request):
                     sales_manager=user, status='accepted', material_type=material_type
                 ).order_by('-date', '-created_at').first()
 
+                # Fetch current Pricing and Commission for Sales Manager channel
+                price_cfg = PriceConfig.objects.filter(
+                    material_type=material_type, channel='sales_manager'
+                ).first()
+                comm_cfg = CommissionConfig.objects.filter(
+                    material_type=material_type, channel='sales_manager'
+                ).first()
+                
+                u_price = float(price_cfg.price_per_unit) if price_cfg else 0
+                c_pct = float(comm_cfg.commission_pct) if comm_cfg else 0
+
                 dist = SalesDistributionRecord.objects.create(
                     date=date_val,
                     collection=recent_coll,
@@ -386,6 +399,8 @@ def record_distribution(request):
                     material_type=material_type,
                     qty_given=qty,
                     recorded_by=user,
+                    unit_price=u_price,
+                    commission_pct=c_pct,
                     notes=notes,
                 )
                 log_action(request, user, 'sales', 'RECORD_DISTRIBUTION',
@@ -556,47 +571,62 @@ def sp_performance(request):
 
     sp_rows = []
     for sp in salespersons:
-        total_given = SalesDistributionRecord.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('qty_given'))['t'] or 0
+        def _dist(mat=None):
+            qs = SalesDistributionRecord.objects.filter(sales_person=sp, **manager_filter)
+            if mat: qs = qs.filter(material_type=mat)
+            return qs.aggregate(t=Sum('qty_given'))['t'] or 0
 
-        total_sold = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('qty_sold'))['t'] or 0
+        def _res(field, mat=None):
+            qs = SalesResult.objects.filter(sales_person=sp, **manager_filter)
+            if mat: qs = qs.filter(material_type=mat)
+            return qs.aggregate(t=Sum(field))['t'] or 0
 
-        total_pieces_sold = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
+        maize_given = _dist('maize')
+        wheat_given = _dist('wheat')
+        total_given = maize_given + wheat_given
 
-        total_commission = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('commission_amount'))['t'] or 0
+        maize_sold = _res('qty_sold', 'maize')
+        wheat_sold = _res('qty_sold', 'wheat')
+        total_sold = maize_sold + wheat_sold
 
-        total_net = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('net_due_to_company'))['t'] or 0
+        total_pieces_sold = _res('qty_pieces_sold')
+        total_commission  = _res('commission_amount')
+        
+        # All results for this SP to use for property-based sums
+        res_all = SalesResult.objects.filter(sales_person=sp, **manager_filter)
+        
+        # Equivalent Sack Totals (Sacks + Pieces/10)
+        maize_sold_eq = float(sum(r.equivalent_sacks_sold for r in res_all if r.material_type == 'maize'))
+        wheat_sold_eq = float(sum(r.equivalent_sacks_sold for r in res_all if r.material_type == 'wheat'))
+        
+        maize_ret_eq = float(sum(r.equivalent_sacks_returned for r in res_all if r.material_type == 'maize'))
+        wheat_ret_eq = float(sum(r.equivalent_sacks_returned for r in res_all if r.material_type == 'wheat'))
 
-        total_returned = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('qty_returned'))['t'] or 0
+        total_net         = _res('net_due_to_company')
+        total_amount_returned = _res('amount_returned')
+        
+        # Add MoneyReceipts (Remittances) to the total returned
+        total_remitted = MoneyReceipt.objects.filter(sales_person=sp).aggregate(
+            t=Sum('cash_received') + Sum('transfer_received')
+        )['t'] or 0
 
-        total_pieces_returned = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
-
-        total_amount_returned = SalesResult.objects.filter(
-            sales_person=sp, **manager_filter
-        ).aggregate(t=Sum('amount_returned'))['t'] or 0
-
-        total_outstanding = max(0.0, float(total_net) - float(total_amount_returned))
-
-        # Unsold calculation: Given Sacks - Sold - Returned
-        unsold = float(total_given) - (float(total_sold) + (float(total_pieces_sold) / 10)) - (float(total_returned) + (float(total_pieces_returned) / 10))
+        total_outstanding = max(0.0, float(total_net) - float(total_amount_returned) - float(total_remitted))
+        
+        # Sacks + Pieces/10
+        total_given = float(_dist('qty_given'))
+        total_sold_eq = maize_sold_eq + wheat_sold_eq
+        total_ret_eq = maize_ret_eq + wheat_ret_eq
+        
+        unsold = total_given - total_sold_eq - total_ret_eq
 
         sp_rows.append({
             'sp': sp,
+            'maize_given': maize_given,
+            'wheat_given': wheat_given,
             'total_given': total_given,
-            'total_sold': total_sold,
+            'maize_sold': maize_sold_eq,
+            'wheat_sold': wheat_sold_eq,
+            'total_sold': total_sold_eq,
             'total_pieces_sold': total_pieces_sold,
             'unsold': max(0, unsold),
             'total_commission': float(total_commission),
@@ -631,7 +661,7 @@ def sp_detail(request, sp_id):
         # SM can only see their own team's records
         results = SalesResult.objects.filter(
             sales_person=sp, recorded_by=user
-        ).select_related('recorded_by').order_by('-date', '-created_at')
+        ).select_related('recorded_by').order_by('date', 'created_at') # ASC for FIFO
         distributions = SalesDistributionRecord.objects.filter(
             sales_person=sp, recorded_by=user
         ).order_by('-date', '-created_at')
@@ -639,17 +669,71 @@ def sp_detail(request, sp_id):
         # MD/GM can see all
         results = SalesResult.objects.filter(
             sales_person=sp
-        ).select_related('recorded_by').order_by('-date', '-created_at')
+        ).select_related('recorded_by').order_by('date', 'created_at') # ASC for FIFO
         distributions = SalesDistributionRecord.objects.filter(
             sales_person=sp
         ).order_by('-date', '-created_at')
 
+    # Aggregated Payment History (Handovers + Remittances)
+    handovers = results.exclude(amount_returned=0)
+    remittances = MoneyReceipt.objects.filter(sales_person=sp).order_by('-date', '-created_at')
+    
+    payment_history = []
+    for h in handovers:
+        payment_history.append({
+            'date': h.date,
+            'type': 'Handover',
+            'amount': float(h.amount_returned),
+            'notes': f"From Sale Result: {h.material_type.upper()} ({h.qty_sold}S/{h.qty_pieces_sold}P)",
+            'ref_pk': h.pk,
+            'created_at': h.created_at
+        })
+    for r in remittances:
+        payment_history.append({
+            'date': r.date,
+            'type': 'Remittance',
+            'amount': float(r.total_received),
+            'notes': r.notes or "Direct Remittance",
+            'ref_pk': r.pk,
+            'created_at': r.created_at
+        })
+    # Sort history by date descending, then created_at descending
+    payment_history.sort(key=lambda x: (x['date'], x['created_at']), reverse=True)
+
+    # Total remitted pool starting with MoneyReceipts
+    remitted_pool = float(remittances.aggregate(
+        t=Sum('cash_received') + Sum('transfer_received')
+    )['t'] or 0)
+
+    # FIFO Allocation Logic (Harvesting overpayments first)
+    results_list = list(results)
+    for r in results_list:
+        net_due = float(r.net_due_to_company)
+        initially_paid = float(r.amount_returned)
+        
+        if initially_paid >= net_due:
+            # Overpayment or exact payment: Surplus goes back to the pool
+            surplus = initially_paid - net_due
+            remitted_pool += surplus
+            r.display_total_paid = net_due
+        else:
+            # Underpaid: We will try to cover the gap from the pool
+            still_needed = net_due - initially_paid
+            allocation = min(still_needed, remitted_pool)
+            remitted_pool -= allocation
+            r.display_total_paid = initially_paid + allocation
+            
+        r.display_outstanding = max(0.0, net_due - r.display_total_paid)
+
+    # Sort back to descending (Newest first)
+    results_list.reverse()
+
     # Totals
     total_maize_given  = distributions.filter(material_type='maize').aggregate(t=Sum('qty_given'))['t'] or 0
     total_wheat_given  = distributions.filter(material_type='wheat').aggregate(t=Sum('qty_given'))['t'] or 0
-    total_maize_sold   = results.filter(material_type='maize').aggregate(t=Sum('qty_sold'))['t'] or 0
+    total_maize_sold   = float(results.filter(material_type='maize').aggregate(t=Sum('qty_sold'))['t'] or 0) + (float(results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0) / 10.0)
+    total_wheat_sold   = float(results.filter(material_type='wheat').aggregate(t=Sum('qty_sold'))['t'] or 0) + (float(results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0) / 10.0)
     total_maize_pieces = results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
-    total_wheat_sold   = results.filter(material_type='wheat').aggregate(t=Sum('qty_sold'))['t'] or 0
     total_wheat_pieces = results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0
 
     total_maize_returned   = results.filter(material_type='maize').aggregate(t=Sum('qty_returned'))['t'] or 0
@@ -659,12 +743,23 @@ def sp_detail(request, sp_id):
 
     total_net = results.aggregate(t=Sum('net_due_to_company'))['t'] or 0
     total_amount_returned = results.aggregate(t=Sum('amount_returned'))['t'] or 0
-    total_outstanding = max(0.0, float(total_net) - float(total_amount_returned))
+    
+    # Add MoneyReceipts (Remittances) 
+    total_remitted = MoneyReceipt.objects.filter(sales_person=sp).aggregate(
+        t=Sum('cash_received') + Sum('transfer_received')
+    )['t'] or 0
+
+    total_outstanding = max(0.0, float(total_net) - float(total_amount_returned) - float(total_remitted))
+
+    # Unsold calculation (Accurate to pieces)
+    # Given (Sacks) - [Sold (Sacks) + SoldPieces/10] - [Returned (Sacks) + RetPieces/10]
+    unsold_maize = float(total_maize_given) - float(sum(r.equivalent_sacks_sold + r.equivalent_sacks_returned for r in results_list if r.material_type == 'maize'))
+    unsold_wheat = float(total_wheat_given) - float(sum(r.equivalent_sacks_sold + r.equivalent_sacks_returned for r in results_list if r.material_type == 'wheat'))
 
     return render(request, 'sales/sp_detail.html', {
         'current_user': user,
         'sp': sp,
-        'results': results,
+        'results': results_list,
         'distributions': distributions,
         'total_maize_given': total_maize_given,
         'total_wheat_given': total_wheat_given,
@@ -676,9 +771,10 @@ def sp_detail(request, sp_id):
         'total_maize_pieces_returned': total_maize_pieces_returned,
         'total_wheat_returned': total_wheat_returned,
         'total_wheat_pieces_returned': total_wheat_pieces_returned,
-        'unsold_maize': max(0.0, float(total_maize_given) - (float(total_maize_sold) + (float(total_maize_pieces) / 10)) - (float(total_maize_returned) + (float(total_maize_pieces_returned) / 10))),
-        'unsold_wheat': max(0.0, float(total_wheat_given) - (float(total_wheat_sold) + (float(total_wheat_pieces) / 10)) - (float(total_wheat_returned) + (float(total_wheat_pieces_returned) / 10))),
+        'unsold_maize': max(0.0, unsold_maize),
+        'unsold_wheat': max(0.0, unsold_wheat),
         'total_outstanding': total_outstanding,
+        'payment_history': payment_history,
     })
 
 
@@ -699,6 +795,28 @@ def record_sm_payment(request):
     # SM's current outstanding balance
     outstanding = get_sm_money_outstanding(user)
 
+    # Total money received FROM team (handovers during sales results + remittances)
+    from reconciliation.models import MoneyReceipt
+    handover_total = SalesResult.objects.filter(
+        recorded_by=user
+    ).aggregate(t=Sum('amount_returned'))['t'] or 0
+    remittance_total = MoneyReceipt.objects.filter(
+        sales_manager=user
+    ).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
+    money_from_team = float(handover_total) + float(remittance_total)
+
+    # Total money already paid to company (confirmed)
+    money_paid_to_company = float(SalesManagerPayment.objects.filter(
+        sales_manager=user, status='confirmed'
+    ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+
+    # Pending payments (not yet confirmed by GM)
+    money_pending = float(SalesManagerPayment.objects.filter(
+        sales_manager=user, status='pending_gm'
+    ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+
+    cash_in_hand = max(0.0, money_from_team - money_paid_to_company - money_pending)
+
     if request.method == 'POST':
         try:
             date_val = datetime.date.fromisoformat(request.POST.get('date'))
@@ -710,8 +828,8 @@ def record_sm_payment(request):
             if total <= 0:
                 error = 'Payment amount must be greater than zero.'
             elif total > outstanding + 0.01:
-                error = (f'Payment amount ₦{total:,.0f} exceeds your outstanding balance '
-                         f'₦{outstanding:,.0f}.')
+                error = (f'Payment amount \u20a6{total:,.0f} exceeds your outstanding balance '
+                         f'\u20a6{outstanding:,.0f}.')
             else:
                 pmt = SalesManagerPayment.objects.create(
                     date=date_val,
@@ -724,12 +842,12 @@ def record_sm_payment(request):
                     is_locked=True,
                 )
                 log_action(request, user, 'sales', 'RECORD_SM_PAYMENT',
-                           f'SM recorded payment: Cash ₦{amount_cash:,.0f} + '
-                           f'Transfer ₦{amount_transfer:,.0f} | Pending GM confirmation',
+                           f'SM recorded payment: Cash \u20a6{amount_cash:,.0f} + '
+                           f'Transfer \u20a6{amount_transfer:,.0f} | Pending GM confirmation',
                            'SalesManagerPayment', pmt.pk)
                 messages.success(
                     request,
-                    f'Payment recorded (₦{total:,.0f}). It is now pending GM confirmation.'
+                    f'Payment recorded (\u20a6{total:,.0f}). It is now pending GM confirmation.'
                 )
                 return redirect('sales:list_collections')
         except Exception as e:
@@ -745,6 +863,10 @@ def record_sm_payment(request):
         'error': error,
         'today': today,
         'outstanding': outstanding,
+        'money_from_team': money_from_team,
+        'money_paid_to_company': money_paid_to_company,
+        'money_pending': money_pending,
+        'cash_in_hand': cash_in_hand,
         'payments': payments,
     })
 
@@ -839,20 +961,35 @@ def outstanding_view(request):
     """
     user = get_current_user(request)
 
-    sales_managers = User.objects.filter(role='sales_manager', status='active')
+    # SM sees only themselves. GM/MD see all Sales Managers.
+    if user.role == 'sales_manager':
+        sales_managers = User.objects.filter(pk=user.pk)
+    else:
+        sales_managers = User.objects.filter(role='sales_manager', status='active')
     sm_outstanding = []
     for sm in sales_managers:
-        goods = get_sm_goods_holding(sm)
+        maize_holding = get_sm_goods_holding(sm, 'maize')
+        wheat_holding = get_sm_goods_holding(sm, 'wheat')
+        goods = maize_holding + wheat_holding
         money = get_sm_money_outstanding(sm)
-        collected = SalesManagerCollection.objects.filter(
-            sales_manager=sm, status='accepted'
+        # collected split by material
+        maize_collected = SalesManagerCollection.objects.filter(
+            sales_manager=sm, status='accepted', material_type='maize'
         ).aggregate(t=Sum('qty_sacks'))['t'] or 0
+        wheat_collected = SalesManagerCollection.objects.filter(
+            sales_manager=sm, status='accepted', material_type='wheat'
+        ).aggregate(t=Sum('qty_sacks'))['t'] or 0
+        collected = maize_collected + wheat_collected
         pending_collections = SalesManagerCollection.objects.filter(
             sales_manager=sm, status='pending'
         ).count()
         sm_outstanding.append({
             'sm': sm,
             'total_collected': collected,
+            'maize_collected': maize_collected,
+            'wheat_collected': wheat_collected,
+            'maize_holding': maize_holding,
+            'wheat_holding': wheat_holding,
             'goods_holding': goods,
             'money_outstanding': money,
             'pending_collection_count': pending_collections,
@@ -1149,4 +1286,109 @@ def record_payment(request, sale_id):
         'payments': payments,
         'error': error,
         'today': datetime.date.today().isoformat(),
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPANY DIRECT SALES (GM records sale & payment → MD confirms)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('manager')
+def record_direct_sale(request):
+    """General Manager records a factory-gate company sale with payment details."""
+    user = get_current_user(request)
+    error = None
+
+    if request.method == 'POST':
+        try:
+            date_val = request.POST.get('date')
+            material_type = request.POST.get('material_type')
+            buyer_name = request.POST.get('buyer_name', '').strip()
+            qty_sold = int(request.POST.get('qty_sold', 0))
+            unit_price = float(request.POST.get('unit_price', 0))
+            amount_received_cash = float(request.POST.get('amount_received_cash', 0))
+            amount_received_transfer = float(request.POST.get('amount_received_transfer', 0))
+            notes = request.POST.get('notes', '').strip()
+
+            if not date_val or not material_type or qty_sold <= 0 or unit_price <= 0:
+                error = 'Date, material type, quantity, and unit price are required.'
+            else:
+                sale = DirectSalePayment.objects.create(
+                    date=date_val,
+                    material_type=material_type,
+                    product_size='10kg',
+                    qty_sold=qty_sold,
+                    unit_price=unit_price,
+                    amount_received_cash=amount_received_cash,
+                    amount_received_transfer=amount_received_transfer,
+                    buyer_name=buyer_name,
+                    recorded_by=user,
+                    notes=notes,
+                    status='pending_md'
+                )
+                log_action(request, user, 'sales', 'RECORD_DIRECT_SALE',
+                           f'Recorded direct sale of {qty_sold} {material_type} sacks for ₦{sale.total_sale_value:,.0f}',
+                           'DirectSalePayment', sale.pk)
+                messages.success(request, f'Direct Sale #{sale.pk} recorded successfully. Awaiting MD confirmation.')
+                return redirect('sales:list_direct_sales')
+        except Exception as e:
+            error = f'Error saving sale: {e}'
+
+    return render(request, 'sales/direct_sale_form.html', {
+        'current_user': user, 'error': error,
+        'today': datetime.date.today().isoformat(),
+        'material_choices': [('maize', 'Maize'), ('wheat', 'Wheat')],
+    })
+
+
+@role_required('manager', 'md')
+def list_direct_sales(request):
+    """List direct sales (GM sees their own or all company sales, MD sees all)."""
+    user = get_current_user(request)
+    sales = DirectSalePayment.objects.all().order_by('-date', '-created_at')
+    
+    pending_count = sales.filter(status='pending_md').count() if user.role == 'md' else 0
+
+    return render(request, 'sales/direct_sales_list.html', {
+        'current_user': user,
+        'sales': sales,
+        'pending_count': pending_count,
+    })
+
+
+@role_required('md')
+def md_confirm_direct_sale(request, pk):
+    """MD confirms or rejects a direct sale payment."""
+    user = get_current_user(request)
+    sale = get_object_or_404(DirectSalePayment, pk=pk)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        md_notes = request.POST.get('md_notes', '').strip()
+        
+        if action == 'confirm':
+            sale.status = 'confirmed'
+            sale.confirmed_by = user
+            sale.confirmed_at = timezone.now()
+            sale.md_notes = md_notes
+            sale.save()
+            log_action(request, user, 'sales', 'CONFIRM_DIRECT_SALE',
+                       f'Confirmed direct sale #{sale.pk}', 'DirectSalePayment', sale.pk)
+            messages.success(request, f'Direct Sale #{sale.pk} has been Confirmed.')
+            
+        elif action == 'reject':
+            sale.status = 'rejected'
+            sale.confirmed_by = user
+            sale.confirmed_at = timezone.now()
+            sale.md_notes = md_notes
+            sale.save()
+            log_action(request, user, 'sales', 'REJECT_DIRECT_SALE',
+                       f'Rejected direct sale #{sale.pk}: {md_notes}', 'DirectSalePayment', sale.pk)
+            messages.warning(request, f'Direct Sale #{sale.pk} has been Rejected.')
+            
+        return redirect('sales:list_direct_sales')
+        
+    return render(request, 'sales/md_confirm_sale.html', {
+        'current_user': user,
+        'sale': sale,
     })

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Record Direct Sale — Noor Foods{% endblock %}
+{% block nav_comp_sales %}active{% endblock %}
+{% block content %}
+
+<style>
+  .hero-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+    color: white;
+    padding: 2.5rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.5rem; display: block; }
+  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
+  .hero-sub { color: #c7d2fe; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 650px; }
+
+  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
+  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
+
+  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
+  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem; }
+
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .form-control {
+    width: 100%; box-sizing: border-box; padding: 0.85rem 1.1rem; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 1rem; color: #1e293b; transition: all 0.2s; background: #f8fafc;
+  }
+  .form-control:focus { outline: none; border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
+  
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 600px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
+
+  .btn-primary {
+    background: #4f46e5; color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px;
+    font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
+    display: inline-flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(79,70,229,0.3);
+  }
+  .btn-primary:hover { background: #3730a3; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79,70,229,0.4); }
+  .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
+  .btn-secondary:hover { color: #1e293b; }
+
+  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; }
+  .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
+  .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+
+  .error-box { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
+  
+  .calc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; }
+  .calc-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+  .calc-value { font-size: 2rem; font-weight: 900; color: #0f172a; font-family: monospace; }
+</style>
+
+<div class="hero-card">
+  <div class="hero-header">
+    <div>
+      <span class="hero-label">🧾 Factory-Gate Operations</span>
+      <h1 class="hero-title">Record Direct Sale</h1>
+      <p class="hero-sub">Initiate a company sale with payment received. The Managing Director must confirm this transaction before it enters the final ledger.</p>
+    </div>
+  </div>
+</div>
+
+{% if error %}
+<div class="error-box">
+  <span>⚠️</span> {{ error }}
+</div>
+{% endif %}
+
+<div class="layout-grid">
+  <div class="card">
+    <form method="post">
+      {% csrf_token %}
+      
+      <!-- SECTION 1: SALE DETAILS -->
+      <h3 class="card-title">1. Sale Details</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date of Sale</label>
+          <input type="date" name="date" value="{{ today }}" required class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Customer Name</label>
+          <input type="text" name="buyer_name" placeholder="Walk-in buyer name" required class="form-control">
+        </div>
+      </div>
+
+      <div class="form-row-3">
+        <div class="form-group">
+          <label class="form-label">Material Type</label>
+          <select name="material_type" required class="form-control">
+            {% for val, label in material_choices %}
+            <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantity</label>
+          <input type="number" name="qty_sold" id="qty_sold" class="form-control" style="font-family: monospace;" min="1" placeholder="0" required oninput="calcTotal()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit Price (₦)</label>
+          <input type="number" step="0.01" name="unit_price" id="unit_price" class="form-control" style="font-family: monospace;" placeholder="0.00" required oninput="calcTotal()">
+        </div>
+      </div>
+      
+      <div class="calc-box">
+        <div class="calc-label">Calculated Sale Value</div>
+        <div class="calc-value">₦<span id="total_value">0.00</span></div>
+      </div>
+
+      <!-- SECTION 2: PAYMENT RECEIVED -->
+      <h3 class="card-title">2. Payment Received</h3>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cash Received (₦)</label>
+          <input type="number" step="0.01" name="amount_received_cash" id="amount_cash" class="form-control" style="font-family: monospace; color: #059669;" placeholder="0.00" value="0" oninput="calcOut()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transfer Received (₦)</label>
+          <input type="number" step="0.01" name="amount_received_transfer" id="amount_transfer" class="form-control" style="font-family: monospace; color: #2563eb;" placeholder="0.00" value="0" oninput="calcOut()">
+        </div>
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:2.5rem; margin-top:0.5rem; margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
+        <div style="text-align:right;">
+          <div style="font-size:0.8rem; color:#64748b; font-weight:700; text-transform: uppercase;">Total Paid</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#10b981; font-family: monospace;" id="total_paid">₦0.00</div>
+        </div>
+        <div style="text-align:right; padding-left: 2.5rem; border-left: 1px solid #e2e8f0;">
+          <div style="font-size:0.8rem; color:#64748b; font-weight:700; text-transform: uppercase;">Outstanding</div>
+          <div style="font-size:1.4rem; font-weight:800; color:#ef4444; font-family: monospace;" id="outstanding">₦0.00</div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: NOTES -->
+      <h3 class="card-title">3. Final Details</h3>
+      <div class="form-group">
+        <label class="form-label">Notes / Context <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any special context for the MD..."></textarea>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content: flex-end; gap:1.5rem; margin-top:2.5rem; padding-top:1.5rem; border-top:2px solid #f1f5f9;">
+        <a href="{% url 'sales:list_direct_sales' %}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary">
+          <span>📤</span> Submit for MD Confirmation
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="sidebar-card">
+    <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
+    
+    <div class="info-item">
+      <div class="info-icon">⚖️</div>
+      <div><strong>Reconciliation Queue:</strong> This sale will enter a 'pending' state and will not impact central financial ledgers until approved.</div>
+    </div>
+    
+    <div class="info-item">
+      <div class="info-icon">👨‍💼</div>
+      <div><strong>Internal Audit:</strong> The MD acts as the final gatekeeper for factory-gate sales to ensure pricing rules are followed.</div>
+    </div>
+    
+    <div class="info-item">
+      <div class="info-icon">🧾</div>
+      <div><strong>Automated Invoicing:</strong> A receipt can be generated from the Direct Sales Registry once this is submitted.</div>
+    </div>
+
+    <div style="background: #eef2ff; color: #4338ca; padding: 1.25rem; border-radius: 12px; font-size: 0.9rem; margin-top: 2rem; border: 1px solid #c7d2fe;">
+      💡 <strong>Did You Know:</strong> Any transaction with partial payment will be flagged 'incomplete' even after MD approval, until the debt is cleared.
+    </div>
+  </div>
+</div>
+
+<script>
+  function formatMoney(n) {
+    return Number(n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+  
+  function calcTotal() {
+    const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
+    const price = parseFloat(document.getElementById('unit_price').value) || 0;
+    const total = qty * price;
+    document.getElementById('total_value').innerText = formatMoney(total);
+    calcOut();
+  }
+  
+  function calcOut() {
+    const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
+    const price = parseFloat(document.getElementById('unit_price').value) || 0;
+    const totalSale = qty * price;
+    
+    const cash = parseFloat(document.getElementById('amount_cash').value) || 0;
+    const trans = parseFloat(document.getElementById('amount_transfer').value) || 0;
+    const totalPaid = cash + trans;
+    
+    const out = Math.max(0, totalSale - totalPaid);
+    
+    document.getElementById('total_paid').innerText = '₦' + formatMoney(totalPaid);
+    document.getElementById('outstanding').innerText = '₦' + formatMoney(out);
+  }
+</script>
+{% endblock %}

@@ -41,17 +41,11 @@ def receive_clean(request):
     """Receive clean bags into store from a cleaning process (handled by Store Officer)."""
     user = get_current_user(request)
     from procurement.models import RawMaterialIssuance
-    from cleaning.models import CleaningBatch
+    from cleaning.models import CleanRawReceipt
 
-    # Show issuances that have not been fully accounted for in cleaning batches
+    # Show issuances that have not been fully accounted for in receipts
     all_raw_issuances = RawMaterialIssuance.objects.order_by('-date', '-created_at')
-    pending_issuances = []
-    for iss in all_raw_issuances:
-        # Re-calc balance: issued bags minus bags already used in batches
-        used = CleaningBatch.objects.filter(raw_issuance=iss).aggregate(t=db_models.Sum('dirty_bags_used'))['t'] or 0
-        if used < iss.num_bags_issued:
-            iss.remaining_balance = iss.num_bags_issued - used
-            pending_issuances.append(iss)
+    pending_issuances = [iss for iss in all_raw_issuances if not CleanRawReceipt.objects.filter(raw_issuance=iss).exists()]
     
     error = None
 
@@ -68,28 +62,13 @@ def receive_clean(request):
             else:
                 issuance = get_object_or_404(RawMaterialIssuance, pk=issuance_id)
                 
-                # 1. Create the Cleaning Batch automatically
-                batch = CleaningBatch.objects.create(
-                    date=date_val,
-                    material_type=issuance.material_type,
-                    cleaning_manager=None, # Cleaner is recorded in issuance.issued_to
-                    raw_issuance=issuance,
-                    dirty_bags_used=issuance.num_bags_issued,
-                    approx_dirty_weight_kg=approx_dirty_weight_kg,
-                    clean_bags_produced=clean_bags_produced,
-                    status='approved',
-                    approved_by=user,
-                    approved_at=datetime.datetime.now(),
-                    is_locked=True,
-                    notes=f"Auto-created from Store Reception. Cleaner: {issuance.issued_to}. {notes}"
-                )
-
-                # 2. Create the Clean Raw Receipt
+                # Create the Clean Raw Receipt directly linked to issuance
                 receipt = CleanRawReceipt.objects.create(
                     date=date_val,
-                    cleaning_batch=batch,
-                    material_type=batch.material_type,
-                    num_bags=batch.clean_bags_produced,
+                    raw_issuance=issuance,
+                    approx_dirty_weight_kg=approx_dirty_weight_kg,
+                    material_type=issuance.material_type,
+                    num_bags=clean_bags_produced,
                     received_by=user,
                     notes=notes,
                     is_locked=True,

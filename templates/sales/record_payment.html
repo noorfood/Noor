@@ -1,13 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}Record Payment — Sale #{{ sale.pk }}{% endblock %}
 {% block content %}
-<style>
-  .pay-hero {
-    background: linear-gradient(145deg, #0f2a1a, #14532d);
-    border-radius: 14px; padding: 1.5rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #166534;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3);
-  }
   .pay-hero-title { font-size:1.3rem; font-weight:800; color:#f0fdf4; margin:0; }
   .pay-hero-sub { font-size:.85rem; color:#86efac; margin-top:.2rem; }
 
@@ -41,51 +34,44 @@
 {# ══════════════════════════════════════════════════════════ #}
 {# HERO                                                      #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="pay-hero">
-  <div class="pay-hero-title">💳 Record Payment — Sale #{{ sale.pk }}</div>
-  <div class="pay-hero-sub">
-    Receiving payment from <strong>{{ sale.display_person }}</strong> ({{ sale.get_channel_display }}).
-    You can record a full or partial payment.
-  </div>
+<div class="page-hero" style="background: linear-gradient(135deg, #0f2a1a 0%, #14532d 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">💳 Payment Reception</span>
+            <h1 class="hero-title" style="color: #fff;">Record Payment — Sale #{{ sale.pk }}</h1>
+            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Receiving payment from <strong>{{ sale.display_person }}</strong> ({{ sale.get_channel_display }}).</p>
+        </div>
+    </div>
 </div>
 
 {# ══════════════════════════════════════════════════════════ #}
 {# SALE SNAPSHOT                                             #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="sale-snapshot">
-  <div class="snap-item">
-    <div class="snap-label">Sales Person</div>
-    <div class="snap-value snap-blue" style="font-size:1rem;">{{ sale.display_person }}</div>
-    <div class="snap-sub">{{ sale.get_channel_display }}</div>
-  </div>
-  <div class="snap-item">
-    <div class="snap-label">Goods Sold</div>
-    <div class="snap-value">{{ sale.qty_sold }}</div>
-    <div class="snap-sub">
-      <span class="badge badge-{{ sale.material_type }}" style="font-size:.7rem;">{{ sale.get_material_type_display|upper }}</span>
-      {{ sale.product_size }}
+<div class="balance-grid" style="margin-bottom: 3rem;">
+    <div class="balance-card" style="border-left: 4px solid #3b82f6;">
+        <div class="balance-label" style="color: #3b82f6;">Net Payable</div>
+        <div class="balance-value">₦{{ sale.net_payable|floatformat:0 }}</div>
+        <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; font-weight: 700;">After Commission</div>
     </div>
-  </div>
-  <div class="snap-item">
-    <div class="snap-label">Net Payable</div>
-    <div class="snap-value snap-blue">₦{{ sale.net_payable|floatformat:0 }}</div>
-    {% if sale.commission_pct > 0 %}<div class="snap-sub">after {{ sale.commission_pct }}% commission</div>{% endif %}
-  </div>
-  <div class="snap-item">
-    <div class="snap-label">Already Received</div>
-    <div class="snap-value snap-green">₦{{ sale.total_paid|floatformat:0 }}</div>
-  </div>
-  <div class="snap-item">
-    <div class="snap-label">Outstanding Now</div>
-    <div class="snap-value {% if sale.amount_outstanding > 0 %}snap-red{% else %}snap-green{% endif %}">
-      ₦{{ sale.amount_outstanding|floatformat:0 }}
+    <div class="balance-card" style="border-left: 4px solid #10b981;">
+        <div class="balance-label" style="color: #10b981;">Already Received</div>
+        <div class="balance-value">₦{{ sale.total_paid|floatformat:0 }}</div>
+        <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; font-weight: 700;">Confirmed Payments</div>
     </div>
-    {% if sale.amount_outstanding <= 0 %}<div class="snap-sub" style="color:#16a34a;">✓ Fully settled</div>{% endif %}
-  </div>
-  <div class="snap-item">
-    <div class="snap-label">Sale Status</div>
-    <div style="margin-top:.4rem;"><span class="badge badge-{{ sale.status }}">{{ sale.get_status_display }}</span></div>
-  </div>
+    <div class="balance-card {% if sale.amount_outstanding > 0 %}border-rose{% else %}border-emerald{% endif %}">
+        <div class="balance-label {% if sale.amount_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}">Outstanding Now</div>
+        <div class="balance-value">₦{{ sale.amount_outstanding|floatformat:0 }}</div>
+        {% if sale.amount_outstanding <= 0 %}
+        <div style="font-size: 0.75rem; color: #10b981; margin-top: 0.5rem; font-weight: 700;">✓ Fully settled</div>
+        {% else %}
+        <div style="font-size: 0.75rem; color: #ef4444; margin-top: 0.5rem; font-weight: 700;">Pending Balance</div>
+        {% endif %}
+    </div>
+    <div class="balance-card" style="border-left: 4px solid #94a3b8;">
+        <div class="balance-label" style="color: #94a3b8;">Sale Status</div>
+        <div class="balance-value" style="font-size: 1.25rem;">{{ sale.get_status_display|upper }}</div>
+        <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem; font-weight: 700;">Current Record State</div>
+    </div>
 </div>
 
 {# ══════════════════════════════════════════════════════════ #}

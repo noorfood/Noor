@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.db.models import Sum
 from accounts.mixins import get_current_user, role_required, store_type_required
 from audit.utils import log_action
-from procurement.models import RawMaterialReceipt, RawMaterialIssuance
+from procurement.models import RawMaterialReceipt, RawMaterialIssuance, CleaningLossConfig
 import datetime
 
 
@@ -21,9 +21,11 @@ def dashboard(request):
     receipts = RawMaterialReceipt.objects.filter(received_by=user).order_by('-date', '-created_at')[:10] if user.is_store_officer else RawMaterialReceipt.objects.all().order_by('-date', '-created_at')[:20]
     balance_maize = _get_raw_store_balance('maize')
     balance_wheat = _get_raw_store_balance('wheat')
+    pending_costs = RawMaterialReceipt.objects.filter(cost_status='pending').count() if user.role == 'md' else 0
     return render(request, 'procurement/dashboard.html', {
         'current_user': user, 'receipts': receipts,
         'balance_maize': balance_maize, 'balance_wheat': balance_wheat,
+        'pending_costs': pending_costs,
     })
 
 
@@ -56,11 +58,12 @@ def receive_raw(request):
                     received_by=user,
                     notes=notes,
                     is_locked=True,
+                    cost_status='pending',
                 )
                 log_action(request, user, 'procurement', 'RECEIVE_RAW',
                            f'Received {num_bags} bags of {material_type} from {supplier}',
                            'RawMaterialReceipt', receipt.pk)
-                messages.success(request, f'Receipt #{receipt.pk} saved successfully. Record is now locked.')
+                messages.success(request, f'Receipt #{receipt.pk} saved. Awaiting MD cost review.')
                 return redirect('procurement:list')
         except Exception as e:
             error = f'Error saving record: {str(e)}'
@@ -131,8 +134,105 @@ def list_records(request):
         receipts = RawMaterialReceipt.objects.all().order_by('-date', '-created_at')
         issuances = RawMaterialIssuance.objects.all().order_by('-date', '-created_at')
 
+    # Compute cleaning loss warnings
+    loss_warnings = {}
+    today = datetime.date.today()
+    for mat in ['maize', 'wheat']:
+        threshold = CleaningLossConfig.get_active_threshold(mat, today)
+        if threshold is not None:
+            loss_warnings[mat] = threshold
+
     return render(request, 'procurement/list.html', {
         'current_user': user, 'receipts': receipts, 'issuances': issuances,
         'balance_maize': _get_raw_store_balance('maize'),
         'balance_wheat': _get_raw_store_balance('wheat'),
+        'loss_warnings': loss_warnings,
+    })
+
+
+@role_required('md')
+def set_receipt_cost(request, receipt_id):
+    """MD enters the purchase cost per bag for a raw material receipt."""
+    user = get_current_user(request)
+    receipt = get_object_or_404(RawMaterialReceipt, pk=receipt_id)
+
+    if request.method == 'POST':
+        try:
+            cost_per_bag = float(request.POST.get('cost_per_bag', 0))
+            if cost_per_bag <= 0:
+                messages.error(request, 'Cost per bag must be greater than zero.')
+                return redirect('procurement:set_cost', receipt_id=receipt_id)
+
+            import django.utils.timezone as tz
+            receipt.cost_per_bag = cost_per_bag
+            receipt.total_cost = cost_per_bag * receipt.num_bags
+            receipt.cost_status = 'approved'
+            receipt.cost_approved_by = user
+            receipt.cost_approved_at = tz.now()
+            receipt.save()
+
+            log_action(request, user, 'procurement', 'SET_COST',
+                       f'Set cost ₦{cost_per_bag}/bag for Receipt #{receipt.pk} '
+                       f'({receipt.material_type}) — Total ₦{receipt.total_cost:,.0f}',
+                       'RawMaterialReceipt', receipt.pk)
+            messages.success(request,
+                             f'Cost set: ₦{cost_per_bag:,.0f}/bag × {receipt.num_bags} bags = '
+                             f'₦{receipt.total_cost:,.0f} for Receipt #{receipt.pk}.')
+            return redirect('procurement:list')
+        except Exception as e:
+            messages.error(request, f'Error: {e}')
+
+    return render(request, 'procurement/set_cost.html', {
+        'current_user': user,
+        'receipt': receipt,
+    })
+
+
+@role_required('md')
+def cleaning_loss_config(request):
+    """MD views and adds cleaning loss thresholds per material type."""
+    user = get_current_user(request)
+    error = None
+
+    if request.method == 'POST':
+        try:
+            material_type = request.POST.get('material_type')
+            max_loss_pct = float(request.POST.get('max_loss_pct', 0))
+            effective_from = request.POST.get('effective_from')
+            notes = request.POST.get('notes', '').strip()
+
+            if not material_type or max_loss_pct <= 0 or not effective_from:
+                error = 'All fields are required and max loss % must be positive.'
+            else:
+                config = CleaningLossConfig.objects.create(
+                    material_type=material_type,
+                    max_loss_pct=max_loss_pct,
+                    effective_from=effective_from,
+                    created_by=user,
+                    notes=notes,
+                )
+                log_action(request, user, 'procurement', 'SET_CLEANING_LOSS',
+                           f'Set max cleaning loss {max_loss_pct}% for {material_type} from {effective_from}',
+                           'CleaningLossConfig', config.pk)
+                messages.success(request,
+                                 f'Cleaning loss threshold saved: max {max_loss_pct}% for '
+                                 f'{material_type.upper()} from {effective_from}.')
+                return redirect('procurement:cleaning_loss')
+        except Exception as e:
+            error = f'Error: {e}'
+
+    configs = CleaningLossConfig.objects.all().order_by('-effective_from')
+    today = datetime.date.today()
+    active = {
+        mat: CleaningLossConfig.get_active_threshold(mat, today)
+        for mat in ['maize', 'wheat']
+    }
+
+    return render(request, 'procurement/loss_config.html', {
+        'current_user': user,
+        'configs': configs,
+        'active': active,
+        'error': error,
+        'today': today.isoformat(),
+        'material_choices': [('maize', 'Maize'), ('wheat', 'Wheat')],
     })

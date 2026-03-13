@@ -2,125 +2,266 @@
 {% block title %}Sales Ledger Details — Noor Foods{% endblock %}
 {% block nav_rp_sales %}active{% endblock %}
 {% block content %}
-<style>
-  .sales-hero {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    border-radius: 14px; padding: 2.25rem;
-    margin-bottom: 2.5rem; border: 1px solid #334155;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  }
-  .sales-hero-title { font-size: 1.75rem; font-weight: 800; color: #f8fafc; margin: 0; display: flex; align-items: center; gap: 1rem; }
-  .sales-hero-title span { color: #8b5cf6; font-size: .85rem; letter-spacing: 1px; background: rgba(139, 92, 246, 0.1); padding: 4px 10px; border-radius: 6px; }
-  .sales-hero-sub { font-size: 0.95rem; color: #94a3b8; margin-top: 0.6rem; max-width: 600px; }
+{# Standardized Sales Ledger Styles #}
 
-  .stats-grid-sales { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
-  .sales-stat-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.5rem;
-    display: flex; flex-direction: column; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    position: relative; overflow: hidden;
-  }
-  .sales-stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; transition: width 0.3s; }
-  .sales-stat-card:hover::before { width: 6px; }
-  
-  .s-label { font-size: .7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .4rem; }
-  .s-value { font-size: 1.6rem; font-weight: 900; color: #0f172a; line-height: 1; display: flex; align-items: baseline; gap: 4px; }
-  .s-value small { font-size: .9rem; font-weight: 700; color: #94a3b8; }
-  .s-sub { font-size: .75rem; color: #94a3b8; margin-top: .4rem; font-weight: 500; }
-
-  .filter-bar-premium {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 1.25rem; margin-bottom: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-  }
-  .filter-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; align-items: flex-end; }
-  .filter-item label { font-size: .75rem; font-weight: 700; color: #64748b; margin-bottom: .4rem; display: block; text-transform: uppercase; }
-  .filter-item input, .filter-item select {
-    width: 100%; padding: .6rem .75rem; border-radius: 8px; border: 1.5px solid #cbd5e1;
-    font-size: .95rem; outline: none; transition: border-color .2s;
-  }
-  .filter-item input:focus { border-color: #3b82f6; }
-
-  .sales-table-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-    overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
-  }
-  .sales-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-  .sales-table th {
-    background: #f8fafc; padding: 1rem; text-align: left;
-    font-size: .7rem; font-weight: 700; text-transform: uppercase;
-    color: #475569; border-bottom: 1px solid #e2e8f0;
-  }
-  .sales-table td { padding: 1.1rem 1rem; border-bottom: 1px solid #f1f5f9; color: #334155; }
-  .sales-table tr:hover td { background: #fbfcfe; }
-  
-  .badge-currency { font-family: 'Courier New', monospace; font-weight: 700; }
-</style>
-
-<div class="sales-hero">
-  <h1 class="sales-hero-title">📈 Sales Ledger Intelligence <span>MD SECURE</span></h1>
-  <p class="sales-hero-sub">Complete audit of all sales transactions, commissions, and payment confirmations. Monitored for financial integrity.</p>
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">📈 Financial Audit</span>
+            <h1 class="hero-title" style="color: #fff;">Sales Ledger Intelligence</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">Strategic audit of transactions, promoter commissions, and confirmed GM revenue streams.</p>
+        </div>
+    </div>
 </div>
 
 {# Summary Cards #}
-<div class="stats-grid-sales">
-  <div class="sales-stat-card" style="--c: #64748b;"><div class="s-label">Gross Value</div><div class="s-value"><small>₦</small>{{ total_value|floatformat:0 }}</div><div class="s-sub">Before team commission</div><style>.sales-stat-card:nth-child(1)::before{background:#64748b;}</style></div>
-  <div class="sales-stat-card" style="--c: #8b5cf6;"><div class="s-label">Total Commission</div><div class="s-value" style="color: #8b5cf6;"><small>₦</small>{{ total_commission|floatformat:0 }}</div><div class="s-sub">Earned by Promoters/Drivers</div><style>.sales-stat-card:nth-child(2)::before{background:#8b5cf6;}</style></div>
-  <div class="sales-stat-card" style="--c: #3b82f6;"><div class="s-label">Net Due</div><div class="s-value" style="color: #3b82f6;"><small>₦</small>{{ total_net|floatformat:0 }}</div><div class="s-sub">Payable to company</div><style>.sales-stat-card:nth-child(3)::before{background:#3b82f6;}</style></div>
-  <div class="sales-stat-card" style="--c: #10b981;"><div class="s-label">Total Collected</div><div class="s-value" style="color: #10b981;"><small>₦</small>{{ total_received|floatformat:0 }}</div><div class="s-sub">Confirmed by GM</div><style>.sales-stat-card:nth-child(4)::before{background:#10b981;}</style></div>
-  <div class="sales-stat-card" style="--c: #f43f5e;"><div class="s-label">Outstanding Debt</div><div class="s-value" style="color: {% if total_outstanding > 0 %}#f43f5e{% else %}#10b981{% endif %};"><small>₦</small>{{ total_outstanding|floatformat:0 }}</div><div class="s-sub">Total market exposure</div><style>.sales-stat-card:nth-child(5)::before{background:{% if total_outstanding > 0 %}#f43f5e{% else %}#10b981{% endif %};}</style></div>
+<div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--slate-400);">
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Gross Value</div>
+        <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">₦{{ total_value|floatformat:0 }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Before commissions</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--indigo);">
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Commission</div>
+        <div style="font-size: 1.6rem; font-weight: 900; color: var(--indigo);">₦{{ total_commission|floatformat:0 }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Earned by Team</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Net Due</div>
+        <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">₦{{ total_net|floatformat:0 }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Payable to Venture</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Collected</div>
+        <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">₦{{ total_received|floatformat:0 }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Confirmed Inflow</div>
+    </div>
+    <div class="card {% if total_outstanding > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Market Debt</div>
+        <div class="{% if total_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.6rem; font-weight: 900;">₦{{ total_outstanding|floatformat:0 }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Financial Exposure</div>
+    </div>
+</div>
+
+{# Per-Material Breakdown #}
+<div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
+    <div class="card" style="border-top: 5px solid var(--amber); background: #fffbeb;">
+        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #92400e; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🌽</span> MAIZE REVENUE STRATA
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Gross Value</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #78350f;">₦{{ maize_value|floatformat:0 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Realized Inflow</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ maize_received|floatformat:0 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Exposure</div>
+                <div class="{% if maize_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ maize_outstanding|floatformat:0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card" style="border-top: 5px solid var(--indigo); background: #f5f3ff;">
+        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4c1d95; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>🌾</span> WHEAT REVENUE STRATA
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Gross Value</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #3730a3;">₦{{ wheat_value|floatformat:0 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Realized Inflow</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ wheat_received|floatformat:0 }}</div>
+            </div>
+            <div>
+                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Exposure</div>
+                <div class="{% if wheat_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ wheat_outstanding|floatformat:0 }}</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {# Filters #}
-<div class="filter-bar-premium">
-  <form method="get" class="filter-form">
-    <div class="filter-item"><label>Date From</label><input type="date" name="date_from" value="{{ f_from }}"></div>
-    <div class="filter-item"><label>Date To</label><input type="date" name="date_to" value="{{ f_to }}"></div>
-    <div class="filter-item">
-      <label>Sales Person</label>
-      <select name="sales_person">
-        <option value="">— All Persons —</option>
-        {% for sp in all_persons %}
-        <option value="{{ sp.name }}" {% if f_person == sp.name %}selected{% endif %}>{{ sp.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div style="display: flex; gap: .5rem;">
-      <button type="submit" class="btn btn-primary" style="flex: 1; padding: .65rem;">Apply</button>
-      <a href="?" class="btn btn-secondary" style="padding: .65rem;">Reset</a>
-    </div>
-  </form>
+<div class="action-bar-modern" style="margin-bottom: 3rem;">
+    <form method="get" style="display: flex; align-items: flex-end; gap: 1rem; width: 100%; flex-wrap: wrap;">
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date From</label>
+            <input type="date" name="date_from" value="{{ f_from }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date To</label>
+            <input type="date" name="date_to" value="{{ f_to }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1.5; min-width: 200px;">
+            <label class="label-modern">Sales Personnel</label>
+            <select name="sales_person" class="input-modern">
+                <option value="">— All Active Personnel —</option>
+                {% for sp in all_persons %}
+                <option value="{{ sp.name }}" {% if f_person == sp.name %}selected{% endif %}>{{ sp.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Material</label>
+            <select name="material" class="input-modern">
+                <option value="" {% if not f_material %}selected{% endif %}>All Types</option>
+                <option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
+                <option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn-modern btn-modern-primary">Apply Audit</button>
+            <a href="?" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200);">Reset</a>
+        </div>
+    </form>
 </div>
 
-<div class="sales-table-card">
-  <table class="sales-table">
-    <thead>
-      <tr>
-        <th>S/N</th><th>Date</th><th>Sales Person</th><th>Mat.</th><th>Size</th>
-        <th class="num">Qty</th><th class="num">Net (₦)</th>
-        <th class="num">Recvd (₦)</th><th class="num">Debt (₦)</th><th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in sales %}
-      <tr>
-        <td style="font-family: monospace; font-weight: 700; color: #64748b;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ r.date }}</td>
-        <td><strong style="color: #0f172a;">{{ r.display_person }}</strong></td>
-        <td><span class="badge badge-{{ r.material_type }}">{{ r.material_type|upper|slice:":3" }}</span></td>
-        <td style="font-size: .8rem; font-weight: 700; color: #64748b;">{{ r.product_size }}</td>
-        <td class="num">{{ r.qty_sold }}</td>
-        <td class="num font-bold badge-currency">{{ r.net_payable|floatformat:2 }}</td>
-        <td class="num badge-currency" style="color: #10b981;">{{ r.total_paid|floatformat:2 }}</td>
-        <td class="num badge-currency {% if r.amount_outstanding > 0 %}text-danger font-bold{% endif %}">
-          {{ r.amount_outstanding|floatformat:2 }}
-        </td>
-        <td>
-          <span class="badge badge-{{ r.status }}" style="font-size: .7rem; font-weight: 800;">{{ r.status|upper }}</span>
-        </td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="10" style="padding: 4rem; text-align: center; color: #94a3b8;">No matching sales records identified.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div style="margin-bottom: 3.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">📋</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Promoter Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Live Personnel Channel</small></h3>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Personnel / Context</th>
+              <th>Material</th>
+              <th class="num">Sacks Sold</th>
+              <th class="num">Net Due</th>
+              <th class="num">Handed Over</th>
+              <th>Integrity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in promoter_sales %}
+            <tr>
+              <td>
+                <div style="font-weight: 800; color: var(--navy);">{{ r.sales_person.name }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ r.date }} • By {{ r.recorded_by.full_name }}</div>
+              </td>
+              <td>
+                <span class="{% if r.material_type == 'maize' %}bg-warning-soft text-warning-heavy{% else %}bg-indigo-soft text-indigo-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                    {{ r.material_type|upper }}
+                </span>
+              </td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ r.equivalent_sacks_sold|floatformat:1 }} <small>Sacks</small></td>
+              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ r.net_due_to_company|floatformat:0 }}</td>
+              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ r.amount_returned|floatformat:0 }}</td>
+              <td>
+                <span style="font-size: 0.65rem; font-weight: 900; background: #f0fdf4; color: #166534; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">CONFIRMED</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No promoter sales identified in this audit window.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-bottom: 3.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">🏢</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Confirmed Direct Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">GM Strategy Channel</small></h3>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Identity / Customer</th>
+              <th>Material</th>
+              <th class="num">Qty</th>
+              <th class="num">Sale Value</th>
+              <th class="num">Received</th>
+              <th class="num">Status / Debt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in direct_sales %}
+            <tr>
+              <td>
+                <div style="font-weight: 800; color: var(--navy);">{{ d.customer_name }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ d.date }}</div>
+              </td>
+              <td>
+                <span class="{% if d.material_type == 'maize' %}bg-warning-soft text-warning-heavy{% else %}bg-indigo-soft text-indigo-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                    {{ d.material_type|upper }}
+                </span>
+              </td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ d.qty_sold }} <small>Sacks</small></td>
+              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_sale_value|floatformat:0 }}</td>
+              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_received|floatformat:0 }}</td>
+              <td class="num">
+                {% if d.outstanding > 0 %}
+                <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">₦{{ d.outstanding|floatformat:0 }}</div>
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--rose);">OUTSTANDING</div>
+                {% else %}
+                <span style="font-size: 0.65rem; font-weight: 900; background: #f0fdf4; color: #166534; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">SETTLED</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No GM direct sales found in this period.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+</div>
+
+<div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <span style="font-size: 1.25rem;">📜</span>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Legacy / Tactical Audit <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Retail & Historical Archives</small></h3>
+    </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Personnel</th>
+              <th>Mat. / Size</th>
+              <th class="num">Qty</th>
+              <th class="num">Net Payable</th>
+              <th class="num">Received</th>
+              <th class="num">Debt</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in sales %}
+            <tr>
+              <td>
+                <div style="font-weight: 800; color: var(--navy);">{{ r.display_person }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ r.date }}</div>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: var(--slate-600); font-size: 0.8rem;">{{ r.material_type|upper }} — {{ r.product_size }}</div>
+              </td>
+              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ r.qty_sold }}</td>
+              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ r.net_payable|floatformat:0 }}</td>
+              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ r.total_paid|floatformat:0 }}</td>
+              <td class="num">
+                {% if r.amount_outstanding > 0 %}
+                <span style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">₦{{ r.amount_outstanding|floatformat:0 }}</span>
+                {% else %}
+                <span style="color: var(--emerald); font-weight: 900;">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="{% if r.status == 'debt' %}bg-danger-soft text-danger-heavy{% elif r.status == 'partial' %}bg-warning-soft text-warning-heavy{% else %}bg-success-soft text-success-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
+                    {{ r.status|upper }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No legacy sales match your query parameters.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

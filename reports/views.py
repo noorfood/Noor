@@ -10,6 +10,7 @@ from sales.models import SalesRecord
 from reconciliation.models import MoneyReceipt, ReconciliationFlag
 from accounts.models import User
 from audit.models import AuditLog
+from procurement.models import RawMaterialReceipt
 import datetime
 
 @role_required('manager', 'md')
@@ -31,50 +32,139 @@ def dashboard(request):
     # ─────────────────────────────────────────────────────────────────
     # OVERARCHING FINANCIAL METRICS (MD ONLY)
     # ─────────────────────────────────────────────────────────────────
-    total_revenue = 0.0
-    total_received = 0.0
-    total_outstanding = 0.0
-    
-    if user.role == 'md':
-        from sales.models import SalesRecord
-        from production.models import BrandSale
-        
-        # 1. Primary Sales
-        all_sales = SalesRecord.objects.all()
-        for r in all_sales:
-            total_revenue += float(r.total_value)
-            total_received += r.total_paid
-            total_outstanding += r.amount_outstanding
-            
-        # 2. Brand / Waste Sales
-        all_brands = BrandSale.objects.all()
-        for b in all_brands:
-            revenue = float(b.total_amount)
-            received = float(b.amount_cash) + float(b.amount_transfer)
-            total_revenue += revenue
-            total_received += received
-            total_outstanding += max(0, revenue - received)
+    # ─────────────────────────────────────────────────────────────────
+    # OVERARCHING FINANCIAL METRICS — split by Material Type (MD ONLY)
+    # ─────────────────────────────────────────────────────────────────
+    md_metrics = {
+        'maize': {
+            'produced': 0, 'in_store': 0, 'issued': 0, 'sold': 0,
+            'money_received': 0.0, 'outstanding': 0.0, 'inventory_value': 0.0
+        },
+        'wheat': {
+            'produced': 0, 'in_store': 0, 'issued': 0, 'sold': 0,
+            'money_received': 0.0, 'outstanding': 0.0, 'inventory_value': 0.0
+        }
+    }
 
-    # Staff Roster and Live Feed (Phase 8/11)
+    if user.role == 'md':
+        from sales.models import SalesRecord, DirectSalePayment, SalesManagerCollection, SalesManagerPayment, SalesResult
+        from production.models import BrandSale
+        from finished_store.views import _fg_balance
+        from finished_store.models import FinishedGoodsIssuance
+        from pricing.models import PriceConfig
+
+        for mat in ['maize', 'wheat']:
+            # 1. Produced (PackagingBatch)
+            md_metrics[mat]['produced'] = PackagingBatch.objects.filter(material_type=mat).aggregate(t=Sum('qty_10kg'))['t'] or 0
+
+            # 2. In Store
+            md_metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
+
+            # 3. Issued (Accepted FG Issuances)
+            md_metrics[mat]['issued'] = FinishedGoodsIssuance.objects.filter(
+                material_type=mat, status='accepted'
+            ).aggregate(t=Sum('qty_issued'))['t'] or 0
+
+            # 4. Sold (Actual promoter results converted to sacks + Confirmed DirectSales)
+            sm_res_qs = SalesResult.objects.filter(material_type=mat)
+            sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_res_qs))
+            
+            ds_sold = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('qty_sold'))['t'] or 0
+            md_metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
+
+            # 5. Money Received & Outstanding
+            # Direct Sales Money
+            ds_qs = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+            for ds in ds_qs:
+                md_metrics[mat]['money_received'] += float(ds.total_received)
+                md_metrics[mat]['outstanding'] += float(ds.outstanding)
+
+            # SM Payments & Outstanding at SM Level
+            # Since SM Payments are tracked as money, we get the total money outstanding from SMs
+            # For Money Received from SMs:
+            # We must map `SalesManagerPayment` to materials... but SM Payments don't have material_type!
+            # Let's derive it proportionally or fall back. Actually, we must use `SalesManagerCollection` value
+            # and `SalesResult` values. But SM returns are logged by material.
+            # To be accurate and separate, we iterate over SMs below and sum it up.
+            
+            # Inventory Value
+            from django.utils import timezone
+            sm_price = PriceConfig.get_active_price('sales_team', mat, '10kg', timezone.now().date()) or 0
+            md_metrics[mat]['inventory_value'] = float(md_metrics[mat]['in_store'] * sm_price)
+            
+    # Calculate SM Money dynamically for Maize/Wheat
+    if user.role == 'md':
+        # To split SM money received by material, we know:
+        # Total Owed = ∑(Collection Value) - ∑(Returns Value).
+        # We can sum the pure Owed per material.
+        # But cash paid is mixed. We will allocate the cash paid to Maize first, then Wheat, or just aggregate it globally?
+        # The user requested 'Total money received (Maize/Wheat)'. So we MUST split it.
+        # Let's approximate: If SM buys 80% maize, 20% wheat, allocate cash 80/20.
+        from sales.views import get_sm_money_outstanding
+        
+        for sm in User.objects.filter(role='sales_manager', status='active'):
+            # Calculate value collected per material
+            m_coll = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='maize', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
+            w_coll = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='wheat', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
+            
+            # Subtract commission earned per material (reduces what SM owes the company)
+            m_comm = SalesResult.objects.filter(recorded_by=sm, material_type='maize').aggregate(t=Sum('commission_amount'))['t'] or 0
+            w_comm = SalesResult.objects.filter(recorded_by=sm, material_type='wheat').aggregate(t=Sum('commission_amount'))['t'] or 0
+            
+            m_net_owed = float(m_coll) - float(m_comm)
+            w_net_owed = float(w_coll) - float(w_comm)
+            total_net = m_net_owed + w_net_owed
+            
+            # Total money paid by this SM
+            from sales.models import SalesManagerPayment
+            total_paid = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+            total_paid = float(total_paid)
+            
+            if total_net > 0:
+                m_ratio = m_net_owed / total_net
+                w_ratio = w_net_owed / total_net
+            else:
+                m_ratio, w_ratio = 0.5, 0.5
+                
+            m_paid = total_paid * m_ratio
+            w_paid = total_paid * w_ratio
+            
+            md_metrics['maize']['money_received'] += m_paid
+            md_metrics['wheat']['money_received'] += w_paid
+            md_metrics['maize']['outstanding'] += max(0, m_net_owed - m_paid)
+            md_metrics['wheat']['outstanding'] += max(0, w_net_owed - w_paid)
+
+    # Staff Roster and Live Feed
     staff_roster = User.objects.filter(status='active').exclude(role='md').order_by('role', 'full_name')
     audit_feed = AuditLog.objects.all().order_by('-timestamp')[:15]
-    
+
     recent_flagged = MillingBatch.objects.filter(flag_level__in=['warning', 'critical']).order_by('-date', '-created_at')[:5]
 
-    # OM Retail and Bran Sales (Phase 20)
+    # Production outstanding broken down by material
+    from clean_store.models import CleanRawIssuance as _CRI, CleanRawReturn as _CRR
+    def _prod_outstanding(mat):
+        acc = _CRI.objects.filter(material_type=mat, status='accepted').aggregate(t=Sum('num_bags'))['t'] or 0
+        mld_new = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('bags_milled_new'))['t'] or 0
+        mld_old = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
+        ret = _CRR.objects.filter(material_type=mat, status__in=['pending', 'accepted']).aggregate(t=Sum('num_bags'))['t'] or 0
+        return max(0, acc - mld_new - mld_old - ret)
+    outstanding_production_maize = _prod_outstanding('maize')
+    outstanding_production_wheat = _prod_outstanding('wheat')
+
+    # OM Retail and Bran Sales
     from sales.models import CompanyRetailLedger, SalesRecord
     from production.models import BrandSale
     from procurement.models import MATERIAL_CHOICES
-    
+
     company_sales = SalesRecord.objects.filter(channel='company').order_by('-date', '-created_at')[:10]
     bran_sales = BrandSale.objects.all().order_by('-date', '-created_at')[:10]
-    
+
     retail_balances = []
     for mat_val, mat_label in MATERIAL_CHOICES:
         pieces = CompanyRetailLedger.objects.filter(material_type=mat_val).aggregate(t=Sum('pieces_changed'))['t'] or 0
         retail_balances.append({'material': mat_label, 'pieces': pieces})
 
-    # SM Accountability Summaries for MD/GM Command Center
+    # SM Accountability Summaries — expose maize/wheat separately
     from sales.views import get_sm_goods_holding, get_sm_money_outstanding
     from sales.models import SalesManagerCollection
     sm_list = User.objects.filter(role='sales_manager', status='active').order_by('full_name')
@@ -86,6 +176,8 @@ def dashboard(request):
         pending_count = SalesManagerCollection.objects.filter(sales_manager=sm, status='pending').count()
         sm_summaries.append({
             'sm': sm,
+            'maize_holding': maize,
+            'wheat_holding': wheat,
             'goods_balance': maize + wheat,
             'money_outstanding': money,
             'pending_count': pending_count,
@@ -99,15 +191,18 @@ def dashboard(request):
     from sales.models import SalesManagerPayment
     pending_sm_payments = SalesManagerPayment.objects.filter(status='pending_gm').order_by('-date', '-created_at')
 
+    # Pending Raw Material Cost Entries (MD Review)
+    pending_raw_costs = RawMaterialReceipt.objects.filter(cost_status='pending') if user.role == 'md' else []
+
     return render(request, 'reports/dashboard.html', {
         'current_user': user,
         'total_batches': total_batches,
         'flagged_batches': flagged_batches,
         'open_flags': open_flags,
         'outstanding_production': outstanding_production,
-        'total_revenue': total_revenue,
-        'total_received': total_received,
-        'total_outstanding': total_outstanding,
+        'outstanding_production_maize': outstanding_production_maize,
+        'outstanding_production_wheat': outstanding_production_wheat,
+        'md_metrics': md_metrics,
         'recent_flagged': recent_flagged,
         'staff_roster': staff_roster,
         'audit_feed': audit_feed,
@@ -117,6 +212,7 @@ def dashboard(request):
         'sm_summaries': sm_summaries,
         'pending_company_issuances': pending_company_issuances,
         'pending_sm_payments': pending_sm_payments,
+        'pending_raw_costs': pending_raw_costs,
     })
 
 
@@ -291,35 +387,85 @@ def sales_report(request):
     f_from = request.GET.get('date_from', '')
     f_to = request.GET.get('date_to', '')
     f_person = request.GET.get('sales_person', '')
+    f_material = request.GET.get('material', '')
 
-    from sales.models import SalesPerson, SalesPayment
+    from sales.models import SalesPerson, SalesPayment, SalesResult, DirectSalePayment
 
     sales = SalesRecord.objects.all().order_by('-date', '-created_at')
+    promoter_sales = SalesResult.objects.all().order_by('-date', '-created_at')
+    direct_sales_confirmed = DirectSalePayment.objects.filter(status='confirmed').order_by('-date', '-created_at')
+
     if f_from:
         sales = sales.filter(date__gte=f_from)
+        promoter_sales = promoter_sales.filter(date__gte=f_from)
+        direct_sales_confirmed = direct_sales_confirmed.filter(date__gte=f_from)
     if f_to:
         sales = sales.filter(date__lte=f_to)
-    if f_person:
-        sales = sales.filter(sales_person__name__icontains=f_person)
+        promoter_sales = promoter_sales.filter(date__lte=f_to)
+        direct_sales_confirmed = direct_sales_confirmed.filter(date__lte=f_to)
+    if f_material:
+        sales = sales.filter(material_type=f_material)
+        promoter_sales = promoter_sales.filter(material_type=f_material)
+        direct_sales_confirmed = direct_sales_confirmed.filter(material_type=f_material)
 
+    # Overall totals
     total_value      = sum(float(r.total_value) for r in sales)
     total_commission = sum(float(r.commission_amount) for r in sales)
     total_net        = sum(float(r.net_payable) for r in sales)
     total_received   = sum(r.total_paid for r in sales)
     total_outstanding= sum(r.amount_outstanding for r in sales)
 
+    # Per-material totals (Consolidated)
+    maize_value = (float(sum(r.total_value for r in sales if r.material_type == 'maize')) +
+                   float(sum(r.gross_value for r in promoter_sales if r.material_type == 'maize')) +
+                   float(sum(r.total_sale_value for r in direct_sales_confirmed if r.material_type == 'maize')))
+    
+    wheat_value = (float(sum(r.total_value for r in sales if r.material_type == 'wheat')) +
+                   float(sum(r.gross_value for r in promoter_sales if r.material_type == 'wheat')) +
+                   float(sum(r.total_sale_value for r in direct_sales_confirmed if r.material_type == 'wheat')))
+    
+    maize_received = (float(sum(r.total_paid for r in sales if r.material_type == 'maize')) +
+                      float(sum(r.amount_returned for r in promoter_sales if r.material_type == 'maize')) +
+                      float(sum(r.total_received for r in direct_sales_confirmed if r.material_type == 'maize')))
+    
+    wheat_received = (float(sum(r.total_paid for r in sales if r.material_type == 'wheat')) +
+                      float(sum(r.amount_returned for r in promoter_sales if r.material_type == 'wheat')) +
+                      float(sum(r.total_received for r in direct_sales_confirmed if r.material_type == 'wheat')))
+    
+    maize_outstanding = max(0, maize_value - maize_received)
+    wheat_outstanding = max(0, wheat_value - wheat_received)
+
     all_persons = SalesPerson.objects.all().order_by('name')
+
+    v_record = float(sum(r.total_value for r in sales))
+    v_promoted = float(sum(r.gross_value for r in promoter_sales))
+    v_direct = float(sum(r.total_sale_value for r in direct_sales_confirmed))
+    tv = v_record + v_promoted + v_direct
+
+    c_record = float(sum(r.commission_amount for r in sales))
+    c_promoted = float(sum(r.commission_amount for r in promoter_sales))
+    tc = c_record + c_promoted
+    
+    r_record = float(sum(r.total_paid for r in sales))
+    r_promoted = float(sum(r.amount_returned for r in promoter_sales))
+    r_direct = float(sum(r.total_received for r in direct_sales_confirmed))
+    tr = r_record + r_promoted + r_direct
+
+    tn = tv - tc
+    tout = max(0, tn - tr)
 
     return render(request, 'reports/sales.html', {
         'current_user': user,
         'sales': sales,
-        'total_value': total_value,
-        'total_commission': total_commission,
-        'total_net': total_net,
-        'total_received': total_received,
-        'total_outstanding': total_outstanding,
+        'promoter_sales': promoter_sales,
+        'direct_sales': direct_sales_confirmed,
+        'total_value': tv,
+        'total_commission': tc,
+        'total_net': tn,
+        'total_received': tr,
+        'total_outstanding': tout,
         'all_persons': all_persons,
-        'f_from': f_from, 'f_to': f_to, 'f_person': f_person,
+        'f_from': f_from, 'f_to': f_to, 'f_person': f_person, 'f_material': f_material,
     })
 
 
@@ -334,24 +480,33 @@ def outstanding_report(request):
     prod_users = User.objects.filter(role='production_officer', status='active')
     prod_balances = []
     for u in prod_users:
-        accepted = CleanRawIssuance.objects.filter(issued_to=u, status='accepted').aggregate(t=Sum('num_bags'))['t'] or 0
-        milled = MillingBatch.objects.filter(production_officer=u).aggregate(t=Sum('bags_milled_new'))['t'] or 0
-        returned = CleanRawReturn.objects.filter(returned_by=u, status__in=['pending', 'accepted']).aggregate(t=Sum('num_bags'))['t'] or 0
-        bal = max(0, accepted - milled - returned)
-        if bal > 0:
-            prod_balances.append({'user': u, 'balance': bal})
+        # Per-material balance for production officer
+        def _po_bal(mat):
+            acc = CleanRawIssuance.objects.filter(issued_to=u, status='accepted', material_type=mat).aggregate(t=Sum('num_bags'))['t'] or 0
+            mld = MillingBatch.objects.filter(production_officer=u, material_type=mat).aggregate(t=Sum('bags_milled_new'))['t'] or 0
+            ret = CleanRawReturn.objects.filter(returned_by=u, material_type=mat, status__in=['pending', 'accepted']).aggregate(t=Sum('num_bags'))['t'] or 0
+            return max(0, acc - mld - ret)
+        maize_bal = _po_bal('maize')
+        wheat_bal = _po_bal('wheat')
+        total_bal = maize_bal + wheat_bal
+        if total_bal > 0:
+            prod_balances.append({'user': u, 'balance': total_bal, 'maize_balance': maize_bal, 'wheat_balance': wheat_bal})
 
-    # Sales Balances: money outstanding per Sales Manager (new flow)
+    # Sales Balances: money outstanding per Sales Manager — with per-material goods split
     sales_managers = User.objects.filter(role='sales_manager', status='active').order_by('full_name')
     sales_balances = []
     for sm in sales_managers:
-        goods_holding = get_sm_goods_holding(sm)
+        maize_holding = get_sm_goods_holding(sm, 'maize')
+        wheat_holding = get_sm_goods_holding(sm, 'wheat')
+        goods_holding = maize_holding + wheat_holding
         money_out = get_sm_money_outstanding(sm)
         record_count = SalesManagerCollection.objects.filter(sales_manager=sm).count()
-        
+
         if goods_holding > 0 or money_out > 0:
             sales_balances.append({
                 'sm': sm,
+                'maize_holding': maize_holding,
+                'wheat_holding': wheat_holding,
                 'goods_holding': goods_holding,
                 'outstanding': money_out,
                 'record_count': record_count,
@@ -377,7 +532,10 @@ def company_flow(request):
     from procurement.models import RawMaterialReceipt, RawMaterialIssuance
     from accounts.models import User
     from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding
-    from sales.models import SalesManagerCollection, SalesManagerPayment, SalesRecord, CompanyRetailLedger
+    from sales.models import (
+        SalesManagerCollection, SalesManagerPayment, SalesRecord,
+        CompanyRetailLedger, SalesResult, DirectSalePayment
+    )
     from production.models import BrandSale
 
     # Stage 1: Raw Store
@@ -397,12 +555,20 @@ def company_flow(request):
     clean_maize_out = CleanRawIssuance.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
     clean_wheat_out = CleanRawIssuance.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
 
-    # Stage 3: Production
+    # Stage 3: Production — split by material
+    def _milled(mat):
+        n = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('bags_milled_new'))['t'] or 0
+        o = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
+        return n + o
+    maize_bags_milled = _milled('maize')
+    wheat_bags_milled = _milled('wheat')
     total_bags_milled_new = MillingBatch.objects.aggregate(t=Sum('bags_milled_new'))['t'] or 0
     total_bags_milled_old = MillingBatch.objects.aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
     total_powder_kg       = float(MillingBatch.objects.aggregate(t=Sum('bulk_powder_kg'))['t'] or 0)
     total_powder_used     = float(PackagingBatch.objects.aggregate(t=Sum('powder_used_kg'))['t'] or 0)
-    total_sacks_produced  = PackagingBatch.objects.aggregate(t=Sum('qty_10kg'))['t'] or 0
+    maize_sacks_produced  = PackagingBatch.objects.filter(material_type='maize').aggregate(t=Sum('qty_10kg'))['t'] or 0
+    wheat_sacks_produced  = PackagingBatch.objects.filter(material_type='wheat').aggregate(t=Sum('qty_10kg'))['t'] or 0
+    total_sacks_produced  = maize_sacks_produced + wheat_sacks_produced
     powder_bal_kg         = max(0.0, total_powder_kg - total_powder_used)
 
     prod_users = User.objects.filter(role='production_officer', status='active')
@@ -415,10 +581,16 @@ def company_flow(request):
         bal = max(0, acc - mld_total - ret)
         prod_officer_rows.append({'user': u, 'accepted': acc, 'milled': mld_total, 'returned': ret, 'balance': bal})
 
-    # Stage 4: Finished Goods Store
-    fg_in  = FinishedGoodsReceipt.objects.aggregate(t=Sum('qty_received'))['t'] or 0
-    fg_out = FinishedGoodsIssuance.objects.aggregate(t=Sum('qty_issued'))['t'] or 0
-    fg_bal = _fg_balance('maize', '10kg') + _fg_balance('wheat', '10kg')
+    # Stage 4: Finished Goods Store — split by material
+    fg_maize_in  = FinishedGoodsReceipt.objects.filter(material_type='maize', status='accepted').aggregate(t=Sum('qty_received'))['t'] or 0
+    fg_wheat_in  = FinishedGoodsReceipt.objects.filter(material_type='wheat', status='accepted').aggregate(t=Sum('qty_received'))['t'] or 0
+    fg_maize_out = FinishedGoodsIssuance.objects.filter(material_type='maize', status='accepted').aggregate(t=Sum('qty_issued'))['t'] or 0
+    fg_wheat_out = FinishedGoodsIssuance.objects.filter(material_type='wheat', status='accepted').aggregate(t=Sum('qty_issued'))['t'] or 0
+    fg_maize_bal = _fg_balance('maize', '10kg')
+    fg_wheat_bal = _fg_balance('wheat', '10kg')
+    fg_in  = fg_maize_in + fg_wheat_in
+    fg_out = fg_maize_out + fg_wheat_out
+    fg_bal = fg_maize_bal + fg_wheat_bal
 
     # Stage 5: Brand Sales & Byproducts
     brand_sales = BrandSale.objects.all()
@@ -427,7 +599,7 @@ def company_flow(request):
     brand_received    = float(brand_sales.aggregate(t=Sum('amount_cash'))['t'] or 0) + float(brand_sales.aggregate(t=Sum('amount_transfer'))['t'] or 0)
     brand_outstanding = max(0, brand_sales_value - brand_received)
 
-    # Stage 6: Sales -> Money (Sales Manager Level)
+    # Stage 6: Sales -> Money (Sales Manager Level) — with per-material split
     sales_managers = User.objects.filter(role='sales_manager', status='active').order_by('full_name')
     sm_rows = []
     total_sacks_collected   = 0
@@ -437,43 +609,66 @@ def company_flow(request):
     total_sales_value       = 0
 
     for sm in sales_managers:
-        # Goods collected (accepted)
-        collections = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted')
-        collected = sum(c.qty_sacks for c in collections)
-        sales_val = sum(c.total_value for c in collections)
+        # Goods collected per material (accepted)
+        maize_coll = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='maize')
+        wheat_coll = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='wheat')
+        maize_collected = sum(c.qty_sacks for c in maize_coll)
+        wheat_collected = sum(c.qty_sacks for c in wheat_coll)
+        collected = maize_collected + wheat_collected
         
+        # Sales Value (Base on actual SalesResults if real, or collection value for debt)
+        # For flow pipeline, we'll keep collection value for SM debt but show SalesResult sold
+        coll_val = sum(c.total_value for c in maize_coll) + sum(c.total_value for c in wheat_coll)
+        
+        # Real Sold (Promoter level)
+        res_qs = SalesResult.objects.filter(recorded_by=sm)
+        sold_eq = float(sum(r.equivalent_sacks_sold for r in res_qs))
+        res_val = res_qs.aggregate(t=Sum('gross_value'))['t'] or 0
+
         # Money received (confirmed)
         payments = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed')
         received = sum(p.total for p in payments)
-        
-        goods_bal = get_sm_goods_holding(sm)
+
+        maize_bal = get_sm_goods_holding(sm, 'maize')
+        wheat_bal = get_sm_goods_holding(sm, 'wheat')
+        goods_bal = maize_bal + wheat_bal
         money_out = get_sm_money_outstanding(sm)
 
         total_sacks_collected   += collected
         total_goods_outstanding += goods_bal
         total_money_outstanding += money_out
         total_money_received    += received
-        total_sales_value       += sales_val
+        total_sales_value       += float(res_val) # Real revenue from results
 
         sm_rows.append({
-            'sm': sm, 'collected': collected,
-            'goods_balance': goods_bal, 'money_outstanding': money_out,
-            'money_received': received, 'total_sales_value': sales_val,
+            'sm': sm,
+            'maize_collected': maize_collected,
+            'wheat_collected': wheat_collected,
+            'collected': collected,
+            'sold_eq': sold_eq,
+            'maize_balance': maize_bal,
+            'wheat_balance': wheat_bal,
+            'goods_balance': goods_bal,
+            'money_outstanding': money_out,
+            'money_received': received,
+            'total_sales_value': float(res_val),
+            'coll_value': coll_val,
         })
 
-    # GM Direct Sales Context
+    # GM Direct Sales Context (Retail pieces + Sacks)
     gm_maize_hand = get_gm_goods_holding('maize')
     gm_wheat_hand = get_gm_goods_holding('wheat')
     gm_maize_pieces = CompanyRetailLedger.objects.filter(material_type='maize').aggregate(t=Sum('pieces_changed'))['t'] or 0
     gm_wheat_pieces = CompanyRetailLedger.objects.filter(material_type='wheat').aggregate(t=Sum('pieces_changed'))['t'] or 0
     
-    gm_sales = SalesRecord.objects.filter(channel='company')
-    gm_revenue = float(gm_sales.aggregate(t=Sum('total_value'))['t'] or 0)
-    gm_received = gm_revenue 
+    gm_ds_qs = DirectSalePayment.objects.filter(status='confirmed')
+    gm_revenue = float(gm_ds_qs.aggregate(t=Sum('total_sale_value'))['t'] or 0)
+    gm_received = float(gm_ds_qs.aggregate(t=Sum('amount_received_cash') + Sum('amount_received_transfer'))['t'] or 0)
+    gm_outstanding = max(0, gm_revenue - gm_received)
         
     company_total_revenue = float(total_sales_value) + float(brand_sales_value) + gm_revenue
     company_received_money = float(total_money_received) + float(brand_received) + gm_received
-    company_outstanding_money = float(total_money_outstanding) + float(brand_outstanding)
+    company_outstanding_money = float(total_money_outstanding) + float(brand_outstanding) + gm_outstanding
 
     return render(request, 'reports/company_flow.html', {
         'current_user': user, 'show_money': show_money,
@@ -484,10 +679,15 @@ def company_flow(request):
         'clean_maize_out': clean_maize_out, 'clean_wheat_out': clean_wheat_out,
         'clean_maize_bal': clean_maize_bal, 'clean_wheat_bal': clean_wheat_bal,
         'total_bags_milled': total_bags_milled_new + total_bags_milled_old,
+        'maize_bags_milled': maize_bags_milled, 'wheat_bags_milled': wheat_bags_milled,
         'total_powder_kg': total_powder_kg, 'total_powder_used': total_powder_used,
         'powder_bal_kg': powder_bal_kg, 'total_sacks_produced': total_sacks_produced,
+        'maize_sacks_produced': maize_sacks_produced, 'wheat_sacks_produced': wheat_sacks_produced,
         'prod_officer_rows': prod_officer_rows,
         'fg_in': fg_in, 'fg_out': fg_out, 'fg_bal': fg_bal,
+        'fg_maize_in': fg_maize_in, 'fg_wheat_in': fg_wheat_in,
+        'fg_maize_out': fg_maize_out, 'fg_wheat_out': fg_wheat_out,
+        'fg_maize_bal': fg_maize_bal, 'fg_wheat_bal': fg_wheat_bal,
         'total_brand_sacks': total_brand_sacks, 'brand_sales_value': brand_sales_value,
         'brand_received': brand_received, 'brand_outstanding': brand_outstanding,
         'sm_rows': sm_rows,
@@ -512,7 +712,7 @@ def md_insights(request):
     """
     user = get_current_user(request)
 
-    from procurement.models import RawMaterialReceipt
+    from procurement.models import RawMaterialReceipt, RawMaterialIssuance
     from clean_store.views import _get_clean_store_balance
     from finished_store.views import _fg_balance
     from sales.models import SalesManagerCollection, SalesManagerPayment, SalesPerson, SalesDistributionRecord, SalesResult
@@ -522,11 +722,15 @@ def md_insights(request):
     from django.db.models.functions import TruncMonth
 
     # 1. Total Store Summary Layer (No money shown here)
-    dirty_maize = RawMaterialReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
+    m_in = RawMaterialReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
+    m_out = RawMaterialIssuance.objects.filter(material_type='maize').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    dirty_maize = max(0, m_in - m_out)
     clean_maize = _get_clean_store_balance('maize')
     fg_maize    = _fg_balance('maize', '10kg')
 
-    dirty_wheat = RawMaterialReceipt.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    w_in = RawMaterialReceipt.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    w_out = RawMaterialIssuance.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    dirty_wheat = max(0, w_in - w_out)
     clean_wheat = _get_clean_store_balance('wheat')
     fg_wheat    = _fg_balance('wheat', '10kg')
 
@@ -549,8 +753,9 @@ def md_insights(request):
     sp_ranks = []
     for sp in all_sps:
         issued = SalesDistributionRecord.objects.filter(sales_person=sp).aggregate(t=Sum('qty_given'))['t'] or 0
-        sold = SalesResult.objects.filter(distribution__sales_person=sp).aggregate(t=Sum('qty_sold'))['t'] or 0
-        pct = (sold / issued * 100) if issued > 0 else 0
+        res_qs = SalesResult.objects.filter(sales_person=sp)
+        sold = float(sum(r.equivalent_sacks_sold for r in res_qs))
+        pct = (sold / float(issued) * 100) if issued > 0 else 0
         if issued > 0:
             sp_ranks.append({
                 'name': sp.name,
@@ -568,9 +773,13 @@ def md_insights(request):
         month=TruncMonth('date')
     ).values('month').annotate(total=Sum('qty_sacks')).order_by('month')
 
-    monthly_sales = SalesResult.objects.annotate(
-        month=TruncMonth('date')
-    ).values('month').annotate(total=Sum('qty_sold')).order_by('month')
+    monthly_sales = SalesResult.objects.all()
+    # Manual monthly aggregation for property-based Sum
+    # (Since property-based Sum isn't possible in ORM aggregate)
+    sales_by_month = {}
+    for r in monthly_sales:
+        m_key = r.date.replace(day=1)
+        sales_by_month[m_key] = sales_by_month.get(m_key, 0) + r.equivalent_sacks_sold
 
     months_list = []
     colls_list = []
@@ -589,11 +798,11 @@ def md_insights(request):
             if m_name in chart_data:
                 chart_data[m_name]['colls'] = c['total']
                 
-    for s in monthly_sales:
-        if s['month'] and s['month'].year == this_year:
-            m_name = s['month'].strftime('%b')
+    for m_key, val in sales_by_month.items():
+        if m_key.year == this_year:
+            m_name = m_key.strftime('%b')
             if m_name in chart_data:
-                chart_data[m_name]['sales'] = s['total']
+                chart_data[m_name]['sales'] = float(val)
 
     for m in month_names:
         months_list.append(m)
@@ -622,7 +831,7 @@ def md_insights(request):
             w_idx = (s.date.day - 1) // 7
             w_name = f'Week {w_idx + 1}'
             if w_name in weekly_chart_data:
-                weekly_chart_data[w_name]['sales'] += s.qty_sold
+                weekly_chart_data[w_name]['sales'] += float(s.equivalent_sacks_sold)
                 
     w_colls_list = [weekly_chart_data[w]['colls'] for w in weeks_list]
     w_sales_list = [weekly_chart_data[w]['sales'] for w in weeks_list]
@@ -633,11 +842,15 @@ def md_insights(request):
     brand_received = float(brand_sales.aggregate(t=Sum('amount_cash'))['t'] or 0) + float(brand_sales.aggregate(t=Sum('amount_transfer'))['t'] or 0)
     brand_outstanding = max(0, brand_revenue - brand_received)
 
-    # 6. Product Sales Mix (Maize vs Wheat)
+    # Product Sales Mix (Maize vs Wheat)
     from sales.models import SalesResult
-    prod_mix = SalesResult.objects.values('material_type').annotate(total=Sum('qty_sold')).order_by('material_type')
-    product_labels = [p['material_type'].title() for p in prod_mix]
-    product_data = [p['total'] for p in prod_mix]
+    prod_mix_qs = SalesResult.objects.all()
+    mix_data = {'maize': 0.0, 'wheat': 0.0}
+    for r in prod_mix_qs:
+        mix_data[r.material_type] += float(r.equivalent_sacks_sold)
+    
+    product_labels = [k.title() for k in mix_data.keys()]
+    product_data = list(mix_data.values())
 
 
     context = {
@@ -666,3 +879,230 @@ def md_insights(request):
     }
 
     return render(request, 'reports/md_insights.html', context)
+
+
+@role_required('md')
+def financial_summary(request):
+    """
+    The Financial Intelligence Center (MD only).
+    Calculates P&L, SM Accountability, and Trend data.
+    """
+    user = get_current_user(request)
+    from django.db.models import Sum, Q
+    from django.utils import timezone
+    from procurement.models import RawMaterialReceipt, MATERIAL_CHOICES
+    from production.models import PackagingBatch
+    from finished_store.views import _fg_balance
+    from sales.models import SalesManagerCollection, SalesManagerPayment, DirectSalePayment, SalesResult
+    from pricing.models import PackagingCostConfig, OperationalExpense, PriceConfig
+    from accounts.models import User
+    import json
+
+    # 1. High Level Material-Specific Metrics
+    materials = ['maize', 'wheat']
+    metrics = {mat: {
+        'produced': 0, 'sold': 0, 'in_store': 0, 'sm_holding': 0,
+        'revenue': 0, 'outstanding': 0
+    } for mat in materials}
+
+    for mat in materials:
+        # Produced (Total sacks ever packaged)
+        metrics[mat]['produced'] = PackagingBatch.objects.filter(material_type=mat).aggregate(t=Sum('qty_10kg'))['t'] or 0
+        
+        # In Store (Physical balance)
+        metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
+
+        # Sold (Actual promoter results converted to sacks + MD confirmed direct sales)
+        sm_results = SalesResult.objects.filter(material_type=mat)
+        sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_results))
+        
+        ds_sold = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('qty_sold'))['t'] or 0
+        metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
+
+        # Outstanding with SMs (Goods in their hands)
+        from sales.views import get_sm_goods_holding
+        total_sm_holding = 0
+        for sm in User.objects.filter(role='sales_manager', status='active'):
+            total_sm_holding += get_sm_goods_holding(sm, mat)
+        metrics[mat]['sm_holding'] = total_sm_holding
+
+        # Revenue (Gross value of actual recognized sales)
+        sm_rev = SalesResult.objects.filter(material_type=mat).aggregate(t=Sum('gross_value'))['t'] or 0
+        ds_rev = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('total_sale_value'))['t'] or 0
+        metrics[mat]['revenue'] = float(sm_rev) + float(ds_rev)
+
+        # Outstanding Money
+        from sales.views import get_sm_money_outstanding
+        total_sm_money = 0
+        for sm in User.objects.filter(role='sales_manager', status='active'):
+            total_sm_money += get_sm_money_outstanding(sm) # Note: SM money is mixed, we estimate proportional link in the accountability table
+        
+        ds_out = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        total_ds_out = sum(float(ds.outstanding) for ds in ds_out)
+        
+        # For the global dashboard cards, we just sum them
+        # Note: SM outstanding is better handled in the table because it's hard to split perfectly by material 
+        # unless we use the ratio logic from the accountability table.
+        metrics[mat]['outstanding_ds'] = total_ds_out
+
+    # 2. Sales Accountability Table (Per SM)
+    sm_rows = []
+    for sm in User.objects.filter(role='sales_manager', status='active').order_by('full_name'):
+        for mat in materials:
+            # Sacks Collected (Total ever)
+            coll_qs = SalesManagerCollection.objects.filter(sales_manager=sm, material_type=mat, status='accepted')
+            collected = coll_qs.aggregate(t=Sum('qty_sacks'))['t'] or 0
+            coll_val = coll_qs.aggregate(t=Sum('total_value'))['t'] or 0
+            
+            # Sacks Sold (Results recorded - converted to equivalent sacks)
+            res_qs = SalesResult.objects.filter(recorded_by=sm, material_type=mat)
+            sold = float(sum(r.equivalent_sacks_sold for r in res_qs))
+            comm = res_qs.aggregate(t=Sum('commission_amount'))['t'] or 0
+            
+            # Outstanding Sacks
+            holding = get_sm_goods_holding(sm, mat)
+            
+            # Financials (Proportional split for SM payments)
+            # This logic matches the dashboard.html logic for consistency
+            m_net_owed = float(SalesManagerCollection.objects.filter(sales_manager=sm, material_type='maize', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0) - float(SalesResult.objects.filter(recorded_by=sm, material_type='maize').aggregate(t=Sum('commission_amount'))['t'] or 0)
+            w_net_owed = float(SalesManagerCollection.objects.filter(sales_manager=sm, material_type='wheat', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0) - float(SalesResult.objects.filter(recorded_by=sm, material_type='wheat').aggregate(t=Sum('commission_amount'))['t'] or 0)
+            total_net = m_net_owed + w_net_owed
+            
+            total_paid = float(SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+            
+            if total_net > 0:
+                ratio = (m_net_owed if mat == 'maize' else w_net_owed) / total_net
+            else:
+                ratio = 0.5
+            
+            mat_paid = total_paid * ratio
+            mat_owed = (m_net_owed if mat == 'maize' else w_net_owed) - mat_paid
+            
+            if collected > 0 or holding > 0:
+                sm_rows.append({
+                    'sm': sm,
+                    'material': mat,
+                    'collected': collected,
+                    'sold': sold,
+                    'holding': holding,
+                    'paid': mat_paid,
+                    'outstanding': max(0, mat_owed)
+                })
+
+    # 3. Profit & Loss Engine
+    # Revenue
+    total_rev = sum(m['revenue'] for m in metrics.values())
+    
+    # Costs
+    # a. Raw Material Cost (MD-approved costs for all RECEIPTS)
+    # We aggregate total_cost from RawMaterialReceipt where cost_status='approved'
+    raw_mat_cost = float(RawMaterialReceipt.objects.filter(cost_status='approved').aggregate(t=Sum('total_cost'))['t'] or 0)
+    
+    # b. Packaging Cost (Produced Sacks * Active Packaging Cost at production time)
+    # Since accurate per-batch matching is complex, we use total produced * current active packaging cost as a strong estimate
+    packaging_cost = 0
+    for mat in materials:
+        active_pack_cost = PackagingCostConfig.get_active_cost(mat, timezone.now().date())
+        packaging_cost += metrics[mat]['produced'] * active_pack_cost
+    
+    # c. Operational Expenses
+    op_expenses = float(OperationalExpense.objects.aggregate(t=Sum('amount'))['t'] or 0)
+    
+    total_costs = raw_mat_cost + packaging_cost + op_expenses
+    net_profit = total_rev - total_costs
+    
+    profit_margin_pct = (net_profit / total_rev * 100) if total_rev > 0 else 0
+    profit_ratio = (net_profit / total_rev) if total_rev > 0 else 0
+
+    # 4. Trend Charts (Dynamic period aggregation)
+    period = request.GET.get('period', 'week')
+    labels = []
+    prod_data = []
+    sales_data = []
+    rev_data = []
+    profit_data = []
+    
+    if period == 'year':
+        ranges = 3
+        delta_kwargs = {'days': 365} # Approximation
+    elif period == 'month':
+        ranges = 6
+        delta_kwargs = {'days': 30} # Approximation
+    else:
+        period = 'week'
+        ranges = 5
+        delta_kwargs = {'weeks': 1}
+
+    today = timezone.now().date()
+    
+    for i in range(ranges - 1, -1, -1):
+        if period == 'year':
+            start_date = datetime.date(today.year - i, 1, 1)
+            end_date = datetime.date(today.year - i, 12, 31)
+            label = str(start_date.year)
+        elif period == 'month':
+            # Simplified month logic
+            target_month = (today.month - i - 1) % 12 + 1
+            target_year = today.year + (today.month - i - 1) // 12
+            start_date = datetime.date(target_year, target_month, 1)
+            if target_month == 12:
+                end_date = datetime.date(target_year, 12, 31)
+            else:
+                end_date = datetime.date(target_year, target_month + 1, 1) - timezone.timedelta(days=1)
+            label = start_date.strftime('%b %Y')
+        else:
+            target_date = today - timezone.timedelta(weeks=i)
+            start_date = target_date - timezone.timedelta(days=target_date.weekday())
+            end_date = start_date + timezone.timedelta(days=6)
+            label = f"Wk {start_date.strftime('%d %b')}"
+        
+        labels.append(label)
+        
+        # Production
+        w_prod = PackagingBatch.objects.filter(date__range=[start_date, end_date]).aggregate(t=Sum('qty_10kg'))['t'] or 0
+        prod_data.append(int(w_prod))
+        
+        # Sales
+        w_res = SalesResult.objects.filter(date__range=[start_date, end_date])
+        w_sm_sold = float(sum(r.equivalent_sacks_sold for r in w_res))
+        w_ds_sold = DirectSalePayment.objects.filter(date__range=[start_date, end_date], status='confirmed').aggregate(t=Sum('qty_sold'))['t'] or 0
+        sales_data.append(int(w_sm_sold + w_ds_sold))
+        
+        # Revenue
+        w_sm_rev = SalesResult.objects.filter(date__range=[start_date, end_date]).aggregate(t=Sum('gross_value'))['t'] or 0
+        w_ds_rev = DirectSalePayment.objects.filter(date__range=[start_date, end_date], status='confirmed').aggregate(t=Sum('total_sale_value'))['t'] or 0
+        w_rev = float(w_sm_rev) + float(w_ds_rev)
+        rev_data.append(w_rev)
+        
+        # Expenses
+        w_exp = OperationalExpense.objects.filter(date__range=[start_date, end_date]).aggregate(t=Sum('amount'))['t'] or 0
+        # Also include raw material costs and packaging costs for that period if we want "Net Profit" per period
+        # For simplicity in the trend, we use Rev - OpEx as a proxy, or calculate full P&L per period.
+        # Let's do Rev - OpEx for the trend to show "Cash Performance"
+        profit_data.append(w_rev - float(w_exp))
+
+    chart_data = {
+        'labels': labels,
+        'production': prod_data,
+        'sales': sales_data,
+        'revenue': rev_data,
+        'profit': profit_data,
+    }
+
+    return render(request, 'reports/financial_summary.html', {
+        'current_user': user,
+        'period': period,
+        'metrics': metrics,
+        'sm_rows': sm_rows,
+        'total_rev': total_rev,
+        'raw_mat_cost': raw_mat_cost,
+        'packaging_cost': packaging_cost,
+        'op_expenses': op_expenses,
+        'total_costs': total_costs,
+        'net_profit': net_profit,
+        'profit_margin_pct': profit_margin_pct,
+        'profit_ratio_pct': profit_ratio * 100,
+        'chart_data_json': json.dumps(chart_data),
+        'expenses_list': OperationalExpense.objects.all().order_by('-date')[:10],
+        'pending_raw_costs': RawMaterialReceipt.objects.filter(cost_status='pending').order_by('-date'),
+    })

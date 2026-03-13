@@ -2,14 +2,18 @@
 {% block title %}Edit Staff | {{ staff.full_name }}{% endblock %}
 {% block nav_md_staff %}active{% endblock %}
 {% block content %}
-<div class="page-header">
-    <div class="page-title">Edit Staff Profile</div>
-    <div class="page-subtitle">Updating details for: {{ staff.username }}</div>
+<div class="page-hero">
+    <div>
+        <span class="hero-badge">🛡️ Administration / Personnel</span>
+        <h1 class="hero-title">Edit Staff Profile</h1>
+        <p class="hero-subtitle">Updating details and access permissions for: <strong style="color:#fff;">{{ staff.username }}</strong></p>
+    </div>
 </div>
 
 {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-<div class="form-card">
+<div class="layout-grid">
+    <div class="card">
     <form method="POST">
         {% csrf_token %}
         <div class="form-section-title">Personal Details</div>
@@ -62,12 +66,28 @@
                     changes.</div>
             </div>
 
-            <div class="form-row mt-24">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="{% url 'accounts:staff_list' %}" class="btn btn-secondary"
-                    style="margin-left: 12px;">Cancel</a>
+            <div class="form-actions mt-24">
+                <button type="submit" class="btn-modern btn-modern-primary">Save Changes</button>
+                <a href="{% url 'accounts:staff_list' %}" class="btn-modern"
+                    style="background: var(--slate-200); color: var(--slate-800); margin-left: 12px;">Cancel</a>
             </div>
-    </form>
+        </form>
+    </div>
+    
+    <div class="sidebar-card">
+        <h3 style="margin-top:0; font-size:0.95rem; font-weight:800; color:var(--navy);">Audit Trail</h3>
+        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6;">
+            Registered by: <strong>{{ staff.created_by.full_name|default:"System" }}</strong><br>
+            Current Status: 
+            {% if staff.status == 'active' %}<span class="badge-soft badge-soft-success">Active</span>
+            {% elif staff.status == 'suspended' %}<span class="badge-soft badge-soft-warning">Suspended</span>
+            {% else %}<span class="badge-soft badge-soft-danger">Dismissed</span>{% endif %}
+        </p>
+        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1rem 0;">
+        <p style="font-size:0.8rem; color:var(--slate-500); margin:0;">
+            Role changes take effect immediately on the user's next page load. Modifying store assignments will reroute their dashboards appropriately.
+        </p>
+    </div>
 </div>
 
 <script>

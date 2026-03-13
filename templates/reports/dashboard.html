@@ -2,407 +2,331 @@
 {% block title %}Management Command Center — Noor Foods{% endblock %}
 {% block nav_md_dash %}active{% endblock %}
 {% block content %}
-<style>
-  .cmd-hero {
-    background: linear-gradient(145deg, #020617, #0f172a);
-    border-radius: 14px; padding: 1.75rem 2rem;
-    margin-bottom: 2rem; border: 1px solid #1e293b;
-    box-shadow: 0 12px 32px rgba(0,0,0,.5);
-    display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;
-  }
-  .cmd-title { font-size:1.6rem; font-weight:900; color:#f8fafc; margin:0; letter-spacing:-.02em; }
-  .cmd-sub { font-size:.88rem; color:#64748b; margin-top:.3rem; max-width:520px; }
-  .cmd-live { display:flex; align-items:center; gap:.5rem; font-size:.8rem; color:#10b981; font-weight:700; }
-  .pulse { width:8px;height:8px;background:#10b981;border-radius:50%;animation:pulse 1.5s infinite; }
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.5)}}
-
-  /* ══ MD INSIGHTS BANNER ══════════════════════════════════════ */
-  .insights-banner {
-    background: linear-gradient(135deg, #1e3a5f, #1e40af);
-    border: 1px solid #3b82f6; border-radius: 12px;
-    padding: 1.25rem 1.75rem; margin-bottom: 2rem;
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
-    box-shadow: 0 4px 16px rgba(59,130,246,.25);
-  }
-  .insights-title { font-size:1.1rem; font-weight:800; color:#e0f2fe; }
-  .insights-sub { font-size:.83rem; color:#93c5fd; margin-top:.2rem; }
-
-  /* ══ FINANCIAL PULSE ════════════════════════════════════════ */
-  .fin-row {
-    background:linear-gradient(145deg,#1e293b,#0f172a);
-    border:1px solid #334155; border-radius:12px;
-    padding:1.5rem; display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-    gap:1.25rem; margin-bottom:2rem;
-    box-shadow: 0 8px 20px rgba(0,0,0,.3);
-  }
-  .fin-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#475569; margin-bottom:.4rem; }
-  .fin-value { font-size:2rem; font-weight:900; font-family:monospace; line-height:1; }
-  .fin-sub { font-size:.75rem; color:#475569; margin-top:.35rem; }
-  .rev-color { color:#60a5fa; }
-  .rcv-color { color:#34d399; }
-  .debt-color-red { color:#fb7185; }
-  .debt-color-grn { color:#34d399; }
-
-  /* ══ SM ACCOUNTABILITY BAR ══════════════════════════════════ */
-  .sm-bar {
-    background:#fff; border:1px solid #e2e8f0; border-left:4px solid #3b82f6;
-    border-radius:10px; padding:1.1rem 1.4rem; margin-bottom:.65rem;
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;
-    transition: background .2s;
-  }
-  .sm-bar:hover { background:#f8fafc; }
-  .sm-bar.has-debt { border-left-color: #ef4444; }
-  .sm-bar.has-goods { border-left-color: #f59e0b; }
-  .sm-name { font-weight:700; color:#0f172a; font-size:.95rem; }
-  .sm-sub { font-size:.77rem; color:#64748b; margin-top:.1rem; }
-  .sm-pills { display:flex; gap:.65rem; flex-wrap:wrap; }
-  .sm-pill { font-size:.8rem; font-weight:700; padding:4px 12px; border-radius:20px; }
-  .pill-goods { background:#dbeafe; color:#1e40af; }
-  .pill-money-ok { background:#dcfce7; color:#166534; }
-  .pill-money-bad { background:#fee2e2; color:#991b1b; }
-  .pill-pending { background:#fef9c3; color:#854d0e; }
-
-  /* ══ SECTION HEADING ════════════════════════════════════════ */
-  .ops-section-heading {
-    font-size:1rem; font-weight:800; color:#1e293b;
-    border-bottom: 2px solid #e2e8f0; padding-bottom:.6rem;
-    margin-bottom:1.25rem; margin-top:0; display:flex; align-items:center; gap:.5rem;
-  }
-
-  /* ══ OPERATIONAL HEALTH CARDS ═══════════════════════════════ */
-  .health-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1.1rem; margin-bottom:2rem; }
-  .health-card { background:#fff; border:1px solid #e2e8f0; border-left:4px solid #3b82f6; border-radius:10px; padding:1.1rem 1.3rem; box-shadow:0 1px 4px rgba(0,0,0,.05); transition:transform .2s; }
-  .health-card:hover { transform:translateY(-2px); }
-  .health-card.warn { border-left-color:#f59e0b; background:linear-gradient(135deg,#fff,#fffbeb); }
-  .health-card.danger { border-left-color:#ef4444; background:linear-gradient(135deg,#fff,#fef2f2); }
-  .health-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#64748b; margin-bottom:.5rem; }
-  .health-value { font-size:2.2rem; font-weight:900; font-family:monospace; line-height:1; color:#0f172a; }
-  .health-value.warn-val { color:#d97706; }
-  .health-value.danger-val { color:#dc2626; }
-  .health-value.ok-val { color:#16a34a; }
-  .health-unit { font-size:.75rem; color:#94a3b8; margin-top:.3rem; }
-
-  /* ══ OVERSIGHT ═══════════════════════════════════════════════ */
-  /* ══ OVERSIGHT REDESIGN ══════════════════════════════════════ */
-  .oversight-wrapper {
-    display: grid; grid-template-columns: 1.8fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem;
-  }
-  .glass-panel {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  }
-  .glass-panel h4 {
-    margin: 0 0 1.25rem; font-size: 1rem; font-weight: 800; color: #0f172a;
-    display: flex; align-items: center; gap: 0.5rem;
-  }
-  
-  /* Audit Feed */
-  .audit-item {
-    display: flex; gap: 1rem; padding: 1rem;
-    background: rgba(255,255,255,0.4);
-    border: 1px solid rgba(0,0,0,0.03);
-    border-radius: 12px; margin-bottom: 0.75rem;
-    transition: all 0.2s ease;
-  }
-  .audit-item:hover { transform: translateX(4px); background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-  
-  .audit-time-box {
-    min-width: 60px; text-align: center; border-right: 1px solid #e2e8f0; padding-right: 0.75rem;
-  }
-  .audit-time { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 0.85rem; color: #0f172a; }
-  .audit-date { font-size: 0.65rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
-  
-  .audit-content { flex: 1; }
-  .audit-user { font-size: 0.7rem; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.2rem; }
-  .audit-desc { font-size: 0.9rem; font-weight: 500; color: #334155; line-height: 1.4; }
-  .audit-tag {
-    display: inline-block; margin-top: 0.4rem; font-size: 0.65rem; font-weight: 700;
-    padding: 2px 8px; border-radius: 6px; background: #f1f5f9; color: #475569;
-  }
-  /* Action specific colors */
-  .tag-login { background: #dbeafe; color: #1e40af; }
-  .tag-sale { background: #dcfce7; color: #166534; }
-  .tag-impersonate { background: #fef9c3; color: #854d0e; }
-
-  /* Personnel Cards */
-  .staff-card {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1rem; background: rgba(255,255,255,0.5);
-    border: 1px solid rgba(0,0,0,0.03);
-    border-radius: 15px; margin-bottom: 0.75rem;
-    transition: all 0.2s ease;
-  }
-  .staff-card:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
-  
-  .staff-info { display: flex; align-items: center; gap: 0.75rem; }
-  .staff-avatar {
-    width: 40px; height: 40px; background: #e0f2fe; color: #0369a1;
-    border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
-  }
-  .staff-name { font-weight: 800; color: #0f172a; font-size: 0.95rem; }
-  .staff-role { font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; margin-top: 1px; }
-
-  .view-btn {
-    background: #0f172a; color: #fff; border: none; padding: 6px 14px;
-    border-radius: 8px; font-size: 0.75rem; font-weight: 700;
-    transition: all 0.2s; text-decoration: none;
-  }
-  .view-btn:hover { background: #1e293b; transform: scale(1.05); color: #fff; }
-  .flag-warn td { background:#fef9c3; }
-  .flag-critical td { background:#fef2f2; }
-</style>
+{# Standardized Command Center Styles #}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# COMMAND CENTER HERO                                        #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="cmd-hero">
-  <div>
-    <div class="cmd-title">🏭 Noor Foods — Management Command Center</div>
-    <div class="cmd-sub">Complete factory-to-market accountability. Every figure is calculated live from immutable records. The MD sees everything, always.</div>
-  </div>
-  <div class="cmd-live"><span class="pulse"></span>Auto-Calculated</div>
+<div class="page-hero" style="background: linear-gradient(145deg, #020617, #0f172a);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🛡️ Factory Oversight Live</span>
+            <h1 class="hero-title" style="color: #fff;">Command Center</h1>
+            <p class="hero-subtitle" style="color: var(--slate-400);">Immutable financial transparency and operational real-time monitoring.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            {% if current_user.role == 'md' %}
+            <a href="/reports/md-insights/" class="btn-modern btn-modern-primary" style="background: var(--blue); border: none;">
+                Strategic Insights →
+            </a>
+            {% endif %}
+            <div class="btn-modern" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+                <span class="pulse" style="display:inline-block; margin-right: 8px;"></span> Live Ledger
+            </div>
+        </div>
+    </div>
 </div>
-
-{# MD Insights Shortcut #}
-{% if current_user.role == 'md' %}
-<div class="insights-banner">
-  <div>
-    <div class="insights-title">📊 MD Insights Dashboard — Your Strategic Overview</div>
-    <div class="insights-sub">Sales trends, SM accountability scores, brand recovery rates, top performers, and weekly/monthly comparisons — all in one place.</div>
-  </div>
-  <a href="/reports/md-insights/" class="btn btn-primary" style="background:#3b82f6; border-color:#2563eb; white-space:nowrap; font-size:.95rem; padding:.75rem 1.5rem;">Open MD Insights →</a>
-</div>
-{% endif %}
 
 {# ═══ PENDING HANDSHAKES (GM / MD) ══════════════════════════════════════ #}
 {% if pending_company_issuances or pending_sm_payments %}
-<div style="background: linear-gradient(90deg, #fffbeb, #fff); border: 1px solid #fcd34d; border-left: 5px solid #f59e0b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(245,158,11,0.1);">
-  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-    <div>
-      <h3 style="margin: 0 0 0.25rem 0; font-size: 1.1rem; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
-        <span style="font-size: 1.25rem;">⏱️</span> Action Required: Pending Acceptance
-      </h3>
-      <p style="margin: 0; font-size: 0.85rem; color: #b45309;">
-        You have internal transfers or payments waiting for your official acceptance.
-      </p>
+<div class="action-bar-modern" style="background: #fffbeb; border: 1px solid #fcd34d; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 1.5rem;">⏱️</span>
+        <div>
+            <div style="font-size: 0.9rem; font-weight: 800; color: #92400e;">Critical Actions Pending Registry Acceptance</div>
+            <div style="font-size: 0.8rem; color: #b45309;">Verify internal transfers and confirm payment collections for system integrity.</div>
+        </div>
     </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <div class="action-group">
+      {% if pending_raw_costs %}
+      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">🚜 {{ pending_raw_costs|length }} Stock Review</a>
+      {% endif %}
       {% if pending_company_issuances %}
-      <a href="/finished-store/list/" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #fcd34d; color: #92400e; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: transform 0.2s;">
-        🏢 {{ pending_company_issuances|length }} Company Handovers
-      </a>
+      <a href="/finished-store/list/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">🏢 {{ pending_company_issuances|length }} Handovers</a>
       {% endif %}
       {% if pending_sm_payments %}
-      <a href="/sales/dashboard/" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #fff; border: 1px solid #fcd34d; color: #92400e; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: transform 0.2s;">
-        💳 {{ pending_sm_payments|length }} Pending SM Payments
-      </a>
+      <a href="/sales/dashboard/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">💳 {{ pending_sm_payments|length }} Payments</a>
       {% endif %}
     </div>
-  </div>
 </div>
 {% endif %}
 
-{# EXECUTIVE FINANCIAL PULSE (MD ONLY) #}
 {% if current_user.role == 'md' %}
-<h3 class="ops-section-heading">💰 Company Financial Pulse — Outstanding vs Received</h3>
-<div class="fin-row">
-  <div>
-    <div class="fin-label">Total Expected Revenue (SM Channel)</div>
-    <div class="fin-value rev-color">₦{{ total_revenue|floatformat:0 }}</div>
-    <div class="fin-sub">Value of all goods collected by Sales Manager</div>
-  </div>
-  <div>
-    <div class="fin-label">Total Secured Funds (Confirmed Payments)</div>
-    <div class="fin-value rcv-color">₦{{ total_received|floatformat:0 }}</div>
-    <div class="fin-sub">Cash &amp; Transfer confirmed by GM</div>
-  </div>
-  <div>
-    <div class="fin-label">Still Owed to Company</div>
-    <div class="fin-value {% if total_outstanding > 0 %}debt-color-red{% else %}debt-color-grn{% endif %}">₦{{ total_outstanding|floatformat:0 }}</div>
-    <div class="fin-sub">Outstanding from SM + Direct Buyers</div>
-  </div>
+<div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; margin-bottom: 3rem;">
+    <h3 style="color: #60a5fa; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center
+    </h3>
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Produced</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.maize.produced }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">10kg Factory Output</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">In Store</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.maize.in_store }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Val: ₦{{ md_metrics.maize.inventory_value|floatformat:0 }}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Dispatched</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.maize.issued }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">To Sales & Internal</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Confirmed Sold</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.maize.sold }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Final Consumer Exit</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Revenue</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.maize.money_received|floatformat:0 }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Verified Receipts</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Exposure</div>
+            <div class="{% if md_metrics.maize.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.maize.outstanding|floatformat:0 }}</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Pending Liquidation</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #2e1065, #1e1b4b); border: 1px solid #4c1d95; margin-bottom: 3rem;">
+    <h3 style="color: #c084fc; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center
+    </h3>
+    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Produced</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.wheat.produced }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">10kg Factory Output</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">In Store</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.wheat.in_store }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Val: ₦{{ md_metrics.wheat.inventory_value|floatformat:0 }}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Dispatched</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.wheat.issued }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">To Sales & Internal</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Confirmed Sold</div>
+            <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.wheat.sold }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Final Consumer Exit</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Revenue</div>
+            <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.wheat.money_received|floatformat:0 }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Verified Receipts</div>
+        </div>
+        <div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Exposure</div>
+            <div class="{% if md_metrics.wheat.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.wheat.outstanding|floatformat:0 }}</div>
+            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Pending Liquidation</div>
+        </div>
+    </div>
 </div>
 {% endif %}
 
 {# SM ACCOUNTABILITY OVERVIEW #}
-{% if current_user.role in 'md manager' %}
+{% if current_user.role == 'md' or current_user.role == 'manager' %}
 <h3 class="ops-section-heading">📦 Sales Manager Accountability — Goods &amp; Money</h3>
-<div style="margin-bottom:2rem;">
+<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 3rem;">
   {% for row in sm_summaries %}
-  <div class="sm-bar {% if row.money_outstanding > 0 %}has-debt{% elif row.goods_balance > 0 %}has-goods{% endif %}">
+  <div class="card {% if row.money_outstanding > 0 %}border-rose{% elif row.goods_balance > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
     <div>
-      <div class="sm-name">{{ row.sm.full_name }}</div>
-      <div class="sm-sub">Sales Manager — Accountable to the company for all goods collected</div>
+      <div style="font-weight: 800; color: var(--navy); font-size: 1rem; margin-bottom: 0.1rem;">{{ row.sm.full_name }}</div>
+      <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase;">Primary Accounts Sentinel</div>
     </div>
-    <div class="sm-pills">
-      <span class="sm-pill pill-goods">📦 {{ row.goods_balance }} sacks in hand</span>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+      <span style="background: var(--slate-100); color: var(--navy); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌽 {{ row.maize_holding|floatformat:0 }} Maize</span>
+      <span style="background: var(--slate-100); color: #4c1d95; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌾 {{ row.wheat_holding|floatformat:0 }} Wheat</span>
       {% if row.money_outstanding > 0 %}
-      <span class="sm-pill pill-money-bad">₦{{ row.money_outstanding|floatformat:0 }} owed</span>
+      <span style="background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">₦{{ row.money_outstanding|floatformat:0 }} Exposure</span>
       {% else %}
-      <span class="sm-pill pill-money-ok">✓ Fully Paid</span>
+      <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">✓ Balanced</span>
       {% endif %}
       {% if row.pending_count > 0 %}
-      <span class="sm-pill pill-pending">⏳ {{ row.pending_count }} pending</span>
+      <span style="background: #fef9c3; color: #854d0e; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">⏳ {{ row.pending_count }} Pending</span>
       {% endif %}
     </div>
   </div>
   {% empty %}
-  <div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:2rem;text-align:center;color:#94a3b8;">No active Sales Managers registered in the system.</div>
+  <div style="padding: 4rem; text-align: center; background: white; border-radius: 20px; border: 1px dashed var(--slate-200); color: var(--slate-400);">No active Sales Managers registered.</div>
   {% endfor %}
 </div>
 {% endif %}
 
 {# OPERATIONAL HEALTH #}
 <h3 class="ops-section-heading">🏗️ Milling Plant & Operations Health</h3>
-<div class="health-grid">
-  <div class="health-card">
-    <div class="health-label">Total Milling Batches</div>
-    <div class="health-value ok-val">{{ total_batches }}</div>
-    <div class="health-unit">flour milling + packaging cycles</div>
+<div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+  <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
+    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Milling Batches</div>
+    <div style="font-size: 1.75rem; font-weight: 900; color: var(--navy);">{{ total_batches }}</div>
+    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Total processed cycles</div>
   </div>
-  <div class="health-card {% if flagged_batches > 0 %}danger{% endif %}">
-    <div class="health-label">Flagged Spillage / Loss</div>
-    <div class="health-value {% if flagged_batches > 0 %}danger-val{% else %}ok-val{% endif %}">{{ flagged_batches }}</div>
-    <div class="health-unit">batches exceeding allowable loss threshold</div>
+  <div class="card {% if flagged_batches > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
+    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Critical Flags</div>
+    <div class="font-bold {% if flagged_batches > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ flagged_batches }}</div>
+    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Excessive loss detect</div>
   </div>
-  <div class="health-card {% if outstanding_production > 0 %}warn{% endif %}">
-    <div class="health-label">Raw Bags on Production Floor</div>
-    <div class="health-value {% if outstanding_production > 0 %}warn-val{% else %}ok-val{% endif %}">{{ outstanding_production }}</div>
-    <div class="health-unit">collected, not yet milled or returned</div>
+  <div class="card {% if outstanding_production_maize > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
+    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌽 Maize Floor</div>
+    <div class="font-bold {% if outstanding_production_maize > 0 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ outstanding_production_maize }}</div>
+    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">WIP Sacks in packaging</div>
   </div>
-  <div class="health-card {% if open_flags > 0 %}danger{% endif %}">
-    <div class="health-label">Open Reconciliation Flags</div>
-    <div class="health-value {% if open_flags > 0 %}danger-val{% else %}ok-val{% endif %}">{{ open_flags }}</div>
-    <div class="health-unit">unresolved financial discrepancies</div>
+  <div class="card {% if outstanding_production_wheat > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
+    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌾 Wheat Floor</div>
+    <div class="font-bold {% if outstanding_production_wheat > 0 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ outstanding_production_wheat }}</div>
+    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">WIP Sacks in packaging</div>
+  </div>
+  <div class="card {% if open_flags > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
+    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Financial Flags</div>
+    <div class="font-bold {% if open_flags > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ open_flags }}</div>
+    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Unresolved audit gaps</div>
   </div>
 </div>
 
 {# OVERSIGHT: LIVE FEED + PERSONNEL ROSTER (MD ONLY) #}
 {% if current_user.role == 'md' %}
 <h3 class="ops-section-heading">🛡️ Operational Oversight — Factory Activity & Staffing</h3>
-<div class="oversight-wrapper">
+<div class="layout-grid" style="grid-template-columns: 1.8fr 1fr; gap: 2rem; margin-bottom: 3rem;">
   
   <!-- AUDIT LOG PANEL -->
-  <div class="glass-panel">
-    <h4>📜 Central Audit Log — Every Action Mapped</h4>
-    <div style="max-height:520px; overflow-y:auto; padding-right:0.5rem;">
-      {% for log in audit_feed %}
-      <div class="audit-item">
-        <div class="audit-time-box">
-          <div class="audit-time">{{ log.timestamp|date:"H:i" }}</div>
-          <div class="audit-date">{{ log.timestamp|date:"M d" }}</div>
-        </div>
-        <div class="audit-content">
-          <div class="audit-user">{{ log.user_name }} ({{ log.user_role }})</div>
-          <div class="audit-desc">{{ log.description }}</div>
-          <span class="audit-tag 
-            {% if 'LOGIN' in log.action %}tag-login 
-            {% elif 'SALE' in log.action %}tag-sale 
-            {% elif 'IMPERSONATE' in log.action %}tag-impersonate 
-            {% endif %}">
-            {{ log.action }}
-          </span>
-        </div>
-      </div>
-      {% empty %}
-      <div style="text-align:center; color:#94a3b8; padding:3rem;">No recent system activity detected.</div>
-      {% endfor %}
+  <div class="card" style="padding: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
+    <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--slate-100); display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin: 0;">📜 Live System Audit Ledger</h4>
+        <a href="/audit/log/" style="font-size: 0.75rem; font-weight: 700; color: var(--blue);">View Full History →</a>
     </div>
-    <div style="margin-top:1.25rem; text-align:center;">
-      <a href="/audit/log/" class="view-btn" style="padding:10px 24px; display:inline-block;">Open Complete Audit Ledger →</a>
+    <div style="max-height: 500px; overflow-y: auto; padding: 1.5rem;">
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for log in audit_feed %}
+        <div class="card" style="padding: 1rem; border: 1px solid var(--slate-100); background: #fff; box-shadow: none;">
+          <div style="display: flex; gap: 1rem;">
+            <div style="min-width: 60px; text-align: center; border-right: 1px solid var(--slate-100); padding-right: 1rem;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 0.8rem; color: var(--navy);">{{ log.timestamp|date:"H:i" }}</div>
+              <div style="font-size: 0.6rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase;">{{ log.timestamp|date:"M d" }}</div>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 0.65rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem;">{{ log.user_name }} • {{ log.user_role }}</div>
+              <div style="font-size: 0.85rem; color: var(--slate-600); line-height: 1.4; font-weight: 500;">{{ log.description }}</div>
+              <div style="display: inline-block; margin-top: 0.5rem; font-size: 0.6rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: var(--slate-100); color: var(--slate-500);">
+                {{ log.action }}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No recent system activity detected.</div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
   <!-- PERSONNEL ROSTER PANEL -->
-  <div class="glass-panel">
-    <h4>👥 Active Personnel — Identity & Accountability</h4>
-    <p style="font-size:0.8rem; color:#64748b; margin:-0.5rem 0 1.25rem;">Audit and verify individual staff accounts.</p>
-    <div style="max-height:520px; overflow-y:auto; padding-right:0.2rem;">
-      {% for s in staff_roster %}
-      <div class="staff-card">
-        <div class="staff-info">
-          <div class="staff-avatar">
-            {% if s.role == 'manager' %}👑{% elif s.role == 'md' %}🛡️{% elif 'store' in s.role %}📦{% else %}⚙️{% endif %}
+  <div class="card" style="padding: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
+    <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--slate-100);">
+        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin: 0;">👥 Active Personnel Registry</h4>
+    </div>
+    <div style="max-height: 500px; overflow-y: auto; padding: 1.5rem;">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for s in staff_roster %}
+        <div class="card" style="padding: 0.75rem 1rem; border: 1px solid var(--slate-100); background: #fff; box-shadow: none; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 32px; height: 32px; background: var(--slate-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+              {% if s.role == 'manager' %}👑{% elif s.role == 'md' %}🛡️{% elif 'store' in s.role %}📦{% else %}⚙️{% endif %}
+            </div>
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 800; color: var(--navy);">{{ s.full_name }}</div>
+              <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">{{ s.get_role_display|default:s.role }}</div>
+            </div>
           </div>
-          <div>
-            <div class="staff-name">{{ s.full_name }}</div>
-            <div class="staff-role">{{ s.get_role_display|default:s.role }}{% if s.store_type %} — {{ s.store_type|title }}{% endif %}</div>
-          </div>
+          <a href="{% url 'accounts:md_impersonate' s.pk %}" class="btn-modern" style="padding: 4px 10px; font-size: 0.7rem;" onclick="return confirm('Initiate administrative spectate for {{ s.full_name }}?');">
+            Spectate
+          </a>
         </div>
-        <a href="{% url 'accounts:md_impersonate' s.pk %}" class="view-btn" onclick="return confirm('Start spectating {{ s.full_name }}?');">
-          👁 View
-        </a>
+        {% empty %}
+        <div style="text-align: center; padding: 2rem; color: var(--slate-400);">No active personnel profiles.</div>
+        {% endfor %}
       </div>
-      {% empty %}
-      <div style="text-align:center; color:#94a3b8; padding:2rem;">No active staff accounts found.</div>
-      {% endfor %}
     </div>
   </div>
 </div>
 {% endif %}
 
 {# RETAIL & BRAN SALES #}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-  <h3 class="ops-section-heading" style="margin-bottom:0; border:none; padding:0;">🏬 Direct Sales — Retail &amp; Bran (GM or MD)</h3>
-  <div style="display:flex; gap:.5rem;">
-    <a href="{% url 'sales:record_company_sale' %}" class="btn btn-primary btn-sm" style="background:#0f172a; border-color:#0f172a;">🛒 Record Retail Sale</a>
-    <a href="{% url 'sales:record_bran_sale' %}" class="btn btn-secondary btn-sm" style="background:#166534; color:#fff; border:none;">🌾 Record Bran Sale</a>
-  </div>
-</div>
-<div style="border-bottom: 2px solid #e2e8f0; margin-bottom:1.25rem;"></div>
-
-<div class="health-grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr));">
-  {% for rb in retail_balances %}
-  <div class="health-card" style="border-left-color:#8b5cf6;">
-    <div class="health-label">{{ rb.material|upper }} RETAIL PIECES</div>
-    <div class="health-value {% if rb.pieces < 10 %}warn-val{% else %}ok-val{% endif %}" style="color:#6d28d9;">{{ rb.pieces }}</div>
-    <div class="health-unit">1kg pieces available at retail desk</div>
-  </div>
-  {% endfor %}
+<div class="action-bar-modern" style="background: transparent; border: none; padding: 0; margin-bottom: 1.5rem;">
+    <h3 style="font-size: 1rem; font-weight: 800; color: var(--navy); margin: 0;">🏬 Direct & Bran Sales Channel</h3>
+    <div class="action-group">
+        <a href="{% url 'sales:record_company_sale' %}" class="btn-modern btn-modern-primary">🛒 Record Retail Sale</a>
+        <a href="{% url 'sales:record_bran_sale' %}" class="btn-modern" style="background: var(--emerald); color: white; border: none;">🌾 Record Bran Sale</a>
+    </div>
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
-  <div>
-    <h4 style="margin:0 0 1rem; font-size:.95rem; color:#0f172a; border-bottom:1px solid #e2e8f0; padding-bottom:.5rem;">🛒 Recent Retail Sales (Direct/Company)</h4>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>Date</th><th>Buyer</th><th>Item</th><th class="num">₦ Value</th></tr></thead>
+<div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    {% for rb in retail_balances %}
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
+        <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">{{ rb.material|upper }} Retail Pieces</div>
+        <div style="font-size: 1.75rem; font-weight: 900; color: var(--blue);">{{ rb.pieces }}</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">1kg bags available at desk</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem;">
+  <div class="card" style="padding: 0;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
+        <h4 style="margin:0; font-size: 0.8rem; font-weight: 900; color: var(--navy); text-transform: uppercase;">🛒 Recent Direct Retail Sales</h4>
+    </div>
+    <div class="table-container">
+      <table class="premium-table">
+        <thead><tr><th>Date</th><th>Buyer Profile</th><th class="num">Volume</th><th class="num">₦ Value</th></tr></thead>
         <tbody>
           {% for s in company_sales %}
           <tr>
-            <td style="white-space:nowrap;">{{ s.date|date:"M d" }}</td>
-            <td style="font-weight:600;">{{ s.display_person }}</td>
-            <td>{{ s.qty_sold }}x {{ s.product_size }} <span class="badge badge-{{ s.material_type }}">{{ s.material_type|upper }}</span></td>
-            <td class="num font-bold">₦{{ s.total_value|floatformat:0 }}</td>
+            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ s.date|date:"M d" }}</td>
+            <td>
+                <div style="font-weight: 800; color: var(--navy);">{{ s.display_person }}</div>
+                <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">Channel: Direct</div>
+            </td>
+            <td class="num">
+                <span style="font-weight: 800; color: var(--slate-600);">{{ s.qty_sold }}</span> 
+                <span style="font-size: 0.65rem; font-weight: 800; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">{{ s.material_type|upper }}</span>
+            </td>
+            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--navy);">₦{{ s.total_value|floatformat:0 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" class="empty-state">No recent retail sales.</td></tr>
+          <tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--slate-400); font-style: italic;">No recent retail records.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
-  <div>
-    <h4 style="margin:0 0 1rem; font-size:.95rem; color:#14532d; border-bottom:1px solid #bbf7d0; padding-bottom:.5rem;">🌾 Recent Bran Sales (By-product)</h4>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>Date</th><th>Buyer</th><th>Sacks</th><th class="num">₦ Value</th></tr></thead>
+
+  <div class="card" style="padding: 0;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #dcfce7; background: #f0fdf4;">
+        <h4 style="margin:0; font-size: 0.8rem; font-weight: 900; color: #166534; text-transform: uppercase;">🌾 Recent Bran Sales Channel</h4>
+    </div>
+    <div class="table-container">
+      <table class="premium-table">
+        <thead><tr><th>Date</th><th>Trading Partner</th><th class="num">Sacks</th><th class="num">₦ Value</th></tr></thead>
         <tbody>
           {% for b in bran_sales %}
           <tr>
-            <td style="white-space:nowrap;">{{ b.date|date:"M d" }}</td>
-            <td style="font-weight:600;">{{ b.buyer_name }}</td>
-            <td>{{ b.qty_sacks }}x <span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
-            <td class="num font-bold">₦{{ b.total_amount|floatformat:0 }}</td>
+            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ b.date|date:"M d" }}</td>
+            <td>
+                <div style="font-weight: 800; color: #166534;">{{ b.buyer_name }}</div>
+                <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">By-product Flow</div>
+            </td>
+            <td class="num">
+                <span style="font-weight: 800; color: var(--slate-600);">{{ b.qty_sacks }}</span>
+                <span style="font-size: 0.65rem; font-weight: 800; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; color: #166534;">{{ b.material_type|upper }}</span>
+            </td>
+            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #166534;">₦{{ b.total_amount|floatformat:0 }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" class="empty-state">No recent bran sales.</td></tr>
+          <tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--slate-400); font-style: italic;">No recent bran records.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -412,30 +336,44 @@
 
 {# EMERGENCY FLAGS #}
 {% if recent_flagged %}
-<h3 class="ops-section-heading" style="color:#dc2626;">🚨 Emergency — Milling Batches with Excessive Loss</h3>
-<div class="table-wrapper" style="border-radius:10px;overflow:hidden;">
-  <table>
-    <thead>
-      <tr>
-        <th>S/N</th><th>Date</th><th>Material</th><th>Officer</th>
-        <th class="num">Bags Milled</th><th class="num">Loss %</th><th>Severity</th><th>Diagnostic</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for b in recent_flagged %}
-      <tr class="flag-{{ b.flag_level }}">
-        <td style="font-family:monospace;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ b.date }}</td>
-        <td><span class="badge badge-{{ b.material_type }}">{{ b.material_type|upper }}</span></td>
-        <td>{{ b.production_officer.full_name }}</td>
-        <td class="num">{{ b.bags_milled_new }}</td>
-        <td class="num font-bold">{{ b.loss_pct }}%</td>
-        <td><span class="badge badge-{{ b.flag_level }}">{{ b.flag_level|upper }}</span></td>
-        <td style="font-size:.82rem;color:#475569;">{{ b.flag_reason|truncatechars:65 }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="card" style="padding: 0; border: 1px solid var(--rose); margin-bottom: 3rem; overflow: hidden;">
+    <div style="padding: 1.25rem 1.5rem; background: var(--rose); color: white;">
+        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; text-transform: uppercase;">🚨 Production Anomalies — Excessive Milling Loss</h3>
+    </div>
+    <div class="table-container">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Batch Details</th>
+            <th>Reporting Officer</th>
+            <th class="num">Volume</th>
+            <th class="num">Loss %</th>
+            <th>Severity</th>
+            <th>Diagnostic</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in recent_flagged %}
+          <tr class="{% if b.flag_level == 'critical' %}bg-rose-light{% else %}bg-amber-light{% endif %}">
+            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ b.date|date:"M d" }}</td>
+            <td>
+                <span style="font-size: 0.65rem; font-weight: 900; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">{{ b.material_type|upper }}</span>
+            </td>
+            <td style="font-weight: 800; color: var(--navy);">{{ b.production_officer.full_name }}</td>
+            <td class="num" style="font-weight: 700; color: var(--slate-600);">{{ b.bags_milled_new }} <small style="font-size: 0.7rem;">Sacks</small></td>
+            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--rose);">{{ b.loss_pct }}%</td>
+            <td>
+                <span class="{% if b.flag_level == 'critical' %}bg-rose{% else %}bg-amber{% endif %}" style="color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">
+                    {{ b.flag_level }}
+                </span>
+            </td>
+            <td style="font-size: 0.75rem; color: var(--slate-600); max-width: 300px;">{{ b.flag_reason|truncatechars:100 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 </div>
 {% endif %}
 {% endblock %}

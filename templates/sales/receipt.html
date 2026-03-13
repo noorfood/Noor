@@ -116,7 +116,7 @@ The receipt is READ-ONLY. The only action available is to record a payment.
                 <span>Total Received</span>
                 <span style="font-family:monospace;font-weight:600;">₦{{ sale.total_paid|floatformat:0 }}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0 20px;font-size:16px;font-weight:800;{% if sale.amount_outstanding > 0 %}color:#C0392B;{% else %}color:#1E6B45;{% endif %}">
+            <div class="{% if sale.amount_outstanding > 0 %}text-danger-heavy{% else %}text-success-heavy{% endif %}" style="display:flex;justify-content:space-between;padding:10px 0 20px;font-size:16px;font-weight:800;">
                 <span>Outstanding Balance</span>
                 <span style="font-family:monospace;">₦{{ sale.amount_outstanding|floatformat:0 }}</span>
             </div>

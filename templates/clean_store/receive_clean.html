@@ -3,68 +3,52 @@
 {% block nav_cs_receive %}active{% endblock %}
 {% block content %}
 <style>
-    .cs-hero {
-        background: linear-gradient(135deg, #10b981, #059669);
-        padding: 2rem; border-radius: 12px; margin-bottom: 2rem;
-        color: white; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
+        transition: all 0.2s;
     }
-    .balance-grid {
-        display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem;
-    }
-    .balance-card {
-        background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px);
-        padding: 1.25rem; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    .balance-card .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; opacity: 0.9; margin-bottom: 0.5rem; }
-    .balance-card .value { font-size: 1.75rem; font-weight: 800; }
-    
-    .form-container {
-        display: grid; grid-template-columns: 1fr 350px; gap: 2rem; align-items: start;
-    }
-    .sidebar-info {
-        background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px;
-    }
-    .info-item { margin-bottom: 1rem; }
-    .info-item label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
-    .info-item span { font-size: 1rem; color: #1e293b; font-weight: 500; }
+    .form-input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); background: #fff; }
 </style>
 
-<div class="cs-hero">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <h1 style="margin:0; font-size:1.75rem;">✨ Receive Clean Bags</h1>
-            <p style="margin:0.5rem 0 0 0; opacity:0.9;">Acknowledge processed grain and move it into the Clean Raw Store.</p>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--emerald);">✨ Inbound</span>
+            <h1 class="hero-title">Receive Clean Bags</h1>
+            <p class="hero-subtitle">Acknowledge processed grain and move it into the Clean Raw Store.</p>
         </div>
-        <a href="/clean-store/list/" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:none;">View Clean Registry</a>
+        <a href="/clean-store/list/" class="btn-modern" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);">View Clean Registry</a>
     </div>
+</div>
 
-    <div class="balance-grid">
-        <div class="balance-card">
-            <div class="label">Total Clean Maize</div>
-            <div class="value">{{ balance_maize }} <small style="font-size:0.5em; opacity:0.7;">Bags</small></div>
-        </div>
-        <div class="balance-card">
-            <div class="label">Total Clean Wheat</div>
-            <div class="value">{{ balance_wheat }} <small style="font-size:0.5em; opacity:0.7;">Bags</small></div>
-        </div>
+<div class="balance-grid" style="margin-bottom: 2rem;">
+    <div class="card" style="padding: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Total Clean Maize</div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_maize }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
+    </div>
+    <div class="card" style="padding: 1.25rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Total Clean Wheat</div>
+        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_wheat }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
     </div>
 </div>
 
 {% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
 
-<div class="form-container">
-    <div class="form-card" style="padding:2rem;">
+<div class="layout-grid" style="grid-template-columns: 1fr 300px; gap: 2rem; align-items: start;">
+    <div class="card" style="padding:2rem;">
         <form method="post">
             {% csrf_token %}
             
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Reception Date*</label>
-                    <input type="date" name="date" value="{{ today }}" required class="form-control">
+            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div>
+                    <label class="form-label">Reception Date*</label>
+                    <input type="date" name="date" value="{{ today }}" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Select Processed Issuance*</label>
-                    <select name="issuance_id" required class="form-control">
+                <div>
+                    <label class="form-label">Select Processed Issuance*</label>
+                    <select name="issuance_id" required class="form-input">
                         <option value="">— Select Pending Issuance —</option>
                         {% for iss in pending_issuances %}
                         <option value="{{ iss.pk }}">#{{ iss.pk }} | {{ iss.material_type|upper }} | {{ iss.num_bags_issued }} bags (to {{ iss.issued_to }})</option>
@@ -75,48 +59,48 @@
                 </div>
             </div>
 
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Clean Bags Produced*</label>
-                    <input type="number" name="clean_bags_produced" min="1" placeholder="Standard 100kg bags" required class="form-control">
+            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                <div>
+                    <label class="form-label">Clean Bags Produced*</label>
+                    <input type="number" name="clean_bags_produced" min="1" placeholder="Standard 100kg bags" required class="form-input">
                 </div>
-                <div class="form-group">
-                    <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Approx. Dirty Weight (kg)*</label>
-                    <input type="number" name="approx_dirty_weight_kg" step="0.01" min="0.1" placeholder="Weight before cleaning" required class="form-control">
+                <div>
+                    <label class="form-label">Approx. Dirty Weight (kg)*</label>
+                    <input type="number" name="approx_dirty_weight_kg" step="0.01" min="0.1" placeholder="Weight before cleaning" required class="form-input">
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:2rem;">
-                <label style="font-weight:700; margin-bottom:0.5rem; display:block;">Notes</label>
-                <textarea name="notes" rows="3" placeholder="Any issues during cleaning? (e.g. high moisture, too much waste)" class="form-control"></textarea>
+            <div style="margin-bottom:2rem;">
+                <label class="form-label">Notes</label>
+                <textarea name="notes" rows="3" placeholder="Any issues during cleaning? (e.g. high moisture, too much waste)" class="form-input"></textarea>
             </div>
 
-            <div style="display:flex; align-items:center; gap:1rem; padding-top:1rem; border-top:1px solid #f1f5f9;">
-                <button type="submit" class="btn btn-primary btn-lg" style="padding:10px 24px; font-weight:700;">
+            <div style="display:flex; align-items:center; gap:1rem; padding-top:1.5rem; border-top:1px solid var(--slate-100);">
+                <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--emerald); border-color: var(--emerald); padding: 0.75rem 1.75rem;">
                     Complete Reception
                 </button>
-                <span style="color:#64748b; font-size:0.85rem;">⚠️ High precision required for mass reconciliation.</span>
+                <span style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">⚠️ High precision required for mass reconciliation.</span>
             </div>
         </form>
     </div>
 
-    <div class="sidebar-info">
-        <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: #0f172a;">Accountability</h3>
+    <div class="card" style="padding: 1.5rem; background: var(--slate-50); border: 1px solid var(--slate-200);">
+        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.1rem; color: var(--navy); font-weight: 800;">Accountability</h3>
         
-        <div class="info-item">
-            <label>Receiving Officer</label>
-            <span>{{ current_user.full_name }}</span>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Receiving Officer</label>
+            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">{{ current_user.full_name }}</span>
         </div>
         
-        <div class="info-item">
-            <label>Department</label>
-            <span>Clean Raw Material Store</span>
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Department</label>
+            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">Clean Raw Material Store</span>
         </div>
         
-        <hr style="border:0; border-top:1px solid #e2e8f0; margin:1.5rem 0;">
+        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1.5rem 0;">
         
-        <p style="font-size:0.8rem; color:#64748b; line-height:1.5;">
-            Recording clean bags produced triggers the automatic creation of a "Cleaning Batch" and updates the clean inventory. This is the bridge between dirty procurement and clean production.
+        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6; font-weight: 500;">
+            Recording clean bags received updates your clean inventory directly. This is the bridge between dirty procurement and clean production.
         </p>
     </div>
 </div>

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Cleaning Loss Configuration — Noor Foods{% endblock %}
+{% block nav_md_dash %}active{% endblock %}
+{% block content %}
+<style>
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
+        transition: all 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); background: #fff; }
+</style>
+
+<div style="max-width:800px; margin:0 auto;">
+  <div class="page-hero" style="margin-bottom: 2rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+      <div>
+        <span class="hero-badge" style="background: rgba(15, 23, 42, 0.1); color: var(--navy);">⚙️ System Rules</span>
+        <h1 class="hero-title">Cleaning Loss Thresholds</h1>
+        <p class="hero-subtitle">Set the maximum acceptable loss percentage when raw materials are cleaned.</p>
+      </div>
+      <a href="{% url 'reports:dashboard' %}" class="btn-modern" style="background: rgba(255,255,255,0.2); border: 1px solid var(--slate-300); color: var(--slate-700);">← Back to MD Dashboard</a>
+    </div>
+  </div>
+
+  <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Active Maize -->
+    <div class="card" style="border-left: 4px solid var(--yellow); padding: 1.5rem;">
+      <div style="font-size:0.75rem; font-weight:800; color:var(--slate-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">🌽 Maize — Active Rule</div>
+      {% if active.maize %}
+      <div style="font-size:2rem; font-weight:900; color:var(--navy); margin-bottom:0.5rem; line-height: 1;">Max {{ active.maize }}%</div>
+      {% else %}
+      <div style="font-size:1.5rem; font-weight:800; color:var(--rose); margin-bottom:0.5rem; line-height: 1;">Not Configured</div>
+      {% endif %}
+      <p style="color:var(--slate-500); font-size:0.85rem; margin:0; font-weight: 500;">System will warn if cleaning loss exceeds this.</p>
+    </div>
+    
+    <!-- Active Wheat -->
+    <div class="card" style="border-left: 4px solid var(--emerald); padding: 1.5rem;">
+      <div style="font-size:0.75rem; font-weight:800; color:var(--slate-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.75rem;">🌾 Wheat — Active Rule</div>
+      {% if active.wheat %}
+      <div style="font-size:2rem; font-weight:900; color:var(--navy); margin-bottom:0.5rem; line-height: 1;">Max {{ active.wheat }}%</div>
+      {% else %}
+      <div style="font-size:1.5rem; font-weight:800; color:var(--rose); margin-bottom:0.5rem; line-height: 1;">Not Configured</div>
+      {% endif %}
+      <p style="color:var(--slate-500); font-size:0.85rem; margin:0; font-weight: 500;">System will warn if cleaning loss exceeds this.</p>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 2rem; margin-bottom: 3rem;">
+    <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--slate-100); padding-bottom: 1rem;">
+      <h3 style="margin:0; font-size:1.1rem; color:var(--navy); font-weight: 800;">Add New Configuration</h3>
+    </div>
+    <form method="POST">
+      {% csrf_token %}
+      <div class="layout-grid" style="grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom: 1.5rem;">
+        <div>
+          <label class="form-label">Material Type</label>
+          <select name="material_type" class="form-input" required>
+            <option value="maize">Maize</option>
+            <option value="wheat">Wheat</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Max Allowed Loss (%)</label>
+          <input type="number" step="0.01" name="max_loss_pct" class="form-input" required placeholder="e.g. 5.00">
+        </div>
+      </div>
+      <div style="margin-bottom: 1.5rem;">
+        <label class="form-label">Effective Date</label>
+        <input type="date" name="effective_from" class="form-input" required value="{{ today }}">
+      </div>
+      <div style="margin-bottom: 2rem;">
+        <label class="form-label">Internal Notes (Optional)</label>
+        <input type="text" name="notes" class="form-input" placeholder="Context for this rule change">
+      </div>
+      <div>
+        <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--blue); border-color: var(--blue); padding: 0.75rem 1.5rem;">💾 Set New Threshold</button>
+      </div>
+    </form>
+  </div>
+
+  <h3 style="font-size:1rem; color:var(--navy); font-weight: 800; border-bottom:2px solid var(--slate-100); padding-bottom:0.75rem; margin-bottom:1rem;">Configuration History</h3>
+  <div class="table-wrapper">
+    <table class="premium-table">
+      <thead>
+        <tr>
+          <th>Effective Date</th>
+          <th>Material</th>
+          <th style="text-align: right;">Max Loss %</th>
+          <th>Set By</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for rule in configs %}
+        <tr>
+          <td style="white-space:nowrap; font-weight:700; color:var(--slate-700);">{{ rule.effective_from }}</td>
+          <td><span class="badge-soft {% if rule.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ rule.material_type|upper }}</span></td>
+          <td style="text-align: right; font-weight:800; font-family: monospace; color:var(--rose);">{{ rule.max_loss_pct }}%</td>
+          <td style="color:var(--slate-500); font-weight: 600; font-size:0.85rem;">{{ rule.created_by.full_name }}</td>
+          <td style="color:var(--slate-500); font-size:0.85rem;">{{ rule.notes|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center; padding: 3rem; color:var(--slate-400);">No thresholds have been configured yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

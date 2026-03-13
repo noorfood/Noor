@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from accounts.mixins import get_current_user, role_required
 from audit.utils import log_action
-from pricing.models import PriceConfig, CommissionConfig, SalesTarget
+from pricing.models import PriceConfig, CommissionConfig, SalesTarget, OperationalExpense
 from finished_store.models import PRODUCT_SIZE_CHOICES, CHANNEL_CHOICES
 from procurement.models import MATERIAL_CHOICES
 from accounts.models import User
@@ -139,10 +139,17 @@ def new_target(request):
             sm_id = request.POST.get('sales_manager_id')
             material_type = request.POST.get('material_type')
             product_size = '10kg'
-            month = int(request.POST.get('month'))
+            target_type = request.POST.get('target_type', 'monthly')
             year = int(request.POST.get('year'))
             target_qty = int(request.POST.get('target_qty', 0))
             notes = request.POST.get('notes', '').strip()
+
+            month = None
+            week = None
+            if target_type == 'weekly':
+                week = int(request.POST.get('week'))
+            else:
+                month = int(request.POST.get('month'))
 
             sm = User.objects.get(pk=sm_id, role='sales_manager')
             if target_qty <= 0:
@@ -151,17 +158,19 @@ def new_target(request):
                 obj, created = SalesTarget.objects.update_or_create(
                     sales_manager=sm, material_type=material_type,
                     product_size=product_size, month=month, year=year,
+                    week=week, target_type=target_type,
                     defaults={'target_qty': target_qty, 'created_by': user, 'notes': notes},
                 )
                 log_action(request, user, 'pricing', 'SET_TARGET',
-                           f'Target: {sm.full_name} | {material_type}/{product_size} | {month}/{year} = {target_qty} sacks',
+                           f'Target: {sm.full_name} | {material_type}/{product_size} | {target_type} {week or month}/{year} = {target_qty} sacks',
                            'SalesTarget', obj.pk)
-                messages.success(request, f'Target {"updated" if not created else "set"}: {sm.full_name} → {target_qty} sacks of {material_type} {product_size} for {month}/{year}.')
+                messages.success(request, f'Target {"updated" if not created else "set"}: {sm.full_name} → {target_qty} sacks of {material_type} {product_size} for {target_type} {week or month}/{year}.')
                 return redirect('pricing:targets')
         except Exception as e:
             error = f'Error: {str(e)}'
 
     now = datetime.date.today()
+    current_week = now.isocalendar()[1]
     return render(request, 'pricing/new_target.html', {
         'current_user': user, 'error': error,
         'sales_managers': sales_managers,
@@ -169,4 +178,60 @@ def new_target(request):
         'material_choices': MATERIAL_CHOICES,
         'current_month': now.month,
         'current_year': now.year,
+        'current_week': current_week,
     })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OPERATIONAL EXPENSES
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('md')
+def list_expenses(request):
+    user = get_current_user(request)
+    expenses = OperationalExpense.objects.all().order_by('-date', '-created_at')
+    from django.db.models import Sum
+    total_expenses = expenses.aggregate(t=Sum('amount'))['t'] or 0
+    return render(request, 'pricing/expenses.html', {
+        'current_user': user,
+        'expenses': expenses,
+        'total_expenses': total_expenses,
+    })
+
+
+@role_required('md')
+def new_expense(request):
+    user = get_current_user(request)
+    error = None
+
+    if request.method == 'POST':
+        try:
+            date_val = request.POST.get('date')
+            description = request.POST.get('description', '').strip()
+            amount = float(request.POST.get('amount', 0))
+            notes = request.POST.get('notes', '').strip()
+
+            if not date_val or not description or amount <= 0:
+                error = 'Please fill in all required fields with valid values.'
+            else:
+                exp = OperationalExpense.objects.create(
+                    date=date_val,
+                    description=description,
+                    amount=amount,
+                    notes=notes,
+                    recorded_by=user,
+                )
+                log_action(request, user, 'pricing', 'NEW_EXPENSE',
+                           f'Recorded expense: {description} | \u20a6{amount:,.0f}',
+                           'OperationalExpense', exp.pk)
+                messages.success(request, f'Expense recorded: {description} — \u20a6{amount:,.0f}')
+                return redirect('pricing:expenses')
+        except Exception as e:
+            error = f'Error: {str(e)}'
+
+    return render(request, 'pricing/new_expense.html', {
+        'current_user': user,
+        'error': error,
+        'today': datetime.date.today().isoformat(),
+    })
+

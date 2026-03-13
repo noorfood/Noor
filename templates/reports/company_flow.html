@@ -3,224 +3,89 @@
 {% block nav_md_flow %}active{% endblock %}
 
 {% block content %}
+{# Standardized Styles Inherited from base.html #}
 <style>
-    :root {
-        --glass-bg: rgba(255, 255, 255, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.3);
-        --navy-deep: #0f172a;
-        --indigo-vibrant: #4f46e5;
-        --emerald-glow: #10b981;
-        --amber-glow: #f59e0b;
-        --sky-glow: #0ea5e9;
-    }
-
-    body { background-color: #f8fafc; }
-
-    .flow-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding-bottom: 4rem;
-    }
-
-    /* Glass Card System */
-    .glass-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 2rem;
-    }
-
-    .glass-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.12);
-    }
-
-    /* Stage Headers */
-    .stage-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid rgba(0,0,0,0.05);
-    }
-
-    .stage-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        color: white;
-    }
-
-    .stage-title {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: var(--navy-deep);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Stat Grid */
-    .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.25rem;
-    }
-
-    .stat-box {
-        padding: 1rem;
-        border-radius: 15px;
-        background: rgba(255,255,255,0.5);
-        border: 1px solid rgba(0,0,0,0.03);
-    }
-
-    .stat-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        margin-bottom: 0.25rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: var(--navy-deep);
-    }
-
-    .stat-footer {
-        font-size: 0.7rem;
-        color: #94a3b8;
-        margin-top: 0.25rem;
-    }
-
-    /* Pipeline Arrow */
     .flow-connector {
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin: -1rem 0 1rem;
+        margin: -0.5rem 0 1.5rem;
         position: relative;
         z-index: 1;
     }
 
     .flow-arrow {
-        width: 30px;
-        height: 30px;
-        background: white;
-        border: 1px solid #e2e8f0;
+        width: 32px;
+        height: 32px;
+        background: var(--white);
+        border: 1px solid var(--slate-200);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #94a3b8;
-        font-size: 0.8rem;
+        color: var(--slate-400);
+        font-size: 0.75rem;
         box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
     .flow-line {
         width: 2px;
-        height: 20px;
-        background: #e2e8f0;
+        height: 24px;
+        background: linear-gradient(180deg, var(--slate-200) 0%, transparent 100%);
     }
-
-    /* Financial Pulse */
-    .pulse-card {
-        background: var(--navy-deep);
-        color: white;
-        border-radius: 24px;
-        padding: 2rem;
-        margin-bottom: 3rem;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .pulse-card::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(79, 70, 229, 0.1) 0%, transparent 70%);
-        pointer-events: none;
-    }
-
-    .pulse-item h4 { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 0.5rem; }
-    .pulse-item .val { font-size: 2.25rem; font-weight: 800; letter-spacing: -1px; }
-    .pulse-item.green .val { color: var(--emerald-glow); }
-    .pulse-item.amber .val { color: var(--amber-glow); }
-
-    /* Tables */
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #e2e8f0;
-        margin-top: 1rem;
-    }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f8fafc; text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
-    td { padding: 1rem; border-top: 1px solid #f1f5f9; font-size: 0.9rem; }
-    .num { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: right; }
-
 </style>
 
 <div class="flow-container">
-    <div class="page-header" style="margin-bottom: 2rem;">
-        <div class="page-title">Company Transaction Flow</div>
-        <div class="page-subtitle">The ultimate lifecycle pulse: from raw material to cash in bank.</div>
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🌊 Operational Liquidity</span>
+            <h1 class="hero-title" style="color: #fff;">Company Transaction Flow</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">The ultimate lifecycle pulse: from raw material sourcing to realized cash in bank.</p>
+        </div>
     </div>
+</div>
 
     {% if show_money %}
     <!-- EXECUTIVE FINANCIAL PULSE -->
-    <div class="pulse-card">
-        <div class="pulse-item">
-            <h4>Total Consolidated Revenue</h4>
-            <div class="val">₦{{ company_total_revenue|floatformat:0 }}</div>
-            <div style="font-size:0.75rem; color:#64748b;">SM + GM + Brand Channels</div>
-        </div>
-        <div class="pulse-item green">
-            <h4>Cash/Transfer Secured</h4>
-            <div class="val">₦{{ company_received_money|floatformat:0 }}</div>
-            <div style="font-size:0.75rem; color:#64748b;">Banked & Confirmed</div>
-        </div>
-        <div class="pulse-item amber">
-            <h4>Outstanding Receivables</h4>
-            <div class="val">₦{{ company_outstanding_money|floatformat:0 }}</div>
-            <div style="font-size:0.75rem; color:#64748b;">Market Debts (SM + Brand)</div>
+    <div class="card" style="background: var(--navy); color: white; border: none; padding: 2.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden;">
+        <div style="position: absolute; top:0; right:0; opacity: 0.05; font-size: 10rem; transform: translate(20%, -20%);">💰</div>
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 3rem; position: relative; z-index: 1;">
+            <div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Consolidated Revenue</div>
+                <div style="font-size: 2.4rem; font-weight: 900; letter-spacing: -1px;">₦{{ company_total_revenue|floatformat:0 }}</div>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">SM + GM + Byproduct Channels</p>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--emerald); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Secured Inflow</div>
+                <div style="font-size: 2.4rem; font-weight: 900; color: var(--emerald); letter-spacing: -1px;">₦{{ company_received_money|floatformat:0 }}</div>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Banked & Reconciled</p>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Credit Exposure</div>
+                <div style="font-size: 2.4rem; font-weight: 900; color: var(--amber); letter-spacing: -1px;">₦{{ company_outstanding_money|floatformat:0 }}</div>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Total Field Debt</p>
+            </div>
         </div>
     </div>
     {% endif %}
 
     <!-- STAGE 1: RAW STORE -->
-    <div class="glass-card">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: #f59e0b;">📦</div>
-            <div class="stage-title">Stage 1 — Raw Material Sourcing</div>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📦</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 1: Raw Material Sourcing</h3>
         </div>
-        <div class="stat-grid">
-            <div class="stat-box">
-                <div class="stat-label">Maize (Raw)</div>
-                <div class="stat-value">{{ raw_maize_in }}</div>
-                <div class="stat-footer">{{ raw_maize_bal }} bags remaining</div>
+        <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize (Raw Intake)</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ raw_maize_in }}</div>
+                <div style="font-size: 0.7rem; color: var(--amber); font-weight: 700;">{{ raw_maize_bal }} Bags in Store</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Wheat (Raw)</div>
-                <div class="stat-value">{{ raw_wheat_in }}</div>
-                <div class="stat-footer">{{ raw_wheat_bal }} bags remaining</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat (Raw Intake)</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ raw_wheat_in }}</div>
+                <div style="font-size: 0.7rem; color: var(--amber); font-weight: 700;">{{ raw_wheat_bal }} Bags in Store</div>
             </div>
         </div>
     </div>
@@ -228,25 +93,24 @@
     <div class="flow-connector">
         <div class="flow-line"></div>
         <div class="flow-arrow">▼</div>
-        <div class="flow-line"></div>
     </div>
 
     <!-- STAGE 2: CLEAN STORE -->
-    <div class="glass-card">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: #22c55e;">🧹</div>
-            <div class="stage-title">Stage 2 — Inventory Readiness (Clean)</div>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #f0fdf4; color: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🧹</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 2: Processing & Purification</h3>
         </div>
-        <div class="stat-grid">
-            <div class="stat-box">
-                <div class="stat-label">Maize (Cleaned)</div>
-                <div class="stat-value">{{ clean_maize_in }}</div>
-                <div class="stat-footer">{{ clean_maize_bal }} bags in clean store</div>
+        <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Cleaned Maize</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">{{ clean_maize_in }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ clean_maize_bal }} Bags Ready</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Wheat (Cleaned)</div>
-                <div class="stat-value">{{ clean_wheat_in }}</div>
-                <div class="stat-footer">{{ clean_wheat_bal }} bags in clean store</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Cleaned Wheat</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">{{ clean_wheat_in }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ clean_wheat_bal }} Bags Ready</div>
             </div>
         </div>
     </div>
@@ -254,54 +118,65 @@
     <div class="flow-connector">
         <div class="flow-line"></div>
         <div class="flow-arrow">▼</div>
-        <div class="flow-line"></div>
     </div>
 
     <!-- STAGE 3: CORE PRODUCTION -->
-    <div class="glass-card">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: #6366f1;">⚙️</div>
-            <div class="stage-title">Stage 3 — Manufacturing (Production)</div>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #eef2ff; color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1rem;">⚙️</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 3: Manufacturing & Transformation</h3>
         </div>
-        <div class="stat-grid" style="margin-bottom: 1.5rem;">
-            <div class="stat-box">
-                <div class="stat-label">Total Milled</div>
-                <div class="stat-value">{{ total_bags_milled }} <small style="font-size:0.8rem;">Bags</small></div>
+        <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Milled</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Sacks Packaged</div>
-                <div class="stat-value">{{ total_sacks_produced }} <small style="font-size:0.8rem;">10kg</small></div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Milled</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Powder Produced</div>
-                <div class="stat-value">{{ total_powder_kg|floatformat:0 }} <small style="font-size:0.8rem;">kg</small></div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Packaged</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Unpackaged Powder</div>
-                <div class="stat-value" style="color:var(--amber-glow)">{{ powder_bal_kg|floatformat:0 }} <small style="font-size:0.8rem;">kg</small></div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Packaged</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
+            </div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Powder Output</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ total_powder_kg|floatformat:0 }} <small style="font-size: 0.7rem;">kg</small></div>
+            </div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border: 1px dashed var(--amber);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--amber); text-transform: uppercase;">Unpackaged</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: var(--amber);">{{ powder_bal_kg|floatformat:0 }} <small style="font-size: 0.7rem;">kg</small></div>
             </div>
         </div>
 
         {% if prod_officer_rows %}
-        <div class="table-container">
-            <table>
+        <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
+            <table class="premium-table">
                 <thead>
                     <tr>
                         <th>Officer</th>
                         <th class="num">Accepted</th>
                         <th class="num">Milled</th>
                         <th class="num">Returned</th>
-                        <th class="num">Floor Balance</th>
+                        <th class="num">Floor Bal</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in prod_officer_rows %}
                     <tr>
-                        <td style="font-weight:600;">{{ row.user.full_name }}</td>
+                        <td><strong style="color: var(--navy);">{{ row.user.full_name }}</strong></td>
                         <td class="num">{{ row.accepted }}</td>
-                        <td class="num">{{ row.milled }}</td>
+                        <td class="num" style="font-weight: 700;">{{ row.milled }}</td>
                         <td class="num">{{ row.returned }}</td>
-                        <td class="num {% if row.balance > 0 %}text-warning{% endif %}">{{ row.balance }}</td>
+                        <td class="num">
+                            <span class="font-bold {% if row.balance > 0 %}text-rose{% else %}text-emerald{% endif %}">
+                                {{ row.balance }}
+                            </span>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -313,30 +188,35 @@
     <div class="flow-connector">
         <div class="flow-line"></div>
         <div class="flow-arrow">▼</div>
-        <div class="flow-line"></div>
     </div>
 
     <!-- STAGE 4: FINISHED STORE -->
-    <div class="glass-card">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: #0ea5e9;">🏬</div>
-            <div class="stage-title">Stage 4 — Inventory Repo (Finished Store)</div>
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; color: #0ea5e9; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🏬</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 4: Inventory Repo (Finished Goods)</h3>
         </div>
-        <div class="stat-grid">
-            <div class="stat-box">
-                <div class="stat-label">Total Inducted</div>
-                <div class="stat-value">{{ fg_in }}</div>
-                <div class="stat-footer">Sacks from Packaging</div>
+        <div class="balance-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--emerald);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Inducted (In)</div>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_in }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_in }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Total Extracted</div>
-                <div class="stat-value">{{ fg_out }}</div>
-                <div class="stat-footer">Sacks issued to Channels</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--rose);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Issued (Out)</div>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_out }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_out }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
+                </div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Secure Store Balance</div>
-                <div class="stat-value" style="color:var(--sky-glow)">{{ fg_bal }}</div>
-                <div class="stat-footer">Total sacks available in warehouse</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--blue);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Warehouse Bal.</div>
+                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_bal }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
+                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_bal }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
+                </div>
             </div>
         </div>
     </div>
@@ -344,65 +224,77 @@
     <div class="flow-connector">
         <div class="flow-line"></div>
         <div class="flow-arrow">▼</div>
-        <div class="flow-line"></div>
     </div>
 
     <!-- STAGE 5: REVENUE CHANNELS (SM & GM) -->
-    <div class="glass-card" style="border: 2px solid var(--indigo-vibrant);">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: var(--indigo-vibrant);">💰</div>
-            <div class="stage-title">Stage 5 — Distribution & Direct Monetization</div>
+    <div class="card" style="border: 2px solid var(--indigo); margin-bottom: 0;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #eef2ff; color: var(--indigo); display: flex; align-items: center; justify-content: center; font-size: 1rem;">💰</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 5: Distribution & Monetization</h3>
         </div>
 
         <!-- GM COMMAND CENTER (DIRECT SALES) -->
-        <div style="background:rgba(79, 70, 229, 0.05); padding:1rem; border-radius:15px; margin-bottom:1.5rem; border:1px dashed var(--indigo-vibrant);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-                <div style="font-weight:800; color:var(--indigo-vibrant); font-size:0.9rem;">🏢 General Manager Direct channel (Retail/Piece Sale)</div>
+        <div style="background:rgba(79, 70, 229, 0.03); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px dashed var(--indigo);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                <div>
+                    <div style="font-weight:900; color:var(--indigo); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">🏢 GM Direct Channel</div>
+                    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700;">Retail & Tactical Sales Execution</div>
+                </div>
                 {% if show_money %}
-                <div style="font-weight:800; color:var(--indigo-vibrant); font-size:1.1rem;">₦{{ gm_revenue|floatformat:0 }}</div>
+                <div style="text-align: right;">
+                    <div style="font-weight:900; color:var(--indigo); font-size:1.4rem;">₦{{ gm_revenue|floatformat:0 }}</div>
+                    <div style="font-size: 0.6rem; color: var(--emerald); font-weight: 800;">REALIZED VALUE</div>
+                </div>
                 {% endif %}
             </div>
-            <div class="stat-grid">
-                <div class="stat-box" style="background:white;">
-                    <div class="stat-label">Maize Sacks in Hand</div>
-                    <div class="stat-value">{{ gm_maize_hand }}</div>
-                    <div style="font-size:0.75rem; color:var(--sky-glow); font-weight:700;">{{ gm_maize_pieces }} <small>Pieces</small></div>
+            <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
+                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Holding</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ gm_maize_hand }} <small style="font-size: 0.7rem;">Sacks</small></div>
+                    <div style="font-size: 0.7rem; color: var(--blue); font-weight: 800;">{{ gm_maize_pieces }} Pieces</div>
                 </div>
-                <div class="stat-box" style="background:white;">
-                    <div class="stat-label">Wheat Sacks in Hand</div>
-                    <div class="stat-value">{{ gm_wheat_hand }}</div>
-                    <div style="font-size:0.75rem; color:#c2410c; font-weight:700;">{{ gm_wheat_pieces }} <small>Pieces</small></div>
+                <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
+                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Holding</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ gm_wheat_hand }} <small style="font-size: 0.7rem;">Sacks</small></div>
+                    <div style="font-size: 0.7rem; color: #c2410c; font-weight: 800;">{{ gm_wheat_pieces }} Pieces</div>
                 </div>
             </div>
         </div>
 
         <!-- SM CHANNEL Breakdown -->
-        <div style="font-weight:800; color:var(--navy-deep); font-size:0.9rem; margin-bottom:1rem;">💼 Sales Manager Channel (Wholesale)</div>
-        <div class="stat-grid" style="margin-bottom:1rem;">
-            <div class="stat-box">
-                <div class="stat-label">Sacks with Managers</div>
-                <div class="stat-value">{{ total_goods_outstanding }}</div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+            <span style="font-weight:900; color:var(--navy); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">💼 SM Wholesale Channel</span>
+        </div>
+        
+        <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Field Inventory</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_goods_outstanding }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Sacks with Managers</div>
             </div>
             {% if show_money %}
-            <div class="stat-box">
-                <div class="stat-label">Expected SM Revenue</div>
-                <div class="stat-value">₦{{ total_sales_value|floatformat:0 }}</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Target Value</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">₦{{ total_sales_value|floatformat:0 }}</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Confirmed Remittance</div>
-                <div class="stat-value" style="color:var(--emerald-glow)">₦{{ total_money_received|floatformat:0 }}</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--emerald);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--emerald); text-transform: uppercase;">Remittance</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">₦{{ total_money_received|floatformat:0 }}</div>
             </div>
             {% endif %}
         </div>
 
         <!-- Per SM Breakdown -->
-        <div class="table-container">
-            <table>
+        <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
+            <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Sales Manager</th>
-                        <th class="num">Collected</th>
-                        <th class="num">In Hand</th>
+                        <th>Manager</th>
+                        <th class="num">Mz (In)</th>
+                        <th class="num">Wt (In)</th>
+                        <th class="num">Liquidated</th>
+                        <th class="num">Mz Bal</th>
+                        <th class="num">Wt Bal</th>
                         {% if show_money %}
                         <th class="num">Expected (₦)</th>
                         <th class="num">Paid (₦)</th>
@@ -413,13 +305,20 @@
                 <tbody>
                     {% for row in sm_rows %}
                     <tr>
-                        <td style="font-weight:600;">{{ row.sm.full_name }}</td>
-                        <td class="num">{{ row.collected }}</td>
-                        <td class="num {% if row.goods_balance > 0 %}text-warning{% endif %}">{{ row.goods_balance }}</td>
+                        <td><strong style="color: var(--navy);">{{ row.sm.full_name }}</strong></td>
+                        <td class="num">{{ row.maize_collected }}</td>
+                        <td class="num" style="color: var(--indigo); font-weight: 700;">{{ row.wheat_collected }}</td>
+                        <td class="num" style="font-weight: 800; color: var(--emerald);">{{ row.sold_eq|floatformat:1 }}</td>
+                        <td class="num">{{ row.maize_balance }}</td>
+                        <td class="num">{{ row.wheat_balance }}</td>
                         {% if show_money %}
-                        <td class="num">₦{{ row.total_sales_value|floatformat:0 }}</td>
-                        <td class="num" style="color:var(--emerald-glow)">₦{{ row.money_received|floatformat:0 }}</td>
-                        <td class="num {% if row.money_outstanding > 0 %}text-warning{% endif %}">₦{{ row.money_outstanding|floatformat:0 }}</td>
+                        <td class="num" style="font-weight: 700;">₦{{ row.total_sales_value|floatformat:0 }}</td>
+                        <td class="num" style="color: var(--emerald); font-weight: 900;">₦{{ row.money_received|floatformat:0 }}</td>
+                        <td class="num">
+                            <span class="font-bold {% if row.money_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}">
+                                ₦{{ row.money_outstanding|floatformat:0 }}
+                            </span>
+                        </td>
                         {% endif %}
                     </tr>
                     {% endfor %}
@@ -429,24 +328,25 @@
     </div>
 
     <!-- STAGE 6: AUXILIARY -->
-    <div class="glass-card">
-        <div class="stage-header">
-            <div class="stage-icon" style="background: #c026d3;">♻️</div>
-            <div class="stage-title">Stage 6 — Byproducts & Bran Sales</div>
+    <div class="card">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #fae8ff; color: #c026d3; display: flex; align-items: center; justify-content: center; font-size: 1rem;">♻️</div>
+            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 6: Secondary Revenue (Byproducts)</h3>
         </div>
-        <div class="stat-grid">
-            <div class="stat-box">
-                <div class="stat-label">Byproduct Sacks Sold</div>
-                <div class="stat-value">{{ total_brand_sacks }}</div>
+        <div class="balance-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Byproducts Sold</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_brand_sacks }}</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Total Sacks Liquidation</div>
             </div>
             {% if show_money %}
-            <div class="stat-box">
-                <div class="stat-label">Revenue Generated</div>
-                <div class="stat-value">₦{{ brand_sales_value|floatformat:0 }}</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Revenue Accrued</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">₦{{ brand_sales_value|floatformat:0 }}</div>
             </div>
-            <div class="stat-box">
-                <div class="stat-label">Debt Owed</div>
-                <div class="stat-value" style="color:var(--amber-glow)">₦{{ brand_outstanding|floatformat:0 }}</div>
+            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--amber);">
+                <div style="font-size: 0.65rem; font-weight: 800; color: var(--amber); text-transform: uppercase;">Outstanding Debt</div>
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--amber);">₦{{ brand_outstanding|floatformat:0 }}</div>
             </div>
             {% endif %}
         </div>

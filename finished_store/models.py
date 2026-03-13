@@ -76,6 +76,17 @@ class FinishedGoodsIssuance(models.Model):
         related_name='issuances', null=True, blank=True,
         help_text='The SM collection this issuance was recorded against'
     )
+    # Company channel: who should approve this issuance
+    approver = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='fg_issuances_to_approve',
+        help_text='GM or MD designated to confirm this company issuance'
+    )
+    # Company channel: buyer/recipient name
+    buyer_name = models.CharField(
+        max_length=200, blank=True,
+        help_text='Name of the customer or entity receiving the goods (company sales)'
+    )
     status = models.CharField(max_length=15, choices=ACKNOWLEDGEMENT_CHOICES, default='pending')
     rejection_note = models.TextField(blank=True, help_text='Reason for rejection')
     notes = models.TextField(blank=True)

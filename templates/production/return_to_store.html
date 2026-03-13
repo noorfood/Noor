@@ -2,47 +2,56 @@
 {% block title %}Return Clean Bags{% endblock %}
 {% block nav_pr_out %}active{% endblock %}
 {% block content %}
-<div class="page-header">
-    <div class="page-title">Return Bags to Clean Store</div>
-    <div class="page-subtitle">Return unused clean bags from your custody back to the store. This will be pending store acknowledgement.</div>
+<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">↩️ Inventory Return</span>
+            <h1 class="hero-title" style="color: #fff;">Return to Clean Store</h1>
+            <p class="hero-subtitle" style="color: var(--slate-400);">Repatriate unused production-floor clean bags back to the primary warehouse.</p>
+        </div>
+    </div>
 </div>
 {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
 
-<div class="form-card">
+<div class="form-card" style="max-width: 800px; margin: 0 auto;">
     <form method="post">
         {% csrf_token %}
-        <div class="form-row-inline">
-            <div class="form-row">
-                <label for="date">Date*</label>
-                <input type="date" id="date" name="date" value="{{ today }}" required>
+        <div class="form-grid-modern" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="form-group-modern">
+                <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Return Date</label>
+                <input type="date" name="date" value="{{ today }}" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--slate-200); border-radius: 8px;">
             </div>
-            <div class="form-row">
-                <label for="material_type">Material Type*</label>
-                <select id="material_type" name="material_type" required>
-                    <option value="">— Select —</option>
-                    {% if balance_maize > 0 %}<option value="maize">Maize (Balance: {{ balance_maize }})</option>{% endif %}
-                    {% if balance_wheat > 0 %}<option value="wheat">Wheat (Balance: {{ balance_wheat }})</option>{% endif %}
+            <div class="form-group-modern">
+                <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Material Type</label>
+                <select name="material_type" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--slate-200); border-radius: 8px;">
+                    <option value="">— Select Material —</option>
+                    {% if balance_maize > 0 %}<option value="maize">🌽 Maize (Floor Balance: {{ balance_maize }})</option>{% endif %}
+                    {% if balance_wheat > 0 %}<option value="wheat">🌾 Wheat (Floor Balance: {{ balance_wheat }})</option>{% endif %}
                 </select>
                 {% if balance_maize <= 0 and balance_wheat <= 0 %}
-                <div class="form-hint text-warning mt-4">You have no outstanding bags to return.</div>
+                <p style="font-size: 0.75rem; color: var(--rose); margin-top: 0.5rem; font-weight: 700;">Zero floor balance detected. No returns possible.</p>
                 {% endif %}
             </div>
         </div>
         
-        <div class="form-row">
-            <label for="num_bags">Number of Bags to Return*</label>
-            <input type="number" id="num_bags" name="num_bags" min="1" required>
-            <div class="form-hint">Must not exceed your current balance for the selected material.</div>
+        <div class="form-group-modern" style="margin-bottom: 2rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Volume to Return (Bags)</label>
+            <input type="number" name="num_bags" min="1" required placeholder="Quantity of bags..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--slate-200); border-radius: 8px;">
+            <p style="font-size: 0.7rem; color: var(--slate-400); margin-top: 0.4rem;">Must be ≤ your current floor custody for selected material.</p>
         </div>
         
-        <div class="form-row">
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" rows="2" placeholder="Optional. Reason for return..."></textarea>
+        <div class="form-group-modern" style="margin-bottom: 2.5rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Reason for Return</label>
+            <textarea name="notes" rows="3" placeholder="Condition details or reason..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--slate-200); border-radius: 8px;"></textarea>
         </div>
         
-        <div class="form-row mt-24">
-            <button type="submit" class="btn btn-primary" {% if balance_maize <= 0 and balance_wheat <= 0 %}disabled{% endif %}>Initiate Return (Pending Store Check)</button>
-            <a href="/production/outstanding/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn-modern" style="flex: 1; background: var(--navy); color: #fff; padding: 0.85rem;" {% if balance_maize <= 0 and balance_wheat <= 0 %}disabled{% endif %}>
+                Initiate Return Transfer
+            </button>
+            <a href="/production/outstanding/" class="btn-modern" style="flex: 1; background: var(--slate-100); color: var(--slate-600); padding: 0.85rem; text-align: center;">
+                Cancel
+            </a>
         </div>
     </form>
 </div>

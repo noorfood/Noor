@@ -2,36 +2,49 @@
 {% block title %}Receive Clean Bags Return{% endblock %}
 {% block nav_cs_return %}active{% endblock %}
 {% block content %}
-<div class="page-header">
-    <div class="page-title">Receive Clean Bags Returned from Production</div>
-</div>
-{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-<div class="form-card">
+<style>
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
+    .form-input {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
+        transition: all 0.2s;
+    }
+    .form-input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); background: #fff; }
+</style>
+
+<div class="card" style="max-width: 800px; margin: 2rem auto; padding: 2.5rem;">
+    <div style="margin-bottom: 2rem; border-bottom: 2px solid var(--slate-100); padding-bottom: 1.5rem;">
+        <h2 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.5rem;">📥 Receive Clean Bags Returned from Production</h2>
+        <p style="margin: 0.5rem 0 0; color: var(--slate-500); font-weight: 500;">Record unused clean bags sent back from the manufacturing floor.</p>
+    </div>
+    
+    {% if error %}<div class="alert alert-error" style="margin-bottom: 2rem;">{{ error }}</div>{% endif %}
+
     <form method="post">
         {% csrf_token %}
-        <div class="form-row-inline">
-            <div class="form-row">
-                <label for="date">Date*</label>
-                <input type="date" id="date" name="date" value="{{ today }}" required>
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <label class="form-label" for="date">Date*</label>
+                <input class="form-input" type="date" id="date" name="date" value="{{ today }}" required>
             </div>
-            <div class="form-row">
-                <label for="material_type">Material Type*</label>
-                <select id="material_type" name="material_type" required>
+            <div>
+                <label class="form-label" for="material_type">Material Type*</label>
+                <select class="form-input" id="material_type" name="material_type" required>
                     <option value="">— Select —</option>
                     {% for val, label in material_choices %}
-                    <option value="{{ val }}">{{ label }}</option>
+                    <option value="{{ val }}">{{ label|upper }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
-        <div class="form-row-inline">
-            <div class="form-row">
-                <label for="num_bags">Number of Bags Returned*</label>
-                <input type="number" id="num_bags" name="num_bags" min="1" required>
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
+                <label class="form-label" for="num_bags">Number of Bags Returned*</label>
+                <input class="form-input" type="number" id="num_bags" name="num_bags" min="1" required>
             </div>
-            <div class="form-row">
-                <label for="returned_by_id">Returned By (Production Officer)*</label>
-                <select id="returned_by_id" name="returned_by_id" required>
+            <div>
+                <label class="form-label" for="returned_by_id">Returned By (Production Officer)*</label>
+                <select class="form-input" id="returned_by_id" name="returned_by_id" required>
                     <option value="">— Select —</option>
                     {% for p in prod_officers %}
                     <option value="{{ p.pk }}">{{ p.full_name }}</option>
@@ -39,17 +52,17 @@
                 </select>
             </div>
         </div>
-        <div class="form-row">
-            <label for="production_batch_ref">Production Batch Reference (Optional)</label>
-            <input type="text" id="production_batch_ref" name="production_batch_ref" placeholder="e.g. Batch #12">
+        <div style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="production_batch_ref">Production Batch Reference (Optional)</label>
+            <input class="form-input" type="text" id="production_batch_ref" name="production_batch_ref" placeholder="e.g. Batch #12">
         </div>
-        <div class="form-row">
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" rows="2"></textarea>
+        <div style="margin-bottom: 2.5rem;">
+            <label class="form-label" for="notes">Notes</label>
+            <textarea class="form-input" id="notes" name="notes" rows="2"></textarea>
         </div>
-        <div class="form-row mt-24">
-            <button type="submit" class="btn btn-primary">Save Return (Locked)</button>
-            <a href="/clean-store/list/" class="btn btn-secondary" style="margin-left:12px">Cancel</a>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--emerald); border-color: var(--emerald); padding: 0.75rem 1.75rem;">Save Return (Locked)</button>
+            <a href="/clean-store/list/" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600); padding: 0.75rem 1.75rem;">Cancel</a>
         </div>
     </form>
 </div>

@@ -2,89 +2,79 @@
 {% block title %}Procurement — Raw Material Store — Noor Foods{% endblock %}
 {% block nav_proc_dash %}active{% endblock %}
 {% block content %}
-<style>
-  .proc-hero {
-    background: linear-gradient(145deg, #1c1917, #292524);
-    border-radius: 14px; padding: 1.75rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #44403c;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-    display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;
-  }
-  .proc-hero-title { font-size:1.5rem; font-weight:800; color:#fafaf9; margin:0 0 .25rem; }
-  .proc-hero-sub { font-size:.9rem; color:#a8a29e; }
-  .mat-balance-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1.5rem; }
-  .mat-balance { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); border-radius:10px; padding:1.25rem 1.5rem; }
-  .mat-balance-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:#78716c; margin-bottom:.5rem; }
-  .mat-balance-value { font-size:2.5rem; font-weight:900; font-family:monospace; line-height:1; }
-  .mat-balance-unit { font-size:.78rem; color:#57534e; margin-top:.35rem; }
-  .maize-val { color:#fcd34d; }
-  .wheat-val { color:#86efac; }
-
-
-  .quick-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; }
-  .quick-actions-label { font-weight:700; color:#334155; font-size:.9rem; }
-  .section-header { font-size:1rem; font-weight:800; color:#1e293b; border-bottom:2px solid #e2e8f0; padding-bottom:.6rem; margin-bottom:1.25rem; }
-</style>
-
-{# HERO #}
-<div class="proc-hero">
-  <div>
-    <div class="proc-hero-title">🏗️ Procurement — Raw Material Store</div>
-    <div class="proc-hero-sub">
-      You are the first gate of the production chain.<br>
-      Every bag of maize or wheat that enters this factory must pass through you.
+<div class="page-hero" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); margin-bottom: 3rem;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(59, 130, 246, 0.1); color: #60a5fa;">🏗️ Intake Operations</span>
+            <h1 class="hero-title" style="color: #fff;">Raw Material Procurement</h1>
+            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Point of entry for the production chain: Managing grain intake and supplier batches.</p>
+        </div>
     </div>
-    <div class="mat-balance-grid">
-      <div class="mat-balance">
-        <div class="mat-balance-label">🌽 Maize — Available in Raw Store</div>
-        <div class="mat-balance-value maize-val">{{ balance_maize }}</div>
-        <div class="mat-balance-unit">100kg bags awaiting issue to Clean Store</div>
-      </div>
-      <div class="mat-balance">
-        <div class="mat-balance-label">🌾 Wheat — Available in Raw Store</div>
-        <div class="mat-balance-value wheat-val">{{ balance_wheat }}</div>
-        <div class="mat-balance-unit">100kg bags awaiting issue to Clean Store</div>
-      </div>
-    </div>
+</div>
+
+<div class="balance-grid" style="margin-bottom: 3rem;">
+  <div class="balance-card" style="border-left: 4px solid var(--amber);">
+    <div class="balance-label" style="color: var(--amber);">🌽 Maize Inventory</div>
+    <div class="balance-value">{{ balance_maize }} <small>Bags</small></div>
+    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">100kg Dirty Grain Stock</div>
   </div>
-  <div style="font-size:.8rem;color:#57534e;text-align:right;align-self:flex-start;">
-    <div style="color:#78716c;font-weight:700;font-size:.85rem;">● LIVE STOCK</div>
-    Auto-calculated from immutable records
+  <div class="balance-card" style="border-left: 4px solid var(--emerald);">
+    <div class="balance-label" style="color: var(--emerald);">🌾 Wheat Inventory</div>
+    <div class="balance-value">{{ balance_wheat }} <small>Bags</small></div>
+    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">100kg Dirty Grain Stock</div>
   </div>
 </div>
 
 
 {# QUICK ACTIONS #}
-<div class="quick-actions">
-  <span class="quick-actions-label">⚡ Quick Actions</span>
-  <a href="{% url 'procurement:receive' %}" class="btn btn-primary">+ Receive New Stock from Market</a>
-  <a href="{% url 'procurement:issue' %}" class="btn btn-secondary">Issue to Cleaning Team →</a>
-  <a href="{% url 'procurement:list' %}" class="btn btn-secondary" style="margin-left:auto;">View Complete Raw Material Registry →</a>
+<div class="action-bar-modern" style="margin-top: 2rem; margin-bottom: 2rem;">
+  <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; width: 100%;">
+    <span style="font-weight:800; color:var(--slate-800); font-size:1rem; margin-right: 0.5rem;">⚡ Quick Actions:</span>
+    <a href="{% url 'procurement:receive' %}" class="btn-modern btn-modern-primary">+ Receive New Stock</a>
+    <a href="{% url 'procurement:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Cleaning →</a>
+    
+    <div style="margin-left:auto; display: flex; gap: 0.75rem; align-items: center;">
+      {% if current_user.role == 'md' %}
+        <a href="{% url 'procurement:cleaning_loss' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--blue); color:var(--blue);">⚙️ Configure Cleaning Loss</a>
+        {% if pending_costs > 0 %}
+          <a href="{% url 'procurement:list' %}" class="btn-modern" style="background:var(--rose); color:#fff; border-color:var(--rose);">⚠️ {{ pending_costs }} Reviews Pending</a>
+        {% endif %}
+      {% endif %}
+      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-200); color:var(--slate-600);">View Complete Registry →</a>
+    </div>
+  </div>
 </div>
 
 {# RECENT RECEIPTS TABLE #}
-<h3 class="section-header">📥 Recent Raw Material Receipts</h3>
-<div class="table-wrapper" style="border-radius:10px;overflow:hidden;">
-  <table>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+  <h3 style="font-size:1.25rem; font-weight:800; color:var(--navy); margin:0;">📥 Recent Raw Material Receipts</h3>
+</div>
+<div class="table-wrapper">
+  <table class="premium-table">
     <thead>
       <tr>
-        <th>S/N</th><th>Date</th><th>Material</th><th>Supplier</th>
-        <th class="num">Bags Received</th><th class="num">Approx. Weight</th><th>Received By</th>
+        <th>S/N</th>
+        <th>Date</th>
+        <th>Material</th>
+        <th>Supplier</th>
+        <th style="text-align: right;">Bags Received</th>
+        <th style="text-align: right;">Approx. Weight</th>
+        <th>Received By</th>
       </tr>
     </thead>
     <tbody>
       {% for r in receipts %}
       <tr>
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ r.date }}</td>
-        <td><span class="badge badge-{{ r.material_type }}">{{ r.get_material_type_display|upper }}</span></td>
-        <td><strong>{{ r.supplier }}</strong></td>
-        <td class="num font-bold text-success">+{{ r.num_bags }}</td>
-        <td class="num" style="color:#64748b;">{{ r.approx_weight_kg|default:"—" }} kg</td>
-        <td style="color:#64748b;">{{ r.received_by.full_name }}</td>
+        <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap; font-weight:600; color:var(--slate-700);">{{ r.date }}</td>
+        <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.get_material_type_display|upper }}</span></td>
+        <td><strong style="color:var(--navy);">{{ r.supplier }}</strong></td>
+        <td style="text-align: right; font-weight:800; color:var(--emerald); font-family: monospace; font-size: 1.1rem;">+{{ r.num_bags }}</td>
+        <td style="text-align: right; color:var(--slate-500); font-family: monospace; font-size: 1.05rem;">{{ r.approx_weight_kg|default:"—" }} kg</td>
+        <td><span style="font-size: 0.9rem; font-weight: 600; color: var(--slate-600);">{{ r.received_by.full_name }}</span></td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" class="table-empty">No receipts recorded yet. Click "Receive New Stock" to begin.</td></tr>
+      <tr><td colspan="7" style="text-align:center; padding:3rem; color:var(--slate-400);">No receipts recorded yet. Click "Receive New Stock" to begin.</td></tr>
       {% endfor %}
     </tbody>
   </table>

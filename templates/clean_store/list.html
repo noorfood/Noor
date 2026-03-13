@@ -2,75 +2,57 @@
 {% block title %}Clean Raw Registry — Noor Foods{% endblock %}
 {% block nav_cs_list %}active{% endblock %}
 {% block content %}
-<style>
-  .cs-reg-hero {
-    background: linear-gradient(145deg, #0c1a0c, #14532d);
-    border-radius: 14px; padding: 1.75rem 2rem;
-    margin-bottom: 1.75rem; border: 1px solid #166534;
-    box-shadow: 0 8px 24px rgba(0,0,0,.3);
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
-  }
-  .cs-reg-title { font-size:1.4rem; font-weight:800; color:#f0fdf4; margin:0; }
-  .cs-reg-sub { font-size:.85rem; color:#86efac; margin-top:.2rem; }
-
-  .bal-strip { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
-  .bal-item { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:.75rem 1.1rem; }
-  .bal-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#4ade80; margin-bottom:.25rem; }
-  .bal-value { font-size:1.8rem; font-weight:900; font-family:monospace; line-height:1; color:#dcfce7; }
-  .bal-unit { font-size:.7rem; color:#4ade80; margin-top:.2rem; }
-
-  .section-divider { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem; padding:.85rem 1.25rem; background:#f8fafc; border-radius:10px 10px 0 0; border:1px solid #e2e8f0; border-bottom:none; font-weight:700; color:#1e293b; font-size:.92rem; }
-  .quick-actions { display:flex; gap:.75rem; align-items:center; flex-wrap:wrap; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:.85rem 1.25rem; margin-bottom:1.5rem; }
-</style>
-
-{# ══════════════════════════════════════════════════════════ #}
-{# HERO + LIVE BALANCES                                      #}
-{# ══════════════════════════════════════════════════════════ #}
-<div class="cs-reg-hero">
+<div class="page-hero">
   <div>
-    <div class="cs-reg-title">🌿 Clean Raw Registry</div>
-    <div class="cs-reg-sub">Ledger of 100kg clean bags received from cleaners and issued to Production Officers for milling.</div>
+    <span class="hero-badge">🌿 Clean Raw Registry</span>
+    <h1 class="hero-title">Clean Store Ledger</h1>
+    <p class="hero-subtitle">Ledger of 100kg clean bags received from cleaners and issued to Production Officers for milling.</p>
   </div>
-  {% if current_user.is_manager_or_above %}
-  <div class="bal-strip" style="min-width:260px;">
-    <div class="bal-item">
-      <div class="bal-label">🌽 Clean Maize</div>
-      <div class="bal-value">{{ balance_maize }}</div>
-      <div class="bal-unit">100kg bags</div>
-    </div>
-    <div class="bal-item">
-      <div class="bal-label">🌾 Clean Wheat</div>
-      <div class="bal-value">{{ balance_wheat }}</div>
-      <div class="bal-unit">100kg bags</div>
-    </div>
-  </div>
-  {% endif %}
 </div>
+
+{% if current_user.is_manager_or_above %}
+<div class="balance-grid" style="margin-bottom: 2rem;">
+  <div class="card" style="padding: 1.5rem;">
+    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌽 Clean Maize</div>
+    <div style="font-size: 3rem; font-weight: 900; color: var(--yellow); font-family: monospace; line-height: 1;">{{ balance_maize }}</div>
+    <div style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.5rem;">100kg bags</div>
+  </div>
+  <div class="card" style="padding: 1.5rem;">
+    <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌾 Clean Wheat</div>
+    <div style="font-size: 3rem; font-weight: 900; color: var(--emerald); font-family: monospace; line-height: 1;">{{ balance_wheat }}</div>
+    <div style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.5rem;">100kg bags</div>
+  </div>
+</div>
+{% endif %}
 
 {# QUICK ACTIONS #}
 {% if current_user.is_store_officer or current_user.is_manager_or_above %}
-<div class="quick-actions">
-  <span style="font-weight:700;color:#334155;font-size:.9rem;">⚡ Quick Actions</span>
-  <a href="{% url 'clean_store:receive' %}" class="btn btn-secondary">+ Receive Clean Bags</a>
-  <a href="{% url 'clean_store:issue' %}" class="btn btn-primary">Issue to Production →</a>
+<div class="action-bar-modern">
+  <div style="display:flex; gap:0.75rem; align-items:center;">
+    <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
+    <a href="{% url 'clean_store:receive' %}" class="btn-modern btn-modern-primary" style="background:var(--emerald); border-color:var(--emerald);">+ Receive Clean Bags</a>
+    <a href="{% url 'clean_store:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Production →</a>
+  </div>
 </div>
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════ #}
 {# ISSUANCES TO PRODUCTION                                   #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="section-divider">
-  <span>📤 Issuances to Production — Clean Stock Out</span>
-  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Bags handed to Production Officers for milling</span>
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
+  <div>
+    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📤 Issuances to Production — Clean Stock Out</h3>
+    <p style="font-size:0.85rem; color:var(--slate-500); margin:0.25rem 0 0 0;">Bags handed to Production Officers for milling.</p>
+  </div>
 </div>
-<div class="table-wrapper mb-16" style="border-radius:0 0 10px 10px;border-top:none;">
-  <table>
+<div class="table-wrapper mb-16">
+  <table class="premium-table">
     <thead>
       <tr>
         <th>S/N</th>
         <th>Date</th>
         <th>Material</th>
-        <th class="num">Bags Issued</th>
+        <th style="text-align: right;">Bags Issued</th>
         <th>Issued To (Production Officer)</th>
         <th>Issued By (Clean Store)</th>
         <th>Status</th>
@@ -79,24 +61,24 @@
     <tbody>
       {% for i in issuances %}
       <tr>
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ i.date }}</td>
-        <td><span class="badge badge-{{ i.material_type }}">{{ i.material_type|upper }}</span></td>
-        <td class="num font-bold text-danger">-{{ i.num_bags }}</td>
-        <td><strong>{{ i.issued_to.full_name }}</strong></td>
-        <td style="color:#64748b;font-size:.85rem;">{{ i.issued_by.full_name }}</td>
+        <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap; font-weight: 600; color:var(--slate-700);">{{ i.date }}</td>
+        <td><span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.material_type|upper }}</span></td>
+        <td style="text-align: right; color:var(--rose); font-family:monospace; font-weight: 800; font-size: 1.1rem;">-{{ i.num_bags }}</td>
+        <td><strong style="color:var(--navy);">{{ i.issued_to.full_name }}</strong></td>
+        <td style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">{{ i.issued_by.full_name }}</td>
         <td>
           {% if i.status == 'accepted' %}
-          <span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">✓ ACCEPTED</span>
+          <span class="badge-soft badge-soft-success">✓ ACCEPTED</span>
           {% elif i.status == 'pending' %}
-          <span class="badge" style="background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;">⏱ PENDING</span>
+          <span class="badge-soft badge-soft-warning">⏱ PENDING</span>
           {% else %}
-          <span class="badge badge-draft">{{ i.status|upper }}</span>
+          <span class="badge-soft">{{ i.status|upper }}</span>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" class="table-empty">No issuances to production recorded yet.</td></tr>
+      <tr><td colspan="7" style="text-align:center; padding: 3rem; color:var(--slate-400);">No issuances to production recorded yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
@@ -105,38 +87,40 @@
 {# ══════════════════════════════════════════════════════════ #}
 {# RECEIPTS FROM CLEANING                                    #}
 {# ══════════════════════════════════════════════════════════ #}
-<div class="section-divider" style="margin-top:1.5rem;">
-  <span>📥 Receipts from Cleaning — Clean Stock In</span>
-  <span style="font-size:.78rem;color:#64748b;font-weight:400;">Bags delivered by Cleaning Department</span>
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
+  <div>
+    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📥 Receipts from Cleaning — Clean Stock In</h3>
+    <p style="font-size:0.85rem; color:var(--slate-500); margin:0.25rem 0 0 0;">Bags delivered by Cleaning Department.</p>
+  </div>
 </div>
-<div class="table-wrapper" style="border-radius:0 0 10px 10px;border-top:none;">
-  <table>
+<div class="table-wrapper">
+  <table class="premium-table">
     <thead>
       <tr>
         <th>S/N</th>
         <th>Date</th>
         <th>Material</th>
-        <th class="num">Bags Received</th>
+        <th style="text-align: right;">Bags Received</th>
         <th>Received By (Clean Store)</th>
       </tr>
     </thead>
     <tbody>
       {% for m in receipts %}
       <tr>
-        <td style="font-family:monospace;color:#94a3b8;font-size:.85rem;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap;">{{ m.date }}</td>
-        <td><span class="badge badge-{{ m.material_type }}">{{ m.material_type|upper }}</span></td>
-        <td class="num font-bold text-success">+{{ m.num_bags }}</td>
-        <td style="color:#64748b;font-size:.85rem;">{{ m.received_by.full_name }}</td>
+        <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
+        <td style="white-space:nowrap; font-weight: 600; color:var(--slate-700);">{{ m.date }}</td>
+        <td><span class="badge-soft {% if m.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ m.material_type|upper }}</span></td>
+        <td style="text-align: right; color:var(--emerald); font-family:monospace; font-weight: 800; font-size: 1.1rem;">+{{ m.num_bags }}</td>
+        <td style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">{{ m.received_by.full_name }}</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" class="table-empty">No clean bag receipts recorded yet.</td></tr>
+      <tr><td colspan="5" style="text-align:center; padding: 3rem; color:var(--slate-400);">No clean bag receipts recorded yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<div style="margin-top:1.25rem;">
-  <a href="{% url 'clean_store:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+<div style="margin-top:2rem;">
+  <a href="{% url 'clean_store:dashboard' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600);">← Back to Dashboard</a>
 </div>
 {% endblock %}

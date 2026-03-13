@@ -13,6 +13,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     
+    <!-- Modern Sans-serif Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/main.css">
     
     <style>
@@ -43,6 +45,11 @@
             0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
             100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
@@ -79,130 +86,142 @@
             <div class="sidenav-section">NAVIGATION</div>
             {% with role=request.session.user_role store_type=request.session.store_type %}
 
-            {# ── RAW MATERIAL STORE OFFICER ────────────────────────────── #}
-            {% if role == 'store_officer' and store_type == 'raw' %}
+            {# ── 🏢 DASHBOARDS ───────────────────────────────────────── #}
             <div class="nav-group">
-                <div class="nav-group-title">Procurement</div>
-                <a href="/procurement/dashboard/" class="nav-link">Raw Store Dashboard</a>
-                <a href="/procurement/receive/" class="nav-link {% block nav_proc_receive %}{% endblock %}">Record Raw Received</a>
-                <a href="/procurement/issue/" class="nav-link {% block nav_proc_issue %}{% endblock %}">Issue Raw to Cleaner</a>
-                <a href="/procurement/list/" class="nav-link {% block nav_proc_list %}{% endblock %}">View Records</a>
-            </div>
-            <div class="nav-group">
-                <div class="nav-group-title">Clean Raw Store</div>
-                <a href="/clean-store/dashboard/" class="nav-link">Clean Store Dashboard</a>
-                <a href="/clean-store/receive/" class="nav-link {% block nav_cs_receive %}{% endblock %}">Receive Clean Bags</a>
-                <a href="/clean-store/issue/" class="nav-link {% block nav_cs_issue %}{% endblock %}">Issue to Production</a>
-                <a href="/clean-store/list/" class="nav-link {% block nav_cs_list %}{% endblock %}">View Records</a>
-            </div>
-            {% endif %}
+                <div class="nav-group-title" style="color:#0ea5e9;">🏢 Dashboards</div>
+                {% if role == 'md' or role == 'manager' %}
+                <a href="/reports/dashboard/" class="nav-link {% block nav_md_dash %}{% endblock %} {% block nav_gm_dash %}{% endblock %}" style="font-weight:700;">Command Center</a>
+                {% endif %}
+                
+                {% if role == 'sales_manager' %}
+                <a href="{% url 'sales:dashboard' %}" class="nav-link {% block nav_sm_dash %}{% endblock %}" style="font-weight:700;">SM Dashboard</a>
+                {% endif %}
 
-            {# ── FINISHED GOODS STORE OFFICER ─────────────────────────── #}
-            {% if role == 'store_officer' and store_type == 'finished' %}
-            <div class="nav-group">
-                <div class="nav-group-title">Finished Goods Operations</div>
-                <a href="{% url 'finished_store:dashboard' %}" class="nav-link {% block nav_fg_dash %}{% endblock %}">FG Store Dashboard</a>
-                <a href="{% url 'finished_store:create_sm_collection' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Handover to Sales Manager</a>
-                <a href="{% url 'finished_store:list' %}" class="nav-link {% block nav_fg_list %}{% endblock %}">Registry & Acknowledge</a>
-            </div>
-            {% endif %}
-
-            {# ── PRODUCTION OFFICER ────────────────────────────────────── #}
-            {% if role == 'production_officer' %}
-            <div class="nav-group">
-                <div class="nav-group-title">Production Flow</div>
+                {% if role == 'production_officer' %}
                 <a href="/production/dashboard/" class="nav-link">Production Dashboard</a>
+                {% endif %}
+
+                {% if role == 'store_officer' and store_type == 'raw' %}
+                <a href="/procurement/dashboard/" class="nav-link">Raw Store Dashboard</a>
+                <a href="/clean-store/dashboard/" class="nav-link">Clean Store Dashboard</a>
+                {% endif %}
+
+                {% if role == 'store_officer' and store_type == 'finished' %}
+                <a href="{% url 'finished_store:dashboard' %}" class="nav-link {% block nav_fg_dash %}{% endblock %}">FG Store Dashboard</a>
+                {% endif %}
+            </div>
+
+            {# ── ⚙️ OPERATIONS ───────────────────────────────────────── #}
+            {% if role == 'production_officer' or role == 'sales_manager' or role == 'manager' or role == 'md' %}
+            <div class="nav-group">
+                <div class="nav-group-title">⚙️ Operations</div>
+                {% if role == 'production_officer' %}
                 <a href="/production/milling/new/" class="nav-link {% block nav_pr_new %}{% endblock %}">Record Milling</a>
                 <a href="/production/packaging/new/" class="nav-link">Record Packaging</a>
                 <a href="/production/list/" class="nav-link {% block nav_pr_list %}{% endblock %}">My Batches</a>
                 <a href="/production/outstanding/" class="nav-link {% block nav_pr_out %}{% endblock %}">Outstanding Bags</a>
+                {% endif %}
+
+                {% if role == 'sales_manager' or role == 'manager' or role == 'md' %}
+                <a href="{% url 'reconciliation:list' %}" class="nav-link {% block nav_rc_md %}{% endblock %} {% block nav_gm_recon %}{% endblock %}">⚖️ Team Audit Hub</a>
+                <a href="{% url 'reconciliation:flags' %}" class="nav-link {% block nav_gm_flags %}{% endblock %}">🚩 Discrepancy Flags</a>
+                {% endif %}
+
+
             </div>
             {% endif %}
 
-            {# ── SALES MANAGER ─────────────────────────────────────────── #}
-            {% if role == 'sales_manager' %}
+            {# ── 📦 INVENTORY REPOSITORY ──────────────────────────────── #}
+            {% if role == 'store_officer' or role == 'manager' or role == 'md' %}
             <div class="nav-group">
-                <div class="nav-group-title" style="color:#0ea5e9;">Sales Operations</div>
-                <a href="{% url 'sales:dashboard' %}" class="nav-link {% block nav_sm_dash %}{% endblock %}" style="font-weight:700; color:#38bdf8;">🏠 SM Dashboard</a>
-                <a href="{% url 'sales:list_collections' %}" class="nav-link {% block nav_sm_coll %}{% endblock %}">📦 My Collections</a>
-                <a href="{% url 'sales:outstanding' %}" class="nav-link {% block nav_sl_out %}{% endblock %}">📊 My Outstanding Balance</a>
-                <a href="{% url 'sales:record_sm_payment' %}" class="nav-link {% block nav_sl_pay %}{% endblock %}">💳 Record Payment to Company</a>
+                <div class="nav-group-title" style="color:#f59e0b;">📦 Inventory</div>
+                
+                {% if role == 'store_officer' and store_type == 'raw' or role == 'manager' %}
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Raw Material Store</div>
+                {% if role == 'store_officer' and store_type == 'raw' %}
+                <a href="/procurement/receive/" class="nav-link {% block nav_proc_receive %}{% endblock %}">Record Raw Received</a>
+                <a href="/procurement/issue/" class="nav-link {% block nav_proc_issue %}{% endblock %}">Issue Raw to Cleaner</a>
+                {% endif %}
+                <a href="/procurement/list/" class="nav-link {% block nav_proc_list %}{% endblock %} {% block nav_gm_proc_dash %}{% endblock %}">Raw Store Records</a>
+                
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Clean Raw Store</div>
+                {% if role == 'store_officer' and store_type == 'raw' %}
+                <a href="/clean-store/receive/" class="nav-link {% block nav_cs_receive %}{% endblock %}">Receive Clean Bags</a>
+                <a href="/clean-store/issue/" class="nav-link {% block nav_cs_issue %}{% endblock %}">Issue to Production</a>
+                {% endif %}
+                <a href="/clean-store/list/" class="nav-link {% block nav_cs_list %}{% endblock %} {% block nav_gm_cs_dash %}{% endblock %}">Clean Store Records</a>
+                {% endif %}
+
+                {% if role == 'store_officer' and store_type == 'finished' or role == 'md' %}
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Finished Goods Store</div>
+                {% if role == 'store_officer' and store_type == 'finished' %}
+                <a href="{% url 'finished_store:create_sm_collection' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Handover to Sales Manager</a>
+                {% endif %}
+                <a href="{% url 'finished_store:list' %}" class="nav-link {% block nav_fg_list %}{% endblock %} {% block nav_gm_fg_handshake %}{% endblock %}">Handshake Registry</a>
+                {% endif %}
             </div>
+            {% endif %}
+
+            {# ── 💼 SALES & REVENUE ──────────────────────────────────── #}
+            {% if role == 'sales_manager' or role == 'manager' or role == 'md' %}
             <div class="nav-group">
-                <div class="nav-group-title">Sales Team</div>
-                <a href="{% url 'sales:salespersons' %}" class="nav-link {% block nav_sm_team %}{% endblock %}" style="font-weight:600; color:#3b82f6;">👥 Team Management</a>
-                <a href="{% url 'sales:record_distribution' %}" class="nav-link {% block nav_sm_dist %}{% endblock %}">📤 Give Sacks to Team</a>
+                <div class="nav-group-title" style="color:#10b981;">💼 Sales & Revenue</div>
+
+                {% if role == 'sales_manager' %}
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Sales Team</div>
+                <a href="{% url 'sales:record_distribution' %}" class="nav-link {% block nav_sm_dist %}{% endblock %}">📤 Give Goods to Team</a>
                 <a href="{% url 'sales:record_sales_result' %}" class="nav-link {% block nav_sm_result %}{% endblock %}">✔ Record Sales Result</a>
+                <a href="{% url 'sales:salespersons' %}" class="nav-link {% block nav_sm_team %}{% endblock %}">👥 Team Management</a>
                 <a href="{% url 'sales:sp_performance' %}" class="nav-link {% block nav_sm_perf %}{% endblock %}">🏆 Team Performance</a>
-            </div>
-            {% endif %}
+                
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Collections & Payments</div>
+                <a href="{% url 'sales:list_collections' %}" class="nav-link {% block nav_sm_coll %}{% endblock %}">📦 My FG Collections</a>
+                <a href="{% url 'sales:outstanding' %}" class="nav-link {% block nav_sl_out %}{% endblock %}">📊 My Outstanding Balance</a>
+                <a href="{% url 'sales:record_sm_payment' %}" class="nav-link {% block nav_sl_pay %}{% endblock %}">💳 Pay Company</a>
+<a href="{% url 'reconciliation:record_money' %}" class="nav-link {% block nav_rc_record %}{% endblock %}" style="color:#10b981; font-weight:600;">💰 Record Team Remittance</a>
+                {% endif %}
 
-
-            {# ── GENERAL MANAGER ───────────────────────────────────────── #}
-            {% if role == 'manager' %}
-            <div class="nav-group">
-                <div class="nav-group-title">🏢 Command Center</div>
-                <a href="/reports/dashboard/" class="nav-link {% block nav_gm_dash %}{% endblock %}" style="font-weight:700;">📈 Global Dashboard</a>
-                <a href="/reports/flow/" class="nav-link {% block nav_gm_flow %}{% endblock %}" style="font-weight:600; color:#3b82f6;">🔗 Company Live Flow</a>
-            </div>
-
-            <div class="nav-group">
-                <div class="nav-group-title">📦 Inventory Supplies</div>
-                <a href="/procurement/dashboard/" class="nav-link {% block nav_gm_proc_dash %}{% endblock %}">Raw Material Store</a>
-                <a href="/clean-store/dashboard/" class="nav-link {% block nav_gm_cs_dash %}{% endblock %}">Clean Raw Store</a>
-            </div>
-
-            <div class="nav-group">
-                <div class="nav-group-title">💰 Revenue & Collections</div>
-                <a href="{% url 'sales:list_sm_payments' %}" class="nav-link {% block nav_gm_pay_confirm %}{% endblock %}" style="font-weight:700; color:#f59e0b;">✅ Confirm SM Payments</a>
+                {% if role == 'manager' or role == 'md' %}
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Direct Sales</div>
+                {% if role == 'manager' %}
+                <a href="{% url 'sales:record_direct_sale' %}" class="nav-link {% block nav_gm_direct_sale %}{% endblock %}">📝 Record Direct Sale (Factory)</a>
                 <a href="{% url 'sales:record_company_sale' %}" class="nav-link {% block nav_gm_company_sale %}{% endblock %}">🛒 Company Direct Sale</a>
-                <a href="{% url 'finished_store:list' %}" class="nav-link {% block nav_gm_fg_handshake %}{% endblock %}" style="font-weight:600; color:#10b981;">📦 Company Issued Goods</a>
                 <a href="{% url 'sales:record_bran_sale' %}" class="nav-link {% block nav_gm_bran %}{% endblock %}">🌾 Record Bran Sale</a>
+                {% endif %}
+                <a href="{% url 'sales:list_direct_sales' %}" class="nav-link {% block nav_gm_direct_list %}{% endblock %} {% block nav_md_direct_sales %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📋 Direct Sales Registry</a>
+
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Collections & Payments</div>
+                <a href="{% url 'sales:list_sm_payments' %}" class="nav-link {% block nav_gm_pay_confirm %}{% endblock %}" style="color:#f59e0b;font-weight:600;">✅ Confirm SM Payments</a>
                 <a href="{% url 'sales:outstanding' %}" class="nav-link {% block nav_gm_out %}{% endblock %}">📊 SM Outstanding Balances</a>
-            </div>
-
-            <div class="nav-group">
-                <div class="nav-group-title">⚖️ Internal Audit</div>
-                <a href="/reconciliation/list/" class="nav-link {% block nav_gm_recon %}{% endblock %}">⚖️ Reconciliation Hub</a>
-                <a href="/reconciliation/flags/" class="nav-link {% block nav_gm_flags %}{% endblock %}">Discrepancy Flags</a>
-            </div>
-
-            <div class="nav-group">
-                <div class="nav-group-title">📊 Strategic Analysis</div>
-                <a href="/reports/production/" class="nav-link {% block nav_gm_rp_prod %}{% endblock %}">Production Loss</a>
-                <a href="/reports/store/" class="nav-link {% block nav_gm_rp_store %}{% endblock %}">Store Inventory</a>
-                <a href="/reports/outstanding/" class="nav-link {% block nav_gm_rp_out %}{% endblock %}">Debt Balances</a>
+                {% endif %}
             </div>
             {% endif %}
 
-            {# ── MANAGING DIRECTOR (MD) SUPREME COMMAND ──────────────── #}
+            {# ── 📊 REPORTS & ANALYTICS ───────────────────────────────── #}
+            {% if role == 'md' or role == 'manager' %}
+            <div class="nav-group">
+                <div class="nav-group-title" style="color:#8b5cf6;">📊 Reports</div>
+                {% if role == 'md' %}
+                <a href="{% url 'reports:financial_summary' %}" class="nav-link {% block nav_md_finance %}{% endblock %}" style="font-weight:700; color:#8b5cf6;">💰 Financial Summary</a>
+                <a href="/reports/md-insights/" class="nav-link {% block nav_md_insights %}{% endblock %}">📊 MD Insights</a>
+                <a href="/reports/sales/" class="nav-link {% block nav_rp_sales %}{% endblock %}">Sales Ledger Details</a>
+                {% endif %}
+                <a href="/reports/flow/" class="nav-link {% block nav_gm_flow %}{% endblock %} {% block nav_md_flow_md %}{% endblock %}" style="font-weight:600;">🔗 Live Company Flow</a>
+                <a href="/reports/store/" class="nav-link {% block nav_gm_rp_store %}{% endblock %} {% block nav_rp_store_md %}{% endblock %}">Store Inventory Balances</a>
+                <a href="/reports/production/" class="nav-link {% block nav_gm_rp_prod %}{% endblock %} {% block nav_rp_prod_md %}{% endblock %}">Manufacturing Loss</a>
+                <a href="/reports/outstanding/" class="nav-link {% block nav_gm_rp_out %}{% endblock %} {% block nav_rp_out_md %}{% endblock %}">System Outstanding Debt</a>
+            </div>
+            {% endif %}
+
+            {# ── 🛡️ ADMINISTRATION ────────────────────────────────────── #}
             {% if role == 'md' %}
             <div class="nav-group">
-                <div class="nav-group-title" style="color:#3b82f6;">Executive Overviews</div>
-                <a href="/reports/md-insights/" class="nav-link {% block nav_md_insights %}{% endblock %}" style="font-weight:600; color:#3b82f6;">📊 MD Insights</a>
-                <a href="/reports/dashboard/" class="nav-link {% block nav_md_dash %}{% endblock %}" style="font-weight:600;">MD Command Center</a>
-                <a href="/reports/flow/" class="nav-link {% block nav_md_flow_md %}{% endblock %}" style="font-weight:600;">🔗 Total Company Flow</a>
-            </div>
-            
-            <div class="nav-group">
-                <div class="nav-group-title" style="color:#10b981;">Financial Controls</div>
+                <div class="nav-group-title" style="color:#f43f5e;">🛡️ Administration</div>
                 <a href="/pricing/list/" class="nav-link {% block nav_pr_pricing %}{% endblock %}">Pricing Strategy</a>
                 <a href="/pricing/commissions/" class="nav-link {% block nav_pr_comm %}{% endblock %}">Commission Rules</a>
                 <a href="/pricing/targets/" class="nav-link {% block nav_pr_targets %}{% endblock %}">Sales Targets</a>
                 <a href="/production/thresholds/" class="nav-link {% block nav_md_thresholds %}{% endblock %}" style="color:#f59e0b;font-weight:600;">⚙️ Loss Thresholds</a>
-            </div>
-            
-            <div class="nav-group">
-                <div class="nav-group-title">Operations & Reports</div>
-                <a href="/reports/store/" class="nav-link {% block nav_rp_store_md %}{% endblock %}">Store Inventory Balances</a>
-                <a href="/reports/production/" class="nav-link {% block nav_rp_prod_md %}{% endblock %}">Manufacturing Loss</a>
-                <a href="/reports/sales/" class="nav-link {% block nav_rp_sales %}{% endblock %}">Sales Ledger Details</a>
-                <a href="/reports/outstanding/" class="nav-link {% block nav_rp_out_md %}{% endblock %}">System Outstanding Debt</a>
-                <a href="/reconciliation/list/" class="nav-link {% block nav_rc_md %}{% endblock %}">Reconciliation Summary</a>
-            </div>
-            
-            <div class="nav-group">
-                <div class="nav-group-title" style="color:#f43f5e;">Security & Administration</div>
+                <a href="{% url 'pricing:expenses' %}" class="nav-link {% block nav_md_expenses %}{% endblock %}" style="color:#f43f5e;font-weight:600;">💸 Operational Expenses</a>
                 <a href="{% url 'accounts:staff_list' %}" class="nav-link {% block nav_md_staff %}{% endblock %}">Personnel Registry</a>
                 <a href="/data-explorer/" class="nav-link {% block nav_de %}{% endblock %}">Data Explorer (God Mode)</a>
                 <a href="/audit/log/" class="nav-link {% block nav_audit %}{% endblock %}">Immutable Audit Ledger</a>

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Confirm Direct Sale — Noor Foods{% endblock %}
+{% block nav_comp_sales %}active{% endblock %}
+{% block content %}
+<div class="form-page-hero" style="background:linear-gradient(145deg,#b45309,#92400e); border-radius:14px; padding:1.5rem 2rem; margin-bottom:1.75rem; border:1px solid #78350f; box-shadow:0 6px 20px rgba(0,0,0,0.15);">
+  <div style="font-size:1.4rem; font-weight:800; color:#fffbeb; margin:0 0 0.4rem;">🛡️ Confirm General Manager's Direct Sale</div>
+  <div style="font-size:0.9rem; color:#fde68a;">Review the factory-gate sale recorded by the GM. Confirming this will finalize the financial record.</div>
+</div>
+
+<div class="form-container" style="max-width:800px; margin:0 auto; box-shadow:0 10px 25px rgba(0,0,0,0.05); border:1px solid #e2e8f0; border-radius:12px;">
+  
+  <div style="margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px dashed #cbd5e1;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+      <div>
+        <div style="color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Transaction Date</div>
+        <div style="font-weight:700; color:#1e293b;">{{ sale.date }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Recorded By</div>
+        <div style="font-weight:700; color:#1e293b;">{{ sale.recorded_by.full_name }} (GM)</div>
+      </div>
+    </div>
+    
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:1.25rem;">
+      <h4 style="margin:0 0 1rem 0; font-size:0.85rem; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Sale Details</h4>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+        <div>
+          <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.2rem;">Customer</div>
+          <div style="font-size:1.2rem; font-weight:800; color:#0f172a;">{{ sale.buyer_name }}</div>
+        </div>
+        <div>
+          <div style="color:#94a3b8; font-size:0.8rem; margin-bottom:0.2rem;">Product Sold</div>
+          <div>
+            <span class="badge badge-{{ sale.material_type }}">{{ sale.get_material_type_display|upper }}</span>
+            <strong style="margin-left:0.5rem; font-size:1.1rem; color:#0f172a;">{{ sale.qty_sold }} sacks</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:2rem;">
+    <h4 style="margin:0 0 1rem 0; font-size:0.85rem; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Financials</h4>
+    
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid #3b82f6; padding:1rem; border-radius:8px;">
+        <div style="color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Total Sale Value</div>
+        <div style="font-size:1.6rem; font-weight:900; color:#1e293b; font-family:monospace;">₦{{ sale.total_sale_value|floatformat:0 }}</div>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.2rem;">@ ₦{{ sale.unit_price|floatformat:0 }} per sack</div>
+      </div>
+      
+      <div style="background:#fff; border:1px solid #e2e8f0; border-left:4px solid #10b981; padding:1rem; border-radius:8px;">
+        <div style="color:#64748b; font-size:0.75rem; font-weight:700; text-transform:uppercase;">Payment Received</div>
+        <div style="font-size:1.6rem; font-weight:900; color:#10b981; font-family:monospace;">₦{{ sale.total_received|floatformat:0 }}</div>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-top:0.2rem;">Cash: ₦{{ sale.amount_received_cash|floatformat:0 }} | Transfer: ₦{{ sale.amount_received_transfer|floatformat:0 }}</div>
+      </div>
+    </div>
+    
+    {% if sale.outstanding > 0 %}
+    <div style="margin-top:1rem; background:#fef2f2; border:1px solid #fecaca; padding:0.75rem 1rem; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="color:#b91c1c; font-weight:700; font-size:0.9rem;">Outstanding Balance Generated</div>
+      <div style="color:#ef4444; font-weight:900; font-size:1.4rem; font-family:monospace;">₦{{ sale.outstanding|floatformat:0 }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if sale.notes %}
+  <div style="margin-bottom:2rem; background:#f0f9ff; border:1px solid #bae6fd; padding:1rem; border-radius:8px;">
+    <div style="color:#0369a1; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:0.4rem;">GM's Note</div>
+    <div style="color:#0c4a6e; font-size:0.95rem;">{{ sale.notes }}</div>
+  </div>
+  {% endif %}
+
+  <form method="post" style="border-top:2px solid #f1f5f9; padding-top:1.5rem;">
+    {% csrf_token %}
+    <div class="form-group" style="margin-bottom:1.5rem;">
+      <label>My Decision Notes (Optional)</label>
+      <input type="text" name="md_notes" class="form-control" placeholder="Context for why this was accepted/rejected...">
+    </div>
+    
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <a href="{% url 'sales:list_direct_sales' %}" class="btn btn-secondary">← Back to List</a>
+      <div style="display:flex; gap:1rem;">
+        <button type="submit" name="action" value="reject" class="btn btn-secondary" style="color:#ef4444; border-color:#fca5a5; background:#fef2f2;" onclick="return confirm('WARNING: Are you sure you want to REJECT this transaction?');">✕ Reject Sale</button>
+        <button type="submit" name="action" value="confirm" class="btn btn-primary" style="background:linear-gradient(135deg,#10b981,#059669); border:none; padding:0.8rem 2rem; font-size:1rem;" onclick="return confirm('Are you sure? Confirming will finalize this transaction on the ledger.');">✓ Confirm & Finalize</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

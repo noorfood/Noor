@@ -65,6 +65,29 @@
 <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:.8rem 1.1rem;color:#991b1b;margin-bottom:1.25rem;font-weight:600;">⚠️ {{ error }}</div>
 {% endif %}
 
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:2rem;">
+    <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#16a34a; letter-spacing:.04em; margin-bottom:.4rem;">💰 Money From Team</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#166534; font-family:monospace;">₦{{ money_from_team|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#4ade80; font-weight:600; margin-top:.25rem;">Handovers + Remittances</div>
+    </div>
+    <div style="background:#eff6ff; border:1.5px solid #bfdbfe; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#2563eb; letter-spacing:.04em; margin-bottom:.4rem;">✅ Paid to Company</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#1e40af; font-family:monospace;">₦{{ money_paid_to_company|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#60a5fa; font-weight:600; margin-top:.25rem;">GM Confirmed</div>
+    </div>
+    <div style="background:#fefce8; border:1.5px solid #fde68a; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#ca8a04; letter-spacing:.04em; margin-bottom:.4rem;">⏳ Pending Confirmation</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#854d0e; font-family:monospace;">₦{{ money_pending|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#facc15; font-weight:600; margin-top:.25rem;">Awaiting GM</div>
+    </div>
+    <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1.5px solid #6ee7b7; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:.04em; margin-bottom:.4rem;">💵 Cash In Hand</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#065f46; font-family:monospace;">₦{{ cash_in_hand|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#34d399; font-weight:600; margin-top:.25rem;">Available to Send</div>
+    </div>
+</div>
+
 <div class="form-layout">
   <div class="form-card">
     <form method="post">

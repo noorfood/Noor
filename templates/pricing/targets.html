@@ -3,105 +3,78 @@
 {% block nav_pr_targets %}active{% endblock %}
 
 {% block content %}
-<style>
-    .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 20px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-    }
-    
-    .pricing-header {
-        display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;
-    }
-    
-    .config-nav {
-        display: flex; gap: 0.75rem; background: #f1f5f9; padding: 0.5rem; border-radius: 12px;
-    }
-    .config-nav-link {
-        padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
-        text-decoration: none; color: #64748b; transition: all 0.2s;
-    }
-    .config-nav-link:hover { color: #0f172a; background: rgba(255,255,255,0.5); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .config-nav-link.active { background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
-    .perf-badge { font-weight: 800; font-size: 0.85rem; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; }
-    .perf-high { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
-    .perf-mid { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 12px rgba(245,158,11,0.2); }
-    .perf-low { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
-</style>
-
-<div class="pricing-header">
+<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
     <div>
-        <div class="page-title">Sales Performance Targets</div>
-        <div class="page-subtitle" style="max-width: 600px;">MD-defined monthly goals for Sales Managers. Real-time tracking against actual verified sales.</div>
-    </div>
-    <div class="config-nav">
-        <a href="{% url 'pricing:list' %}" class="config-nav-link">Pricing Strategy</a>
-        <a href="{% url 'pricing:commissions' %}" class="config-nav-link">Commission Rules</a>
-        <a href="{% url 'pricing:targets' %}" class="config-nav-link active">Sales Targets</a>
+        <span class="hero-badge">📈 Strategic Sales Targets</span>
+        <h1 class="hero-title">Sales Performance Targets</h1>
+        <p class="hero-subtitle">MD-defined monthly goals for Sales Managers. Real-time tracking against actual verified sales.</p>
     </div>
 </div>
 
-<div class="glass-panel">
+<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
+        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
+        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
+    </div>
+</div>
+
+<div style="margin-top: 2.5rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h4 style="margin:0; font-weight:800; color:#0f172a;">📈 Strategic Sales Targets</h4>
+        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">📈 Strategic Sales Targets</h4>
         {% if current_user.role == 'md' %}
-        <a href="{% url 'pricing:new_target' %}" class="btn btn-primary" style="background:#0f172a; border-color:#0f172a; padding:10px 20px; border-radius:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">+ Set New Target</a>
+        <a href="{% url 'pricing:new_target' %}" class="btn-modern btn-modern-primary">+ Set New Target</a>
         {% endif %}
     </div>
     
-    <div class="table-container" style="background:transparent; border:none; box-shadow:none;">
-        <table style="width:100%; border-collapse:separate; border-spacing:0 0.5rem;">
+    <div class="table-wrapper">
+        <table class="premium-table">
             <thead>
-                <tr style="background:#f8fafc;">
-                    <th style="padding:1rem; border-radius:10px 0 0 10px;">Sales Manager</th>
-                    <th style="padding:1rem;">Product Details</th>
-                    <th style="padding:1rem;">Target (Sacks)</th>
-                    <th class="num" style="padding:1rem;">Actual Sold</th>
-                    <th class="num" style="padding:1rem;">Performance</th>
-                    <th style="padding:1rem; border-radius:0 10px 10px 0;">Timeline / Notes</th>
+                <tr>
+                    <th>Sales Manager</th>
+                    <th>Product Details</th>
+                    <th style="text-align: right;">Target (Sacks)</th>
+                    <th style="text-align: right;">Actual Sold</th>
+                    <th style="text-align: right;">Performance</th>
+                    <th>Timeline / Notes</th>
                 </tr>
             </thead>
             <tbody>
                 {% for t in targets %}
-                <tr style="background:rgba(255,255,255,0.4); transition: transform 0.2s; cursor:default;" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
-                    <td style="padding:1rem; border-radius:10px 0 0 10px;">
-                        <div style="font-weight:800; color:#0f172a;">{{ t.sales_manager.full_name }}</div>
-                        <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase;">By {{ t.created_by.full_name }}</div>
+                <tr>
+                    <td>
+                        <div style="font-weight:800; color:var(--navy); font-size: 1.1rem;">{{ t.sales_manager.full_name }}</div>
+                        <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase; margin-top:2px;">By {{ t.created_by.full_name }}</div>
                     </td>
-                    <td style="padding:1rem;">
-                        <span class="badge badge-{{ t.material_type }}">{{ t.get_material_type_display|upper }}</span>
-                        <span style="font-weight:700; color:#475569; margin-left:4px;">{{ t.product_size }}</span>
+                    <td>
+                        <span class="badge-soft badge-soft-primary">{{ t.get_material_type_display|upper }}</span>
+                        <span style="font-weight:700; color:var(--slate-700); margin-left:6px;">{{ t.product_size }}</span>
                     </td>
-                    <td style="padding:1rem; font-weight:800; color:#334155; font-family:'JetBrains Mono', monospace;">{{ t.target_qty }}</td>
-                    <td class="num" style="padding:1rem; font-weight:700; color:#0369a1;">{{ t.actual_qty }}</td>
-                    <td class="num" style="padding:1rem;">
+                    <td style="text-align: right; font-weight:800; color:var(--slate-600); font-family: monospace; font-size: 1.15rem;">{{ t.target_qty }}</td>
+                    <td style="text-align: right; font-weight:800; color:var(--blue); font-family: monospace; font-size: 1.15rem;">{{ t.actual_qty }}</td>
+                    <td style="text-align: right;">
                         {% if t.target_qty %}
                             {% with pct=t.performance_pct %}
                             {% if pct >= 100 %}
-                            <span class="perf-badge perf-high">✓ {{ pct }}%</span>
+                            <span class="badge-soft badge-soft-success">✓ {{ pct }}%</span>
                             {% elif pct >= 50 %}
-                            <span class="perf-badge perf-mid">{{ pct }}%</span>
+                            <span class="badge-soft badge-soft-warning">{{ pct }}%</span>
                             {% else %}
-                            <span class="perf-badge perf-low">{{ pct }}%</span>
+                            <span class="badge-soft badge-soft-danger">{{ pct }}%</span>
                             {% endif %}
                             {% endwith %}
                         {% else %}—{% endif %}
                     </td>
-                    <td style="padding:1rem; border-radius:0 10px 10px 0;">
-                        <div style="font-size:0.85rem; font-weight:700; color:#1e293b;">
+                    <td>
+                        <div style="font-size:0.9rem; font-weight:700; color:var(--slate-800);">
                             {% if t.target_type == 'weekly' %}W{{ t.week }}{% else %}{{ t.month }}{% endif %}/{{ t.year }}
                         </div>
-                        <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">{{ t.notes|default:"No specific notes." }}</div>
+                        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:4px;">{{ t.notes|default:"No specific notes." }}</div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr style="background:transparent;">
-                    <td colspan="6" style="text-align:center; padding:3rem; color:#94a3b8;">No targets set for the current period. {% if current_user.role == 'md' %}<a href="{% url 'pricing:new_target' %}" style="color:#0f172a; font-weight:700;">Set a new target</a>.{% endif %}</td>
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No targets set for the current period. {% if current_user.role == 'md' %}<a href="{% url 'pricing:new_target' %}" style="color:var(--indigo); font-weight:700;">Set a new target</a>.{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

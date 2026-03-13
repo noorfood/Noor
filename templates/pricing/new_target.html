@@ -3,44 +3,24 @@
 
 {% block content %}
 <style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 20px;
-        padding: 2.5rem;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-        max-width: 900px;
-        margin: 2rem auto;
-    }
-    .form-header { margin-bottom: 2rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; }
-    .form-title { font-size: 1.5rem; font-weight: 900; color: #0f172a; margin: 0; }
-    .form-subtitle { font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
-    
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
-    .form-group { margin-bottom: 1.25rem; }
-    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 0.5rem; }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
     .form-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid #e2e8f0;
-        background: rgba(255,255,255,0.8); font-size: 0.95rem; font-weight: 600; color: #1e293b;
+        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
+        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
         transition: all 0.2s;
     }
-    .form-input:focus { outline: none; border-color: #0f172a; box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1); background: #fff; }
-    
-    .btn-submit {
-        background: #0f172a; color: #fff; border: none; padding: 12px 32px; border-radius: 12px;
-        font-weight: 800; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;
-        cursor: pointer; transition: all 0.2s;
-    }
-    .btn-submit:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .form-input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1); background: #fff; }
 </style>
 
-<div class="glass-card">
-    <div class="form-header">
-        <h2 class="form-title">📈 Define Performance Target</h2>
-        <p class="form-subtitle">Assign monthly sales volume goals to a specific Sales Manager.</p>
+<div class="page-hero">
+    <div>
+        <span class="hero-badge">📈 Performance Strategy</span>
+        <h1 class="hero-title">Define Performance Target</h1>
+        <p class="hero-subtitle">Assign monthly sales volume goals to a specific Sales Manager.</p>
     </div>
+</div>
+
+<div class="card" style="max-width: 900px; margin: 0 auto;">
 
     {% if error %}
     <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: #991b1b; font-size: 0.85rem; font-weight: 600;">
@@ -50,8 +30,8 @@
 
     <form method="post">
         {% csrf_token %}
-        <div class="form-grid">
-            <div class="form-group">
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
                 <label class="form-label">Sales Manager</label>
                 <select name="sales_manager_id" class="form-input" required>
                     <option value="">— Select Personnel —</option>
@@ -62,7 +42,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
+            <div>
                 <label class="form-label">Material Type</label>
                 <select name="material_type" class="form-input" required>
                     <option value="">— Select Category —</option>
@@ -73,22 +53,22 @@
             </div>
         </div>
 
-        <div class="form-grid">
-            <div class="form-group">
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div>
                 <label class="form-label">Frequency</label>
                 <select name="target_type" id="targetType" class="form-input" required onchange="toggleFreq()">
                     <option value="monthly" selected>Monthly Target</option>
                     <option value="weekly">Weekly Target</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div>
                 <label class="form-label">Target Year</label>
                 <input type="number" name="year" value="{{ current_year }}" min="2020" max="2035" class="form-input" required>
             </div>
         </div>
 
-        <div class="form-grid">
-            <div class="form-group" id="monthGrp">
+        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div id="monthGrp">
                 <label class="form-label">Target Month</label>
                 <select name="month" id="monthInput" class="form-input">
                     <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
@@ -106,25 +86,25 @@
                 </select>
             </div>
             
-            <div class="form-group" id="weekGrp" style="display: none;">
+            <div id="weekGrp" style="display: none;">
                 <label class="form-label">Target Week (ISO 1-53)</label>
                 <input type="number" name="week" id="weekInput" min="1" max="53" value="{{ current_week }}" class="form-input">
             </div>
 
-            <div class="form-group">
+            <div>
                 <label class="form-label">Target Quantity (Sacks)</label>
                 <input type="number" name="target_qty" min="1" class="form-input" placeholder="e.g. 500" required>
             </div>
         </div>
 
-        <div class="form-group">
+        <div style="margin-bottom: 1.5rem;">
             <label class="form-label">Directives / Notes (Optional)</label>
             <textarea name="notes" class="form-input" rows="3" placeholder="Specific goal context..."></textarea>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-            <button type="submit" class="btn-submit">🚀 Set Performance Goal</button>
-            <a href="{% url 'pricing:targets' %}" style="display: flex; align-items: center; text-decoration: none; color: #64748b; font-weight: 700; font-size: 0.85rem;">Cancel & Return</a>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn-modern btn-modern-primary">🚀 Set Performance Goal</button>
+            <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600);">Cancel & Return</a>
         </div>
     </form>
 </div>

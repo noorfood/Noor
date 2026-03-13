@@ -17,7 +17,7 @@ def _fg_balance(material_type, product_size):
     return received - issued + returned
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'md')
 @store_type_required('finished')
 def dashboard(request):
     from procurement.models import MATERIAL_CHOICES
@@ -94,7 +94,7 @@ def acknowledge_receipt(request, receipt_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer', 'manager')
+@role_required('store_officer')
 @store_type_required('finished')
 def issue_fg(request):
     """FG issuance for company-channel only. Requires management handshake."""
@@ -107,21 +107,26 @@ def issue_fg(request):
             material_type = request.POST.get('material_type', 'maize')
             product_size = '10kg'
             qty_issued = int(request.POST.get('qty_issued', 0))
+            buyer_name = request.POST.get('buyer_name', '').strip()
+            approver_id = request.POST.get('approver_id')
             notes = request.POST.get('notes', '').strip()
 
-            if not date_val or qty_issued <= 0:
-                error = 'All fields required (Date and Quantity).'
+            if not date_val or qty_issued <= 0 or not buyer_name or not approver_id:
+                error = 'All fields required (Date, Quantity, Buyer Name, Approver).'
             else:
                 balance = _fg_balance(material_type, product_size)
                 if qty_issued > balance:
                     error = f'Insufficient stock. Current {material_type.upper()} {product_size} balance: {balance} units.'
                 else:
+                    approver = get_object_or_404(User, pk=approver_id)
                     issuance = FinishedGoodsIssuance.objects.create(
                         date=date_val,
                         material_type=material_type,
                         product_size=product_size,
                         qty_issued=qty_issued,
                         channel='company',
+                        buyer_name=buyer_name,
+                        approver=approver,
                         issued_by=user,
                         notes=notes,
                         status='pending', # New: Always pending until Handshake
@@ -130,16 +135,19 @@ def issue_fg(request):
                     log_action(request, user, 'finished_store', 'INITIATE_ISSUE_FG',
                                f'Initiated issuance of {qty_issued} × {product_size} to Company | Handshake Pending',
                                'FinishedGoodsIssuance', issuance.pk)
-                    messages.info(request, f'Company Handover #{issuance.pk} initiated. Awaiting General Manager approval.')
+                    messages.info(request, f'Company Handover #{issuance.pk} initiated. Awaiting approval from {approver.full_name}.')
                     return redirect('finished_store:list')
         except Exception as e:
             error = f'Error: {str(e)}'
 
     from procurement.models import MATERIAL_CHOICES
+    
+    approvers = User.objects.filter(role__in=['manager', 'md'], status='active')
+    
     return render(request, 'finished_store/issue_fg.html', {
         'current_user': user, 'error': error,
         'today': datetime.date.today().isoformat(), 'size_choices': PRODUCT_SIZE_CHOICES,
-        'material_choices': MATERIAL_CHOICES,
+        'material_choices': MATERIAL_CHOICES, 'approvers': approvers,
     })
 
 
@@ -273,7 +281,7 @@ def acknowledge_return(request, return_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'md')
 @store_type_required('finished')
 def acknowledge_issuance(request, issuance_id):
     """
@@ -288,9 +296,13 @@ def acknowledge_issuance(request, issuance_id):
         
         if action == 'accept':
             # Check permission for Company Handshake
-            if issuance.channel == 'company' and user.role not in ['manager', 'md']:
-                messages.error(request, 'Only the General Manager or MD can authorize Company Handovers.')
-                return redirect('finished_store:list')
+            if issuance.channel == 'company':
+                if issuance.approver and user != issuance.approver:
+                    messages.error(request, f'Only the designated approver ({issuance.approver.full_name}) can authorize this Company Handover.')
+                    return redirect('finished_store:list')
+                elif not issuance.approver and user.role != 'md':
+                    messages.error(request, 'Only the Managing Director can authorize Company Handovers.')
+                    return redirect('finished_store:list')
 
             issuance.status = 'accepted'
             # Sync the SalesRecord status based on handed-over goods
@@ -328,7 +340,7 @@ def acknowledge_issuance(request, issuance_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'md')
 @store_type_required('finished')
 def list_records(request):
     from finished_store.models import FinishedGoodsReturn
