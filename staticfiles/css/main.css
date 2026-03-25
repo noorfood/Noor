@@ -1365,3 +1365,55 @@ body {
         font-size: 12px;
     }
 }
+
+/* ══════════ GLOBAL TABLE SCROLL FIX ══════════ */
+/* Many tables aren't inside .table-wrapper — this ensures ALL tables scroll on mobile */
+@media (max-width: 1024px) {
+    .main-content table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+    }
+    .main-content table thead,
+    .main-content table tbody,
+    .main-content table tr {
+        display: table;
+        width: 100%;
+        table-layout: auto;
+    }
+    .main-content table thead {
+        display: table-header-group;
+    }
+    .main-content table tbody {
+        display: table-row-group;
+    }
+    /* Ensure parent containers don't clip */
+    .main-content .card,
+    .main-content .sidebar-card,
+    .main-content section,
+    .main-content > div {
+        overflow-x: auto;
+    }
+    /* Keep .table-wrapper working properly */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-wrapper table {
+        min-width: 600px;
+    }
+    /* Unwrapped premium-table needs min-width */
+    .main-content > table.premium-table,
+    .main-content .card > table.premium-table,
+    .main-content > .premium-table {
+        min-width: 600px;
+    }
+    /* recon-table and similar custom tables */
+    .recon-table,
+    .table-sm {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
