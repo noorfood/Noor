@@ -65,6 +65,7 @@
     <!-- TOP BAR -->
     <header class="topbar">
         <div class="topbar-left">
+            <button class="hamburger" id="hamburger-btn" aria-label="Open menu">☰</button>
             <span class="company-name">NOOR FOODS QUALITY SERVICES NIG LTD</span>
         </div>
         <div class="topbar-right">
@@ -80,6 +81,8 @@
     </header>
 
     <div class="layout">
+        <!-- MOBILE OVERLAY -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
         <!-- LEFT NAVIGATION -->
         {% if request.session.user_id %}
         <nav class="sidenav">
@@ -288,6 +291,37 @@
                 installBtn.style.display = 'none';
             }
         });
+    </script>
+    <!-- Mobile Nav Toggle -->
+    <script>
+        (function() {
+            const hamburger = document.getElementById('hamburger-btn');
+            const sidenav = document.querySelector('.sidenav');
+            const overlay = document.getElementById('mobile-overlay');
+            if (hamburger && sidenav) {
+                hamburger.addEventListener('click', function() {
+                    sidenav.classList.toggle('open');
+                    if (overlay) overlay.classList.toggle('active');
+                });
+            }
+            if (overlay && sidenav) {
+                overlay.addEventListener('click', function() {
+                    sidenav.classList.remove('open');
+                    overlay.classList.remove('active');
+                });
+            }
+            // Close nav when a link is clicked (mobile)
+            if (sidenav) {
+                sidenav.querySelectorAll('.nav-link').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        if (window.innerWidth <= 768) {
+                            sidenav.classList.remove('open');
+                            if (overlay) overlay.classList.remove('active');
+                        }
+                    });
+                });
+            }
+        })();
     </script>
 </body>
 
