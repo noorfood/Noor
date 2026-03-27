@@ -66,11 +66,21 @@
   </p>
 </div>
 
-<div class="warning-banner">
-  <div style="font-size: 1.75rem;">⚡</div>
+<div class="warning-banner" style="justify-content: space-between; align-items: center;">
+  <div style="display: flex; gap: 1rem; align-items: flex-start;">
+    <div style="font-size: 1.75rem;">⚡</div>
+    <div>
+      <strong>UNRESTRICTED ACCESS ZONE</strong>
+      <p>Modified records are permanently logged in the Immutable Audit Ledger. Accuracy is the sole responsibility of the MD. Proceed with clinical precision.</p>
+    </div>
+  </div>
   <div>
-    <strong>UNRESTRICTED ACCESS ZONE</strong>
-    <p>Modified records are permanently logged in the Immutable Audit Ledger. Accuracy is the sole responsibility of the MD. Proceed with clinical precision.</p>
+    <form method="POST" action="{% url 'data_explorer:clear_database' %}" onsubmit="return confirm('🚨 CRITICAL WARNING 🚨\n\nAre you absolutely sure you want to WIPE THE ENTIRE DATABASE?\n\nThis will permanently delete ALL transactional records in the system! This action CANNOT BE UNDONE.');">
+      {% csrf_token %}
+      <button type="submit" style="background: #ef4444; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);">
+        ☣️ WIPE ENTIRE DATABASE
+      </button>
+    </form>
   </div>
 </div>
 

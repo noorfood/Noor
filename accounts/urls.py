@@ -10,6 +10,7 @@ urlpatterns = [
     path('<int:pk>/edit/', views.staff_edit, name='staff_edit'),
     path('<int:pk>/reset-password/', views.staff_reset_password, name='staff_reset_password'),
     path('<int:pk>/action/', views.staff_action, name='staff_action'),
+    path('<int:pk>/delete/', views.staff_delete, name='staff_delete'),
     
     # MD Impersonation
     path('<int:target_id>/impersonate/', views.md_impersonate, name='md_impersonate'),

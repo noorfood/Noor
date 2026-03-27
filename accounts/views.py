@@ -287,3 +287,27 @@ def staff_action(request, pk):
             messages.success(request, f"Staff '{staff.full_name}' is now {staff.get_status_display().lower()}.")
     
     return redirect('accounts:staff_list')
+
+
+@role_required('md')
+def staff_delete(request, pk):
+    """Permanently delete a staff member and all their logins."""
+    user = get_current_user(request)
+    staff = get_object_or_404(User, pk=pk)
+    
+    if request.method == 'POST':
+        if staff.pk == user.pk:
+            messages.error(request, "You cannot delete yourself.")
+            return redirect('accounts:staff_list')
+            
+        username = staff.username
+        full_name = staff.full_name
+        
+        try:
+            staff.delete()
+            log_action(request, user, 'accounts', 'STAFF_DELETE', f'Permanently deleted user: {username}')
+            messages.success(request, f"Staff '{full_name}' was permanently deleted and their login removed.")
+        except Exception as e:
+            messages.error(request, f"Could not delete {full_name}. They might be tied to existing records. Error: {str(e)}")
+            
+    return redirect('accounts:staff_list')

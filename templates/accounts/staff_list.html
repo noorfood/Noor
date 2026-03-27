@@ -97,6 +97,11 @@
                             <button type="submit" class="btn-modern" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; background: var(--rose-light); color: var(--rose); border: 1px solid var(--rose);">Dismiss</button>
                         </form>
                         {% endif %}
+                        <form action="{% url 'accounts:staff_delete' s.pk %}" method="POST" style="display:inline;margin-left:4px;"
+                            onsubmit="return confirm('🚨 CRITICAL WARNING 🚨\n\nPERMANENTLY DELETE {{ s.full_name }}?\nThis completely removes their system login and all record of them!\n\nThis action CANNOT BE UNDONE.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-modern" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; background: #ef4444; color: white; border: 1px solid #dc2626;">Delete</button>
+                        </form>
                     </span>
                     {% endif %}
                 </td>

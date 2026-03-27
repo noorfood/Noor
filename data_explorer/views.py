@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.forms import modelform_factory
 from django.contrib import messages
+from django.db.models.deletion import ProtectedError
+from django.db.utils import IntegrityError
+from django.contrib import messages
 from accounts.mixins import get_current_user, role_required
 from audit.utils import log_action
 
@@ -109,7 +112,10 @@ def explore_model(request, model_name):
             'current_user': user, 'model_name': model_name,
         })
 
-    Model, fields = MODEL_MAP[model_name]
+    Model, _ = MODEL_MAP[model_name]
+    
+    # Get all fields dynamically
+    fields = [f.name for f in Model._meta.fields]
     raw_records = Model.objects.all().order_by('-pk')[:500]
 
     # Pre-format field labels for the header
@@ -178,14 +184,92 @@ def explore_delete(request, model_name, pk):
     instance = get_object_or_404(Model, pk=pk)
 
     if request.method == 'POST':
-        instance.delete()
-        log_action(request, user, 'data_explorer', 'GOD_MODE_DELETE',
-                   f'PERMANENTLY DELETED {model_name} #{pk}', model_name, pk)
-        messages.success(request, f'Record #{pk} permanently deleted from {model_name}.')
+        try:
+            instance.delete()
+            log_action(request, user, 'data_explorer', 'GOD_MODE_DELETE',
+                       f'PERMANENTLY DELETED {model_name} #{pk}', model_name, pk)
+            messages.success(request, f'Record #{pk} permanently deleted from {model_name}.')
+        except (ProtectedError, IntegrityError) as e:
+            messages.error(request, f"Cannot delete record #{pk} because it is referenced by other data. "
+                                    f"Please delete the related records first. Details: {str(e)}")
         return redirect('data_explorer:model', model_name=model_name)
+
+@role_required('md')
+def explore_bulk_delete(request, model_name):
+    """Bulk Delete View (God Mode)"""
+    user = get_current_user(request)
+
+    if model_name not in MODEL_MAP:
+        return redirect('data_explorer:home')
+
+    Model = MODEL_MAP[model_name][0]
+
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_ids')
+        if not selected_ids:
+            messages.warning(request, "No records selected for deletion.")
+            return redirect('data_explorer:model', model_name=model_name)
+
+        success_count = 0
+        failed_count = 0
+        for pk in selected_ids:
+            try:
+                instance = Model.objects.get(pk=pk)
+                instance.delete()
+                success_count += 1
+            except Model.DoesNotExist:
+                continue
+            except (ProtectedError, IntegrityError):
+                failed_count += 1
+
+        if success_count > 0:
+            log_action(request, user, 'data_explorer', 'GOD_MODE_BULK_DELETE',
+                       f'BULK DELETED {success_count} records in {model_name}', model_name, None)
+            messages.success(request, f'Successfully deleted {success_count} records.')
+            
+        if failed_count > 0:
+            messages.error(request, f'Failed to delete {failed_count} records because they are referenced by other data.')
+            
+        return redirect('data_explorer:model', model_name=model_name)
+    
+    return redirect('data_explorer:model', model_name=model_name)
 
     return render(request, 'data_explorer/delete.html', {
         'current_user': user,
         'model_name': model_name,
         'instance': instance,
     })
+
+
+@role_required('md')
+def clear_database(request):
+    """Wipes all transactional data in the system (God Mode Action)"""
+    user = get_current_user(request)
+    
+    if request.method == 'POST':
+        success_count = 0
+        failed_count = 0
+        # Iterate over all transactional models (skipping System & Audit possibly, 
+        # or maybe we wipe AuditLog too as per 'wipe every records', but usually audit is kept?
+        # The prompt says 'the deletion shoul wipe every records'. We will wipe everything in MODEL_MAP)
+        for model_name, (Model, _) in MODEL_MAP.items():
+            try:
+                # We count before delete
+                count = Model.objects.count()
+                Model.objects.all().delete()
+                success_count += count
+            except Exception:
+                failed_count += 1
+                
+        # Optional: Wipe audit logs intentionally since God mode
+        log_action(request, user, 'data_explorer', 'GOD_MODE_WIPE_DB',
+                   f'WIPED ENTIRE DATABASE. {success_count} records removed.', 'ALL', None)
+                   
+        messages.success(request, f'Database wipe successful. Permanently deleted {success_count} records.')
+        if failed_count > 0:
+            messages.warning(request, f'Some records could not be deleted due to constraint errors.')
+            
+        return redirect('data_explorer:home')
+    
+    return redirect('data_explorer:home')
+

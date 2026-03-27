@@ -55,6 +55,8 @@
   <a href="/data-explorer/">🗄 All Datasets</a> &nbsp;›&nbsp; {{ model_name|title|cut:"-" }}
 </div>
 
+<form id="bulkDeleteForm" method="POST" action="{% url 'data_explorer:bulk_delete' model_name %}">
+{% csrf_token %}
 <div class="table-hero">
   <div>
     <div class="dataset-badge">Dataset</div>
@@ -64,9 +66,13 @@
     </p>
   </div>
   
-  <div class="search-container">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="godModeSearch" class="search-input" placeholder="Quick search in this dataset...">
+  <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button type="button" class="action-btn" onclick="selectAllViaButton();" style="margin-top: 1rem; background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1;">
+          ☑️ Select All
+        </button>
+        <button type="submit" class="action-btn btn-delete" onclick="return confirm('Are you sure you want to permanently delete all selected records?');" style="margin-top: 1rem; border: 1px solid #ef4444;">
+          🗑️ Delete Selected
+        </button>
   </div>
 </div>
 
@@ -74,6 +80,9 @@
   <table class="god-table" id="godModeTable">
     <thead>
       <tr>
+        <th style="width: 40px; text-align: center;">
+            <input type="checkbox" id="selectAllCheckbox">
+        </th>
         {% for label in fields %}
         <th>{{ label }}</th>
         {% endfor %}
@@ -83,6 +92,9 @@
     <tbody>
       {% for record in records %}
       <tr>
+        <td style="text-align: center;">
+            <input type="checkbox" name="selected_ids" value="{{ record.pk }}" class="row-checkbox">
+        </td>
         {% for val, f in record.values %}
         <td>
           {% if f == 'timestamp' or f == 'created_at' %}
@@ -108,18 +120,39 @@
       {% endfor %}
     </tbody>
   </table>
+  </form>
 </div>
 
 <script>
-document.getElementById('godModeSearch').addEventListener('keyup', function() {
-    let filter = this.value.toLowerCase();
-    let rows = document.querySelectorAll('#godModeTable tbody tr');
-    
-    rows.forEach(row => {
-        if(row.cells.length < 2) return;
-        let text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
+function toggleAllRecords() {
+    let master = document.getElementById('selectAllCheckbox');
+    let checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = master.checked;
     });
-});
+}
+
+function selectAllViaButton() {
+    let master = document.getElementById('selectAllCheckbox');
+    let checkboxes = document.querySelectorAll('.row-checkbox');
+    
+    // Check if everything is currently checked
+    let allChecked = true;
+    checkboxes.forEach(cb => {
+        if (!cb.checked) allChecked = false;
+    });
+    
+    // Toggle the master checkbox
+    master.checked = !allChecked;
+    
+    // Apply to all
+    toggleAllRecords();
+}
+
+// Attach to the master checkbox
+var masterCb = document.getElementById('selectAllCheckbox');
+if(masterCb) {
+    masterCb.addEventListener('change', toggleAllRecords);
+}
 </script>
 {% endblock %}
