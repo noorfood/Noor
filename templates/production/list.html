@@ -1,5 +1,5 @@
-﻿{% extends 'base.html' %}
-{% block title %}Production Ledgers — Noor Foods{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Production Records — Noor Foods{% endblock %}
 {% block nav_pr_list %}active{% endblock %}
 {% block content %}
 <style>
@@ -51,13 +51,13 @@
   <div class="hero-header">
     <div>
       <span class="hero-label">⚙️ Factory Operations</span>
-      <h1 class="hero-title">Production Ledgers</h1>
-      <p class="hero-sub">Historical records of all milling and packaging batches. Flagged rows indicate yield loss above threshold.</p>
+      <h1 class="hero-title">Production Records</h1>
+      <p class="hero-sub">History of all grinding (milling) and bagging (packaging) work. Red or Yellow rows mean there was too much waste.</p>
     </div>
     {% if current_user.is_production_officer %}
     <div style="display:flex; gap:1rem;">
-      <a href="/production/milling/new/" class="btn-primary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">+ Record Milling</a>
-      <a href="/production/packaging/new/" class="btn-primary" style="background: #4f46e5;">+ Record Packaging</a>
+      <a href="/production/milling/new/" class="btn-primary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">+ Record Grinding</a>
+      <a href="/production/packaging/new/" class="btn-primary" style="background: #4f46e5;">+ Record Bagging</a>
     </div>
     {% endif %}
   </div>
@@ -102,8 +102,8 @@
 {% endif %}
 
 <div class="section-header">
-  <div>⚗️ Milling Batches <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">100kg Bags → Bulk Powder</span></div>
-  <div class="section-desc">Flagged rows indicate abnormal yield loss</div>
+  <div>⚗️ Grinding Work (Milling) <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Big Bags → Powder</span></div>
+  <div class="section-desc">Red/Yellow rows show where waste was high</div>
 </div>
 
 <div class="table-wrapper" style="margin-bottom: 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
@@ -117,7 +117,7 @@
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">New Bags</th>
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Old Bags</th>
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Out (kg)</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Loss %</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Waste %</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Flag</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
       </tr>
@@ -154,8 +154,8 @@
 </div>
 
 <div class="section-header" style="margin-top:2rem;">
-  <div>📦 Packaging Batches <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Bulk Powder → Final Sacks</span></div>
-  <div class="section-desc">Each batch feeds directly into Finished Goods Store</div>
+  <div>📦 Bagging Work (Packaging) <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Powder → Small Sacks</span></div>
+  <div class="section-desc">Each batch goes to the Main Product Store</div>
 </div>
 
 <div class="table-wrapper" style="margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
@@ -167,8 +167,8 @@
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Used (kg)</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">10kg Sacks</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Loss %</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Small Bags</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Waste %</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
       </tr>
     </thead>

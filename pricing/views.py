@@ -22,7 +22,15 @@ COMMISSION_CHANNEL_CHOICES = [
 def list_prices(request):
     user = get_current_user(request)
     prices = PriceConfig.objects.all().order_by('-effective_from', 'channel', 'material_type', 'product_size')
-    return render(request, 'pricing/list.html', {'current_user': user, 'prices': prices})
+    
+    from procurement.models import RawMaterialReceipt
+    pending_costs = RawMaterialReceipt.objects.filter(cost_status='pending').order_by('-date', '-created_at')
+    
+    return render(request, 'pricing/list.html', {
+        'current_user': user, 
+        'prices': prices,
+        'pending_costs': pending_costs,
+    })
 
 
 @role_required('md')
@@ -47,10 +55,36 @@ def new_price(request):
                     product_size=product_size, price_per_unit=price_per_unit,
                     effective_from=effective_from, created_by=user, notes=notes,
                 )
+                
+                # Retroactive Price Update Magic
+                from sales.models import SalesManagerCollection, DirectSalePayment
+                eff_date = price.effective_from
+                updated_count = 0
+                
+                if channel == 'sales_manager':
+                    collections = SalesManagerCollection.objects.filter(date__gte=eff_date, material_type=material_type)
+                    for c in collections:
+                        c.price_per_sack = price_per_unit
+                        c.total_value = float(price_per_unit) * c.qty_sacks
+                        c.save(update_fields=['price_per_sack', 'total_value'])
+                        updated_count += 1
+                elif channel == 'company':
+                    direct_sales = DirectSalePayment.objects.filter(date__gte=eff_date, material_type=material_type, product_size=product_size)
+                    for ds in direct_sales:
+                        ds.unit_price = price_per_unit
+                        ds.total_sale_value = float(price_per_unit) * ds.qty_sold
+                        ds.save(update_fields=['unit_price', 'total_sale_value'])
+                        updated_count += 1
+
                 log_action(request, user, 'pricing', 'SET_PRICE',
-                           f'Price: {channel}/{material_type}/{product_size} = ₦{price_per_unit} from {effective_from}',
+                           f'Price: {channel}/{material_type}/{product_size} = ₦{price_per_unit} from {effective_from}. Auto-updated {updated_count} records.',
                            'PriceConfig', price.pk)
-                messages.success(request, f'Price saved: {material_type.title()} {product_size} ({channel}) → ₦{price_per_unit:,.2f} from {effective_from}.')
+                
+                msg = f'Price saved: {material_type.title()} {product_size} ({channel}) → ₦{price_per_unit:,.2f} from {effective_from}.'
+                if updated_count > 0:
+                    msg += f' Proactively applied to {updated_count} existing transactions.'
+                messages.success(request, msg)
+                
                 return redirect('pricing:list')
         except Exception as e:
             error = f'Error: {str(e)}'

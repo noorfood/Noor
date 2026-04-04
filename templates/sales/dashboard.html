@@ -6,19 +6,19 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 3rem;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #818cf8;">💼 Sales Module</span>
+            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #818cf8;">💼 Sales Area</span>
             <h1 class="hero-title" style="color: #fff;">
                 {% if current_user.role == 'sales_manager' %}
-                    Sales Manager Operations
+                    My Sales Work
                 {% else %}
-                    Sales Oversight — MD / GM
+                    Sales Manager Checking
                 {% endif %}
             </h1>
             <p class="hero-subtitle" style="color: var(--slate-400);">
                 {% if current_user.role == 'sales_manager' %}
-                    Track goods holding, record sales results, and manage team performance.
+                    See bags in your hands, record what you sell, and manage your staff.
                 {% else %}
-                    Monitor Sales Manager accountability, collections, and market exposure.
+                    Check how many bags Managers have and how much money they owe the company.
                 {% endif %}
             </p>
         </div>
@@ -35,25 +35,25 @@
 {# Metrics #}
 <div class="balance-grid" style="margin-bottom: 3rem;">
     <div class="balance-card" style="border-left: 4px solid var(--amber);">
-        <div class="balance-label">🌽 Maize in Your Hands</div>
-        <div class="balance-value" style="color: var(--amber);">{{ maize_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">sacks</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Currently held 10kg units</div>
+        <div class="balance-label">🌽 Maize Bags with me</div>
+        <div class="balance-value" style="color: var(--amber);">{{ maize_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
+        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Bags with you right now</div>
     </div>
     <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
-        <div class="balance-label">🌾 Wheat in Your Hands</div>
-        <div class="balance-value" style="color: #8b5cf6;">{{ wheat_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">sacks</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Currently held 10kg units</div>
+        <div class="balance-label">🌾 Wheat Bags with me</div>
+        <div class="balance-value" style="color: #8b5cf6;">{{ wheat_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
+        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Bags with you right now</div>
     </div>
     <div class="balance-card" style="border-left: 4px solid var(--rose);">
-        <div class="balance-label">💳 Money Outstanding</div>
+        <div class="balance-label">💳 Money I owe Company</div>
         <div class="balance-value" style="color: var(--rose);">₦{{ money_outstanding|floatformat:0 }}</div>
         <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Owed to company accounts</div>
     </div>
     {% if pending_count > 0 %}
     <div class="balance-card" style="border-left: 4px solid var(--amber); background: rgba(251, 191, 36, 0.05);">
-        <div class="balance-label">⏳ Pending Collections</div>
+        <div class="balance-label">⏳ New Bags waiting for me</div>
         <div class="balance-value" style="color: var(--amber);">{{ pending_count }}</div>
-        <div style="font-size:0.8rem; color:var(--amber); font-weight:700; margin-top:0.5rem;">Require acknowledgement</div>
+        <div style="font-size:0.8rem; color:var(--amber); font-weight:700; margin-top:0.5rem;">You need to confirm receipt</div>
     </div>
     {% endif %}
 </div>
@@ -62,7 +62,7 @@
 
 {# Collections Queue #}
 <div class="action-bar-modern">
-  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📋 Recent Collections from FG Store</h3>
+  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📋 Recent Bags received from Store</h3>
   <a href="{% url 'sales:list_collections' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy); padding: 0.4rem 1rem; font-size: 0.8rem;">View All →</a>
 </div>
 
@@ -70,13 +70,13 @@
 {% for c in recent_collections %}
 <div class="card {% if c.status == 'pending' %}border-amber bg-amber-gradient{% endif %}" style="padding: 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
   <div>
-    <div style="font-weight: 800; color: var(--slate-900);">{{ c.material_type|upper }} — {{ c.qty_sacks }} sacks</div>
+    <div style="font-weight: 800; color: var(--slate-900);">{{ c.material_type|upper }} — {{ c.qty_sacks }} bags</div>
     <div style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.25rem;">{{ c.date }} &nbsp;·&nbsp; Recorded by {{ c.store_officer.full_name }}</div>
   </div>
   <div style="display:flex;align-items:center;gap:1rem;">
     {% if c.status == 'pending' %}
-    <span class="badge-soft badge-soft-warning">⏳ Awaiting Your Acceptance</span>
-    <a href="{% url 'sales:acknowledge_collection' c.pk %}" class="btn-modern btn-modern-success" style="padding: 0.4rem 1.25rem; font-size: 0.8rem;">Accept →</a>
+    <span class="badge-soft badge-soft-warning">⏳ Waiting for you to confirm</span>
+    <a href="{% url 'sales:acknowledge_collection' c.pk %}" class="btn-modern btn-modern-success" style="padding: 0.4rem 1.25rem; font-size: 0.8rem;">Confirm →</a>
     {% elif c.status == 'accepted' %}
     <span class="badge-soft badge-soft-success">✓ Accepted</span>
     {% if c.total_value and show_money %}<span style="color:var(--indigo); font-weight:800; font-size:1rem;">₦{{ c.total_value|floatformat:0 }}</span>{% endif %}
@@ -108,7 +108,7 @@
                 <div style="font-weight:800; color:var(--navy); font-size: 1.1rem;">{{ sp.name }}</div>
                 <div style="font-size: 0.7rem; background: var(--indigo-50); color: var(--indigo-700); border-radius: 6px; padding: 0.2rem 0.6rem; display: inline-block; margin-top: 0.25rem; font-weight: 800; text-transform: uppercase;">{{ sp.get_channel_display }}</div>
             </div>
-            <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--navy); color: #fff;">Issue Goods</a>
+            <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--navy); color: #fff;">Give Bags</a>
         </div>
         {% if sp.phone %}<div style="font-size: 0.85rem; color: var(--slate-500); display: flex; align-items: center; gap: 0.5rem;"><span>📞</span> {{ sp.phone }}</div>{% endif %}
     </div>
@@ -130,7 +130,7 @@
     <div class="balance-card" style="border-left: 4px solid var(--amber); background: rgba(251, 191, 36, 0.05);">
         <div class="balance-label">⏳ {{ row.sm.full_name }}</div>
         <div class="balance-value" style="color: var(--amber);">{{ row.pending_count }}</div>
-        <div style="font-size:0.8rem; color:var(--amber); font-weight: 700; margin-top:0.5rem;">Unacknowledged handovers</div>
+        <div style="font-size:0.8rem; color:var(--amber); font-weight: 700; margin-top:0.5rem;">Bags they haven't confirmed</div>
     </div>
     {% endif %}
     {% endfor %}
@@ -139,7 +139,7 @@
 {# Quick Actions removed - redundant with sidenav #}
 
 <div class="action-bar-modern">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📊 Sales Manager Accountability Ledger</h3>
+    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📊 Who has what? (Managers List)</h3>
 </div>
 <div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 3rem;">
     <table class="premium-table">
@@ -147,8 +147,8 @@
             <tr>
                 <th>S/N</th>
                 <th>Sales Manager</th>
-                <th class="num">Maize (sacks)</th>
-                <th class="num">Wheat (sacks)</th>
+                <th class="num">Maize (bags)</th>
+                <th class="num">Wheat (bags)</th>
                 {% if show_money %}<th class="num">Money Owed</th>{% endif %}
                 <th class="num">Pending</th>
             </tr>
@@ -184,7 +184,7 @@
 
 {% if pending_payments %}
 <div class="action-bar-modern" style="margin-top: 3rem;">
-  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">💳 Payments Awaiting Confirmation</h3>
+  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">💳 Money given in waiting to be confirmed</h3>
   <a href="{% url 'sales:list_sm_payments' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy); padding: 0.4rem 1rem; font-size: 0.8rem;">View All →</a>
 </div>
 <div class="table-wrapper mb-24">
@@ -240,5 +240,7 @@
 </div>
 {% endif %}
 {% endif %}
+
+{% include 'includes/_daily_ledger.html' %}
 
 {% endblock %}

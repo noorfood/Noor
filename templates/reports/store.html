@@ -8,9 +8,9 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏬 Live Inventory Audit</span>
-            <h1 class="hero-title" style="color: #fff;">Store Inventory Balances</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">Real-time snapshot of stock levels across the factory pipeline — from intake to finished export goods.</p>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏬 Current Stock Check</span>
+            <h1 class="hero-title" style="color: #fff;">Every Store Balance</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">Shows how many bags we have at every stage, from raw grain to finished bags.</p>
         </div>
     </div>
 </div>
@@ -19,18 +19,18 @@
 <div style="margin-bottom: 3.5rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">📦</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Raw Material Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Unprocessed Intake</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Main Grain Store (Raw) <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Bags just arrived</small></h3>
     </div>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
         <div class="card" style="padding: 2rem; border-left: 4px solid var(--slate-400);">
             <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">🌽 Maize Balance</div>
             <div class="font-bold {% if dirty_raw.maize == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ dirty_raw.maize }}</div>
-            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">100kg Bags On Hand</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">Bags On Hand</div>
         </div>
         <div class="card" style="padding: 2rem; border-left: 4px solid var(--slate-400);">
             <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">🌾 Wheat Balance</div>
             <div class="font-bold {% if dirty_raw.wheat == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 2.25rem; letter-spacing: -1px;">{{ dirty_raw.wheat }}</div>
-            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">100kg Bags On Hand</div>
+            <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); margin-top: 5px;">Bags On Hand</div>
         </div>
     </div>
 </div>
@@ -39,7 +39,7 @@
 <div style="margin-bottom: 3.5rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">🧺</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Clean Raw Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Post-Cleaning / Production Ready</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Clean Grain Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Cleaned & Ready to Grind</small></h3>
     </div>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
         <div class="card" style="padding: 2rem; border-left: 4px solid var(--emerald);">
@@ -59,16 +59,16 @@
 <div>
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">🏭</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Finished Goods Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Packaging Optimized / Ready for Departure</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Finished Goods Store <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Ready for Sales / Departure</small></h3>
     </div>
     <div class="card" style="padding: 0; overflow: hidden;">
         <table class="premium-table">
           <thead>
             <tr>
-              <th>SKU / Product Size</th>
-              <th class="num">Maize (Sacks)</th>
-              <th class="num">Wheat (Sacks)</th>
-              <th class="num">Consolidated Balance</th>
+              <th>Bag Size</th>
+              <th class="num">Maize Bags</th>
+              <th class="num">Wheat Bags</th>
+              <th class="num">Total Bags in Store</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -90,7 +90,7 @@
               </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No finished goods currently in tactical inventory.</td></tr>
+            <tr><td colspan="5" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No finished goods currently in stock.</td></tr>
             {% endfor %}
           </tbody>
         </table>

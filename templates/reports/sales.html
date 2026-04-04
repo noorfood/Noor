@@ -1,5 +1,5 @@
-﻿{% extends 'base.html' %}
-{% block title %}Sales Ledger Details — Noor Foods{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Global Sales Record — Noor Foods{% endblock %}
 {% block nav_rp_sales %}active{% endblock %}
 {% block content %}
 {# Standardized Sales Ledger Styles #}
@@ -7,9 +7,9 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">📈 Financial Audit</span>
-            <h1 class="hero-title" style="color: #fff;">Sales Ledger Intelligence</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">Strategic audit of transactions, promoter commissions, and confirmed GM revenue streams.</p>
+            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">📈 Money Check</span>
+            <h1 class="hero-title" style="color: #fff;">Sales Records Summary</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">Full list of all sales, payments to staff, and money received by the company.</p>
         </div>
     </div>
 </div>
@@ -17,29 +17,29 @@
 {# Summary Cards #}
 <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
     <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--slate-400);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Gross Value</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Sale Value</div>
         <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">₦{{ total_value|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Before commissions</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Full price before staff commissions</div>
     </div>
     <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--indigo);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Commission</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Staff Payments</div>
         <div style="font-size: 1.6rem; font-weight: 900; color: var(--indigo);">₦{{ total_commission|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Earned by Team</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Total money given to staff</div>
     </div>
     <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Net Due</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Company Share</div>
         <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">₦{{ total_net|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Payable to Venture</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Money that belongs to the factory</div>
     </div>
     <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Collected</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Actual Money Received</div>
         <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">₦{{ total_received|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Confirmed Inflow</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Verified and banked</div>
     </div>
     <div class="card {% if total_outstanding > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Market Debt</div>
+        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Money Owed</div>
         <div class="{% if total_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.6rem; font-weight: 900;">₦{{ total_outstanding|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Financial Exposure</div>
+        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Money still in the market</div>
     </div>
 </div>
 
@@ -47,7 +47,7 @@
 <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
     <div class="card" style="border-top: 5px solid var(--amber); background: #fffbeb;">
         <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #92400e; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🌽</span> MAIZE REVENUE STRATA
+            <span>🌽</span> MAIZE SALES SUMMARY
         </div>
         <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div>
@@ -55,18 +55,18 @@
                 <div style="font-size: 1.4rem; font-weight: 900; color: #78350f;">₦{{ maize_value|floatformat:0 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Realized Inflow</div>
+                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Money Received</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ maize_received|floatformat:0 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Exposure</div>
+                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Money Owed</div>
                 <div class="{% if maize_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ maize_outstanding|floatformat:0 }}</div>
             </div>
         </div>
     </div>
     <div class="card" style="border-top: 5px solid var(--indigo); background: #f5f3ff;">
         <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4c1d95; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🌾</span> WHEAT REVENUE STRATA
+            <span>🌾</span> WHEAT SALES SUMMARY
         </div>
         <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div>
@@ -74,11 +74,11 @@
                 <div style="font-size: 1.4rem; font-weight: 900; color: #3730a3;">₦{{ wheat_value|floatformat:0 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Realized Inflow</div>
+                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Money Received</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ wheat_received|floatformat:0 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Exposure</div>
+                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Money Owed</div>
                 <div class="{% if wheat_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ wheat_outstanding|floatformat:0 }}</div>
             </div>
         </div>
@@ -114,7 +114,7 @@
             </select>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <button type="submit" class="btn-modern btn-modern-primary">Apply Audit</button>
+            <button type="submit" class="btn-modern btn-modern-primary">Apply Filter</button>
             <a href="?" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200);">Reset</a>
         </div>
     </form>
@@ -123,18 +123,18 @@
 <div style="margin-bottom: 3.5rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">📋</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Promoter Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Live Personnel Channel</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Team Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Current sales made by staff</small></h3>
     </div>
     <div class="card" style="padding: 0; overflow: hidden;">
         <table class="premium-table">
           <thead>
             <tr>
-              <th>Personnel / Context</th>
+              <th>Staff Name / Date</th>
               <th>Material</th>
-              <th class="num">Sacks Sold</th>
+              <th class="num">Bags Sold</th>
               <th class="num">Net Due</th>
-              <th class="num">Handed Over</th>
-              <th>Integrity</th>
+              <th class="num">Money Paid In</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -149,7 +149,7 @@
                     {{ r.material_type|upper }}
                 </span>
               </td>
-              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ r.equivalent_sacks_sold|floatformat:1 }} <small>Sacks</small></td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ r.equivalent_sacks_sold|floatformat:1 }} <small>Bags</small></td>
               <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ r.net_due_to_company|floatformat:0 }}</td>
               <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ r.amount_returned|floatformat:0 }}</td>
               <td>
@@ -167,18 +167,18 @@
 <div style="margin-bottom: 3.5rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">🏢</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Confirmed Direct Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">GM Strategy Channel</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Customer Direct Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Sales made directly from the factory</small></h3>
     </div>
     <div class="card" style="padding: 0; overflow: hidden;">
         <table class="premium-table">
           <thead>
             <tr>
-              <th>Identity / Customer</th>
+              <th>Customer Name</th>
               <th>Material</th>
-              <th class="num">Qty</th>
-              <th class="num">Sale Value</th>
-              <th class="num">Received</th>
-              <th class="num">Status / Debt</th>
+              <th class="num">Amount Sold</th>
+              <th class="num">Total Price</th>
+              <th class="num">Paid</th>
+              <th class="num">Money Owed</th>
             </tr>
           </thead>
           <tbody>
@@ -193,7 +193,7 @@
                     {{ d.material_type|upper }}
                 </span>
               </td>
-              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ d.qty_sold }} <small>Sacks</small></td>
+              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ d.qty_sold }} <small>Bags</small></td>
               <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_sale_value|floatformat:0 }}</td>
               <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_received|floatformat:0 }}</td>
               <td class="num">
@@ -216,18 +216,18 @@
 <div>
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">📜</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Legacy / Tactical Audit <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Retail & Historical Archives</small></h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Past Sales Records <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Old sales and archive records</small></h3>
     </div>
     <div class="card" style="padding: 0; overflow: hidden;">
         <table class="premium-table">
           <thead>
             <tr>
-              <th>Personnel</th>
-              <th>Mat. / Size</th>
+              <th>Staff Name</th>
+              <th>Type / Size</th>
               <th class="num">Qty</th>
-              <th class="num">Net Payable</th>
-              <th class="num">Received</th>
-              <th class="num">Debt</th>
+              <th class="num">Total Price</th>
+              <th class="num">Paid</th>
+              <th class="num">Owed</th>
               <th>Status</th>
             </tr>
           </thead>

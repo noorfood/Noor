@@ -22,6 +22,11 @@ def _get_clean_store_balance(material_type):
 @store_type_required('raw')
 def dashboard(request):
     user = get_current_user(request)
+    
+    from audit.models import AuditLog
+    import datetime
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+    
     balance_maize = _get_clean_store_balance('maize')
     balance_wheat = _get_clean_store_balance('wheat')
     recent_issuances = CleanRawIssuance.objects.order_by('-date', '-created_at')[:10]
@@ -32,6 +37,7 @@ def dashboard(request):
         'balance_wheat': balance_wheat,
         'recent_issuances': recent_issuances,
         'pending_returns': pending_returns,
+        'today_activities': today_activities,
     })
 
 

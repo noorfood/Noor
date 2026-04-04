@@ -137,6 +137,10 @@ def get_salesperson_money_outstanding(salesperson):
 def dashboard(request):
     user = get_current_user(request)
 
+    from audit.models import AuditLog
+    import datetime
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+
     if user.role == 'sales_manager':
         # Pending collections waiting for SM to acknowledge
         pending_collections = SalesManagerCollection.objects.filter(
@@ -167,6 +171,7 @@ def dashboard(request):
             'money_outstanding': money_outstanding,
             'recent_collections': recent_collections,
             'show_money': True,
+            'today_activities': today_activities,
         })
 
     else:
@@ -203,6 +208,7 @@ def dashboard(request):
             'recent_collections': recent_collections,
             'pending_payments': pending_payments,
             'show_money': user.role in ('md', 'manager'),
+            'today_activities': today_activities,
         })
 
 

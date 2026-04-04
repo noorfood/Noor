@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Full Sales Ledger — Noor Foods{% endblock %}
+{% block title %}Main Sales Record — Noor Foods{% endblock %}
 {% block nav_sales %}active{% endblock %}
 {% block content %}
 <style>
@@ -17,8 +17,8 @@
 
 <div class="sales-led-hero">
   <div>
-    <div class="sales-led-title">📋 Full Sales Ledger</div>
-    <div class="sales-led-sub">Complete history of all sales recorded by Sales Managers. Rows highlighted in amber have outstanding balances.</div>
+    <div class="sales-led-title">📋 Main Sales Record</div>
+    <div class="sales-led-sub">History of all sales recorded. Yellow rows mean money is still owed.</div>
   </div>
   {% if current_user.role == 'sales_manager' %}
   <a href="{% url 'sales:record' %}" class="btn btn-primary" style="font-size:.95rem;padding:.75rem 1.5rem;">+ Record New Sale</a>
@@ -36,9 +36,9 @@
         <th>Material & Size</th>
         <th class="num">Qty</th>
         {% if current_user.role == 'sales_manager' or show_money %}
-        <th class="num">Net Payable (₦)</th>
-        <th class="num">Received (₦)</th>
-        <th class="num">Outstanding (₦)</th>
+        <th class="num">Total Price (₦)</th>
+        <th class="num">Money Paid (₦)</th>
+        <th class="num">Still Owed (₦)</th>
         {% endif %}
         <th>Status</th>
         <th>Actions</th>
@@ -60,7 +60,7 @@
         <td class="num">₦{{ sale.net_payable|floatformat:0 }}</td>
         <td class="num" style="color:#16a34a;font-weight:600;">₦{{ sale.total_paid|floatformat:0 }}</td>
         <td class="num font-bold {% if sale.amount_outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
-          {% if sale.amount_outstanding > 0 %}₦{{ sale.amount_outstanding|floatformat:0 }}{% else %}✓ SETTLED{% endif %}
+          {% if sale.amount_outstanding > 0 %}₦{{ sale.amount_outstanding|floatformat:0 }}{% else %}✓ ALL PAID{% endif %}
         </td>
         {% endif %}
         <td><span class="badge badge-{{ sale.status }}">{{ sale.get_status_display }}</span></td>
@@ -79,7 +79,7 @@
 </div>
 
 <div class="chain-note">
-  ℹ️ <strong>Chain of Custody:</strong> Sales recorded here automatically generate a Pending Issuance in the Finished Goods Store. The FG Store Officer must physically hand over goods and acknowledge the issuance before the sale moves out of <em>Pending</em> status.
+  ℹ️ <strong>Important Note:</strong> When you record a sale, the Store is automatically notified to give you the bags. The Store Officer must confirm they have given you the bags before the status changes from <em>Pending</em>.
 </div>
 
 <div style="margin-top:1.25rem;display:flex;gap:.75rem;">

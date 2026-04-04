@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Team Audit Hub — Noor Foods{% endblock %}
+{% block title %}Money & Stock Checking — Noor Foods{% endblock %}
 {% block nav_gm_recon %}active{% endblock %}
 {% block nav_rc_md %}active{% endblock %}
 {% block content %}
@@ -126,15 +126,15 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 3rem;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">⚖️ Digital Auditor</span>
-            <h1 class="hero-title" style="color: #fff;">Team Audit Hub</h1>
-            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Twin-track accountability: Financial mapping vs. Inventory distribution.</p>
+            <span class="hero-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">⚖️ Checking System</span>
+            <h1 class="hero-title" style="color: #fff;">Staff Checking Hub</h1>
+            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Checking both Money and Bags to make sure everything is correct.</p>
         </div>
         <div style="display: flex; gap: 1rem;">
             {% if current_user.role == 'sales_manager' %}
-            <a href="{% url 'reconciliation:record_money' %}" class="btn-modern btn-modern-primary" style="background: #10b981; border-color: #10b981;">💰 Record Remittance</a>
+            <a href="{% url 'reconciliation:record_money' %}" class="btn-modern btn-modern-primary" style="background: #10b981; border-color: #10b981;">💰 Record Money Given In</a>
             {% endif %}
-            <a href="/reconciliation/flags/" class="btn-modern" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">🚩 Discrepancy Registry</a>
+            <a href="/reconciliation/flags/" class="btn-modern" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);">🚩 Problem List (Flags)</a>
         </div>
     </div>
 </div>
@@ -143,15 +143,15 @@
 <div class="balance-grid" style="margin-bottom: 3rem;">
     <!-- Financial Track -->
     <div class="balance-card" style="border-left: 4px solid #4f46e5;">
-        <div class="balance-label" style="color: #4f46e5;">💰 Global Financial Position</div>
+        <div class="balance-label" style="color: #4f46e5;">💰 Total Money Status</div>
         <div class="balance-value">₦{{ grand_diff|floatformat:0 }}</div>
         <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
-                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Expected</div>
+                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Should Be</div>
                 <div style="font-weight: 700; color: #1e293b;">₦{{ grand_expected|floatformat:0 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Actual</div>
+                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Really Have</div>
                 <div style="font-weight: 700; color: #059669;">₦{{ grand_actual|floatformat:0 }}</div>
             </div>
         </div>
@@ -159,15 +159,15 @@
 
     <!-- Inventory Track -->
     <div class="balance-card" style="border-left: 4px solid #059669;">
-        <div class="balance-label" style="color: #059669;">📦 Global Inventory Position</div>
+        <div class="balance-label" style="color: #059669;">📦 Total Bags Status</div>
         <div class="balance-value">{{ grand_stock_diff|floatformat:1 }} <small>Unsold</small></div>
         <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div>
-                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Given</div>
+                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Bags Given Out</div>
                 <div style="font-weight: 700; color: #1e293b;">{{ grand_given|floatformat:1 }}</div>
             </div>
             <div>
-                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Sold</div>
+                <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Bags Sold</div>
                 <div style="font-weight: 700; color: #4f46e5;">{{ grand_sold|floatformat:1 }}</div>
             </div>
         </div>
@@ -177,7 +177,7 @@
 {# ══ DETAILED TABLE ═════════════════════════════════════════════════ #}
 <div class="premium-table-card">
     <div class="filter-bar">
-        <span style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Filter by Personnel:</span>
+        <span style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Search for a Staff Member:</span>
         <form method="get" id="filterForm">
             <select name="sp" onchange="this.form.submit()" style="padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 0.9rem; min-width: 200px;">
                 <option value="">— All Team Members —</option>
@@ -195,17 +195,17 @@
         <thead>
             <tr>
                 <th rowspan="2">Sales Person</th>
-                <th colspan="3" style="text-align: center; background: #eef2ff; border-left: 2px solid #e2e8f0;">Financial Audit (₦)</th>
-                <th colspan="3" style="text-align: center; background: #ecfdf5; border-left: 2px solid #e2e8f0;">Stock Audit (Sacks — All Materials)</th>
+                <th colspan="3" style="text-align: center; background: #eef2ff; border-left: 2px solid #e2e8f0;">Money Check (₦)</th>
+                <th colspan="3" style="text-align: center; background: #ecfdf5; border-left: 2px solid #e2e8f0;">Bags Check (All Types)</th>
                 <th rowspan="2" style="text-align: center; border-left: 2px solid #e2e8f0;">Status</th>
             </tr>
             <tr>
-                <th style="background: #f8fafc; border-left: 2px solid #e2e8f0;">Expected</th>
-                <th style="background: #f8fafc;">Actual</th>
-                <th style="background: #f8fafc;">Exposure</th>
+                <th style="background: #f8fafc; border-left: 2px solid #e2e8f0;">Should Be</th>
+                <th style="background: #f8fafc;">Really Have</th>
+                <th style="background: #f8fafc;">Shortage</th>
                 <th style="background: #f8fafc; border-left: 2px solid #e2e8f0;">Given</th>
                 <th style="background: #f8fafc;">Sold</th>
-                <th style="background: #f8fafc;">Unsold</th>
+                <th style="background: #f8fafc;">Left</th>
             </tr>
         </thead>
         <tbody>
@@ -241,9 +241,9 @@
                 
                 <td style="text-align: center; border-left: 1px solid #e2e8f0;">
                     {% if row.status == 'settled' %}
-                    <span class="badge-settled">✓ SETTLED</span>
+                    <span class="badge-settled">✓ ALL OK</span>
                     {% else %}
-                    <span class="badge-pending">⚠ PENDING</span>
+                    <span class="badge-pending">⚠ NOT CLEAR</span>
                     {% endif %}
                 </td>
             </tr>

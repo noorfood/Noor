@@ -18,6 +18,11 @@ def _get_raw_store_balance(material_type):
 @store_type_required('raw')
 def dashboard(request):
     user = get_current_user(request)
+    
+    from audit.models import AuditLog
+    import datetime
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+    
     receipts = RawMaterialReceipt.objects.filter(received_by=user).order_by('-date', '-created_at')[:10] if user.is_store_officer else RawMaterialReceipt.objects.all().order_by('-date', '-created_at')[:20]
     balance_maize = _get_raw_store_balance('maize')
     balance_wheat = _get_raw_store_balance('wheat')
@@ -26,6 +31,7 @@ def dashboard(request):
         'current_user': user, 'receipts': receipts,
         'balance_maize': balance_maize, 'balance_wheat': balance_wheat,
         'pending_costs': pending_costs,
+        'today_activities': today_activities,
     })
 
 

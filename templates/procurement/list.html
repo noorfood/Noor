@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Raw Material Registry — Noor Foods{% endblock %}
+{% block title %}Raw Material Stock Log — Noor Foods{% endblock %}
 {% block nav_proc_list %}active{% endblock %}
 {% block content %}
 <div class="page-hero" style="background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); margin-bottom: 3rem;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">📑 Intermediate Ledger</span>
-            <h1 class="hero-title" style="color: #fff;">Clean Store Registry</h1>
-            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Operational history of purified grain receipts and production issuances.</p>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">📑 Stock List</span>
+            <h1 class="hero-title" style="color: #fff;">Raw Material Record</h1>
+            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">History of bags received from suppliers and bags given to the cleaner.</p>
         </div>
     </div>
 </div>
@@ -15,12 +15,12 @@
 {% if current_user.is_manager_or_above %}
 <div class="balance-grid" style="margin-bottom: 3rem;">
   <div class="balance-card" style="border-left: 4px solid var(--amber);">
-    <div class="balance-label" style="color: var(--amber);">🌽 Clean Maize</div>
+    <div class="balance-label" style="color: var(--amber);">🌽 Maize in Store</div>
     <div class="balance-value">{{ balance_maize }} <small>Bags</small></div>
     <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Verified Bags in Store</div>
   </div>
   <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
-    <div class="balance-label" style="color: #8b5cf6;">🌾 Clean Wheat</div>
+    <div class="balance-label" style="color: #8b5cf6;">🌾 Wheat in Store</div>
     <div class="balance-value">{{ balance_wheat }} <small>Bags</small></div>
     <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Verified Bags in Store</div>
   </div>
@@ -31,7 +31,7 @@
   <div style="display:flex; gap:0.75rem; align-items:center;">
     <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
     <a href="{% url 'procurement:receive' %}" class="btn-modern btn-modern-primary">+ Receive New Stock</a>
-    <a href="{% url 'procurement:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Cleaner →</a>
+    <a href="{% url 'procurement:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Give to Cleaner →</a>
   </div>
 </div>
 
@@ -40,7 +40,7 @@
 {# ══════════════════════════════════════════════════════════ #}
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
   <div>
-    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📥 Market Receipts — Raw Stock In</h3>
+    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📥 Bags Received from Suppliers</h3>
     <p style="font-size:0.85rem; color:var(--slate-500); margin:0.25rem 0 0 0;">Total bags received from suppliers.</p>
   </div>
 </div>
@@ -54,7 +54,7 @@
         <th>Supplier</th>
         <th style="text-align: right;">Bags Received</th>
         <th style="text-align: right;">Approx. Weight</th>
-        <th>Finance/Cost</th>
+        <th>Price / Cost</th>
         <th>Ref No.</th>
         <th>Received By</th>
       </tr>
@@ -70,16 +70,16 @@
         <td style="text-align: right; font-family:monospace; color:var(--slate-500); font-size: 1.05rem;">{{ r.approx_weight_kg|default:"—" }} kg</td>
         <td>
           {% if r.cost_status == 'pending' %}
-            <span class="badge-soft badge-soft-warning">Pending Review</span>
+            <span class="badge-soft badge-soft-warning">Price Not Set</span>
             {% if current_user.role == 'md' %}
-              <div style="margin-top:0.5rem;"><a href="{% url 'procurement:set_cost' r.id %}" style="font-size:0.8rem; font-weight:800; color:var(--blue); text-decoration:none;">Set Cost →</a></div>
+              <div style="margin-top:0.5rem;"><a href="{% url 'procurement:set_cost' r.id %}" style="font-size:0.8rem; font-weight:800; color:var(--blue); text-decoration:none;">Set Price →</a></div>
             {% endif %}
           {% else %}
             {% if current_user.role == 'md' or current_user.role == 'manager' %}
               <div style="font-weight:800; color:var(--navy); font-size: 1.05rem;">₦{{ r.total_cost|floatformat:0 }}</div>
               <div style="font-size:0.8rem; color:var(--slate-500); font-weight: 600;">@ ₦{{ r.cost_per_bag|floatformat:0 }}/bag</div>
             {% else %}
-              <span class="badge-soft badge-soft-success">Cost Approved</span>
+              <span class="badge-soft badge-soft-success">Price Verified</span>
             {% endif %}
           {% endif %}
         </td>
@@ -98,8 +98,8 @@
 {# ══════════════════════════════════════════════════════════ #}
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
   <div>
-    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📤 Cleaning Issuances — Raw Stock Out</h3>
-    <p style="font-size:0.85rem; color:var(--slate-500); margin:0.25rem 0 0 0;">Bags sent to the Cleaning Department.</p>
+    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📤 Bags Sent to Cleaner</h3>
+    <p style="font-size:0.85rem; color:var(--slate-500); margin:0.25rem 0 0 0;">Bags taken from store to be cleaned.</p>
   </div>
 </div>
 <div class="table-wrapper">
@@ -109,9 +109,9 @@
         <th>S/N</th>
         <th>Date</th>
         <th>Material</th>
-        <th style="text-align: right;">Bags Issued</th>
-        <th>Issued To (Cleaner)</th>
-        <th>Issued By (Store)</th>
+        <th>Bags Sent</th>
+        <th>Given To (Cleaner)</th>
+        <th>Recorded By</th>
       </tr>
     </thead>
     <tbody>

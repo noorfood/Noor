@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Finished Goods Registry — Noor Foods{% endblock %}
+{% block title %}Product Store Registry — Noor Foods{% endblock %}
 {% block nav_fg_list %}active{% endblock %}
 {% block content %}
 
@@ -29,8 +29,8 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
             <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📑 Digital Registry</span>
-            <h1 class="hero-title">Finished Goods Registry</h1>
-            <p class="hero-subtitle">Comprehensive ledger of all flour production receipts and sales issuances.</p>
+            <h1 class="hero-title">Product Store Registry</h1>
+            <p class="hero-subtitle">Log of all bags received from production and those given out for sale.</p>
         </div>
         <div style="text-align: right;">
             <div style="font-size: 0.75rem; color: var(--emerald); font-weight: 800; display: flex; align-items: center; gap: 6px; justify-content: flex-end;">
@@ -68,8 +68,8 @@
         <span class="badge-soft badge-soft-primary" style="padding: 0.5rem 0.75rem;">⚡ Operations</span>
         <div style="height: 20px; width: 1px; background: var(--slate-200);"></div>
         {% if current_user.is_store_officer %}
-        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700);">🏢 Company Issue</a>
-        <a href="{% url 'finished_store:create_sm_collection' %}" class="btn-modern btn-modern-primary">📦 Record Issue to SM</a>
+        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700);">🏢 Give to Company Sale</a>
+        <a href="{% url 'finished_store:create_sm_collection' %}" class="btn-modern btn-modern-primary">📦 Give Bags to Manager</a>
         {% endif %}
     </div>
     <div style="display: flex; gap: 0.75rem;">
@@ -87,7 +87,7 @@
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: space-between;">
         <h3 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
             <span class="pulse-badge" style="background: var(--emerald);"></span>
-            New Production Receipts Pending Acceptance
+            New Production Bags waiting for Confirmation
         </h3>
         <span class="badge-soft badge-soft-success">{{ pending_receipts|length }} PENDING</span>
     </div>
@@ -100,7 +100,7 @@
                     <th>Officer</th>
                     <th>Material</th>
                     <th style="text-align: right;">Qty</th>
-                    <th style="width: 320px;">Verification Action</th>
+                    <th style="width: 320px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -141,7 +141,7 @@
 <div class="card mb-16" style="border: 1px solid var(--amber); background: #fffbeb;">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: space-between;">
         <h3 style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            ⚠️ Sales Force Returns Awaiting Check-in
+            ⚠️ Bags returned by Sales Team waiting for Check-in
         </h3>
         <span class="badge-soft badge-soft-warning">{{ pending_returns|length }} AWAITING</span>
     </div>
@@ -153,7 +153,7 @@
                     <th>Product</th>
                     <th style="text-align: right;">Qty</th>
                     <th>Returned By</th>
-                    <th style="width: 320px;">Registry Action</th>
+                    <th style="width: 320px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -190,9 +190,9 @@
 <div class="card mb-16">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #f0f9ff;">
         <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--blue); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🔄</span> Physical Handover Queue
+            <span>🔄</span> Bags waiting to be Collected
         </h3>
-        <span class="badge-soft badge-soft-primary">{{ pending_issuances|length }} WAITING COLLECTION</span>
+        <span class="badge-soft badge-soft-primary">{{ pending_issuances|length }} NOT YET COLLECTED</span>
     </div>
     <div class="table-wrapper">
         <table class="premium-table">
@@ -202,7 +202,7 @@
                     <th>Approval Date</th>
                     <th>Product</th>
                     <th class="num">Sacks</th>
-                    <th>Authorized Recipient</th>
+                    <th>Who is collecting?</th>
                     <th>Channel</th>
                     <th style="text-align: right;">Action</th>
                 </tr>
@@ -230,12 +230,12 @@
                     <td><span class="badge-soft badge-soft-primary" style="font-size: 0.7rem; font-weight: 800;">{{ iss.get_channel_display|upper }}</span></td>
                     <td style="text-align: right;">
                         {% if iss.channel == 'sales_manager' %}
-                            <span class="badge-soft badge-soft-warning">AWAITING SM SIGNATURE</span>
+                            <span class="badge-soft badge-soft-warning">WAITING FOR MANAGER TO SIGN</span>
                         {% elif iss.channel == 'company' %}
                             {% if current_user == iss.approver %}
                                 <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
                                     {% csrf_token %}
-                                    <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm physical handover?');">Release Goods</button>
+                                    <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm handover of bags?');">Give Products Now</button>
                                 </form>
                             {% else %}
                                 <span class="badge-soft badge-soft-warning">PENDING: {{ iss.approver.full_name|truncatechars:10 }}</span>
@@ -243,7 +243,7 @@
                         {% else %}
                             <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
                                 {% csrf_token %}
-                                <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm physical handover?');">Release Goods</button>
+                                <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm handover of bags?');">Give Products Now</button>
                             </form>
                         {% endif %}
                     </td>
@@ -269,7 +269,7 @@
 {# ════ RECENT RECEIPTS FROM PRODUCTION ════ #}
 <div class="card mb-16">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Received from Production (History)</h3>
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Bags Received from Production (History)</h3>
     </div>
     <div class="table-wrapper">
         <table class="premium-table">
@@ -317,7 +317,7 @@
 {# ════ ISSUANCE HISTORY ════ #}
 <div class="card">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Store Handover History</h3>
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Past Record: Bags Given Out from Store</h3>
     </div>
     <div class="table-wrapper">
         <table class="premium-table">

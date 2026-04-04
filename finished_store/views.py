@@ -25,6 +25,9 @@ def dashboard(request):
     user = get_current_user(request)
     today = datetime.date.today()
 
+    from audit.models import AuditLog
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
+
     balances = {}
     for mat_val, mat_label in MATERIAL_CHOICES:
         for size_val, size_label in PRODUCT_SIZE_CHOICES:
@@ -55,6 +58,7 @@ def dashboard(request):
         'pending_company_issuances': pending_company_issuances,
         'receipts_today_count': receipts_today,
         'issuances_today_count': issuances_today,
+        'today_activities': today_activities,
     })
 
 
@@ -281,7 +285,7 @@ def acknowledge_return(request, return_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer', 'md')
+@role_required('store_officer', 'md', 'manager')
 @store_type_required('finished')
 def acknowledge_issuance(request, issuance_id):
     """
@@ -340,7 +344,7 @@ def acknowledge_issuance(request, issuance_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer', 'md')
+@role_required('store_officer', 'md', 'manager')
 @store_type_required('finished')
 def list_records(request):
     from finished_store.models import FinishedGoodsReturn

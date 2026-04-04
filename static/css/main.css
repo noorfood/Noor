@@ -220,6 +220,7 @@ tbody td {
     border-bottom: 1px solid var(--border-light);
     color: var(--text-primary);
     vertical-align: top;
+    white-space: nowrap;
 }
 
 tbody tr:hover {
@@ -985,6 +986,7 @@ body {
     font-size: 0.95rem;
     color: var(--slate-900);
     vertical-align: middle;
+    white-space: nowrap;
 }
 .premium-table tbody tr:hover td {
     background: var(--slate-50);

@@ -1,0 +1,52 @@
+<!-- Daily Ledger Partial -->
+<div id="daily-ledger" style="padding-top: 2rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--slate-100); padding-bottom: 0.75rem; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--navy); display: flex; align-items: center; gap: 0.5rem;">
+            <span>📖</span> My Daily Ledger <span style="font-size: 0.8rem; font-weight: 600; color: var(--slate-400); margin-left: 0.5rem;">({{ today|default:"Today" }})</span>
+        </h3>
+    </div>
+
+    {% if today_activities %}
+    <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--slate-200);">
+        <div class="table-wrapper" style="margin: 0;">
+            <table class="premium-table" style="margin: 0;">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Time</th>
+                        <th style="width: 25%;">Activity Type</th>
+                        <th style="width: 60%;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in today_activities %}
+                    <tr>
+                        <td style="font-family: monospace; font-weight: 700; color: var(--slate-500);">
+                            {{ log.timestamp|date:"h:i A" }}
+                        </td>
+                        <td>
+                            <span class="badge-soft 
+                                {% if log.action == 'ADD_SALESPERSON' or log.action == 'CREATE_USER' %}badge-soft-success
+                                {% elif log.action == 'DELETE' %}badge-soft-danger
+                                {% elif log.action == 'LOGIN' %}badge-soft-info
+                                {% elif log.action == 'LOGOUT' %}badge-soft-warning
+                                {% else %}badge-soft-primary{% endif %}" style="font-size: 0.75rem; text-transform: uppercase;">
+                                {{ log.get_action_display }}
+                            </span>
+                        </td>
+                        <td style="color: var(--slate-700); font-size: 0.9rem;">
+                            {{ log.description }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 3rem 2rem; text-align: center; margin-bottom: 3rem;">
+        <div style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;">📝</div>
+        <h4 style="margin: 0 0 0.5rem 0; color: var(--slate-700); font-weight: 800;">No Activities Recorded Yet</h4>
+        <p style="margin: 0; color: var(--slate-500); font-size: 0.9rem;">Your history is clean for today. Any system actions you perform will automatically appear here.</p>
+    </div>
+    {% endif %}
+</div>

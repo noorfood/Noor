@@ -12,7 +12,7 @@
         <div>
             <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🛡️ Factory Oversight Live</span>
             <h1 class="hero-title" style="color: #fff;">Command Center</h1>
-            <p class="hero-subtitle" style="color: var(--slate-400);">Immutable financial transparency and operational real-time monitoring.</p>
+            <p class="hero-subtitle" style="color: var(--slate-400);">Real-time monitoring of all factory operations and money flow.</p>
         </div>
         <div style="display: flex; gap: 0.75rem;">
             {% if current_user.role == 'md' %}
@@ -33,8 +33,8 @@
     <div style="display: flex; align-items: center; gap: 1rem;">
         <span style="font-size: 1.5rem;">⏱️</span>
         <div>
-            <div style="font-size: 0.9rem; font-weight: 800; color: #92400e;">Critical Actions Pending Registry Acceptance</div>
-            <div style="font-size: 0.8rem; color: #b45309;">Verify internal transfers and confirm payment collections for system integrity.</div>
+            <div style="font-size: 0.9rem; font-weight: 800; color: #92400e;">Pending Actions Requiring Confirmation</div>
+            <div style="font-size: 0.8rem; color: #b45309;">Please confirm these transfers and payments to keep the system up to date.</div>
         </div>
     </div>
     <div class="action-group">
@@ -54,74 +54,74 @@
 {% if current_user.role == 'md' %}
 <div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; margin-bottom: 3rem;">
     <h3 style="color: #60a5fa; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center
+        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center &mdash; {% now "F Y" %}
     </h3>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Produced</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Produced</div>
             <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.maize.produced }}</div>
             <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">10kg Factory Output</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">In Store</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total In Store</div>
             <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.maize.in_store }}</div>
             <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Val: ₦{{ md_metrics.maize.inventory_value|floatformat:0 }}</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Dispatched</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Given Out</div>
             <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.maize.issued }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">To Sales & Internal</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">To Sales Team & Drivers</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Confirmed Sold</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Actual Sales</div>
             <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.maize.sold }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Final Consumer Exit</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Bags actually sold to customers</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Revenue</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Cash Received</div>
             <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.maize.money_received|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Verified Receipts</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Actual money in bank</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Exposure</div>
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Unpaid (Debt)</div>
             <div class="{% if md_metrics.maize.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.maize.outstanding|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Pending Liquidation</div>
+            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Money outside with staff</div>
         </div>
     </div>
 </div>
 
 <div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #2e1065, #1e1b4b); border: 1px solid #4c1d95; margin-bottom: 3rem;">
     <h3 style="color: #c084fc; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center
+        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center &mdash; {% now "F Y" %}
     </h3>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Produced</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Produced</div>
             <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.wheat.produced }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">10kg Factory Output</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">In Store</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total In Store</div>
             <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.wheat.in_store }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Val: ₦{{ md_metrics.wheat.inventory_value|floatformat:0 }}</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Dispatched</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Given Out</div>
             <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.wheat.issued }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">To Sales & Internal</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Confirmed Sold</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Actual Sales</div>
             <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.wheat.sold }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Final Consumer Exit</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Revenue</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Cash Received</div>
             <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.wheat.money_received|floatformat:0 }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Verified Receipts</div>
         </div>
         <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Exposure</div>
+            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Unpaid (Debt)</div>
             <div class="{% if md_metrics.wheat.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.wheat.outstanding|floatformat:0 }}</div>
             <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Pending Liquidation</div>
         </div>
@@ -143,7 +143,7 @@
       <span style="background: var(--slate-100); color: var(--navy); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌽 {{ row.maize_holding|floatformat:0 }} Maize</span>
       <span style="background: var(--slate-100); color: #4c1d95; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌾 {{ row.wheat_holding|floatformat:0 }} Wheat</span>
       {% if row.money_outstanding > 0 %}
-      <span style="background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">₦{{ row.money_outstanding|floatformat:0 }} Exposure</span>
+      <span style="background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">₦{{ row.money_outstanding|floatformat:0 }} Unpaid</span>
       {% else %}
       <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">✓ Balanced</span>
       {% endif %}
@@ -310,7 +310,7 @@
     </div>
     <div class="table-container">
       <table class="premium-table">
-        <thead><tr><th>Date</th><th>Trading Partner</th><th class="num">Sacks</th><th class="num">₦ Value</th></tr></thead>
+        <thead><tr><th>Date</th><th>Trading Partner</th><th class="num">Bags</th><th class="num">₦ Value</th></tr></thead>
         <tbody>
           {% for b in bran_sales %}
           <tr>
@@ -338,7 +338,7 @@
 {% if recent_flagged %}
 <div class="card" style="padding: 0; border: 1px solid var(--rose); margin-bottom: 3rem; overflow: hidden;">
     <div style="padding: 1.25rem 1.5rem; background: var(--rose); color: white;">
-        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; text-transform: uppercase;">🚨 Production Anomalies — Excessive Milling Loss</h3>
+        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; text-transform: uppercase;">🚨 Production Problems — High Waste</h3>
     </div>
     <div class="table-container">
       <table class="premium-table">
@@ -361,7 +361,7 @@
                 <span style="font-size: 0.65rem; font-weight: 900; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">{{ b.material_type|upper }}</span>
             </td>
             <td style="font-weight: 800; color: var(--navy);">{{ b.production_officer.full_name }}</td>
-            <td class="num" style="font-weight: 700; color: var(--slate-600);">{{ b.bags_milled_new }} <small style="font-size: 0.7rem;">Sacks</small></td>
+            <td class="num" style="font-weight: 700; color: var(--slate-600);">{{ b.bags_milled_new }} <small style="font-size: 0.7rem;">Bags</small></td>
             <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--rose);">{{ b.loss_pct }}%</td>
             <td>
                 <span class="{% if b.flag_level == 'critical' %}bg-rose{% else %}bg-amber{% endif %}" style="color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">
@@ -376,4 +376,7 @@
     </div>
 </div>
 {% endif %}
+
+{% include 'includes/_daily_ledger.html' %}
+
 {% endblock %}

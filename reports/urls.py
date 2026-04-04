@@ -12,5 +12,6 @@ urlpatterns = [
     path('outstanding/', views.outstanding_report, name='outstanding'),
     path('flow/', views.company_flow, name='flow'),
     path('financial-summary/', views.financial_summary, name='financial_summary'),
+    path('md-ledger/', views.md_ledger, name='ledger'),
 ]
 

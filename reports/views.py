@@ -53,90 +53,96 @@ def dashboard(request):
         from finished_store.models import FinishedGoodsIssuance
         from pricing.models import PriceConfig
 
-        for mat in ['maize', 'wheat']:
-            # 1. Produced (PackagingBatch)
-            md_metrics[mat]['produced'] = PackagingBatch.objects.filter(material_type=mat).aggregate(t=Sum('qty_10kg'))['t'] or 0
+        from django.utils import timezone
+        
+        now = timezone.now()
+        cur_month = now.month
+        cur_year = now.year
 
-            # 2. In Store
+        for mat in ['maize', 'wheat']:
+            # 1. Produced (PackagingBatch) - Monthly
+            md_metrics[mat]['produced'] = PackagingBatch.objects.filter(
+                material_type=mat, date__month=cur_month, date__year=cur_year
+            ).aggregate(t=Sum('qty_10kg'))['t'] or 0
+
+            # 2. In Store - All-time
             md_metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
 
-            # 3. Issued (Accepted FG Issuances)
+            # 3. Issued (Accepted FG Issuances) - Monthly
             md_metrics[mat]['issued'] = FinishedGoodsIssuance.objects.filter(
-                material_type=mat, status='accepted'
+                material_type=mat, status='accepted', date__month=cur_month, date__year=cur_year
             ).aggregate(t=Sum('qty_issued'))['t'] or 0
 
-            # 4. Sold (Actual promoter results converted to sacks + Confirmed DirectSales)
-            sm_res_qs = SalesResult.objects.filter(material_type=mat)
+            # 4. Sold - Monthly
+            sm_res_qs = SalesResult.objects.filter(material_type=mat, date__month=cur_month, date__year=cur_year)
             sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_res_qs))
             
-            ds_sold = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('qty_sold'))['t'] or 0
+            ds_sold = DirectSalePayment.objects.filter(
+                material_type=mat, status='confirmed', date__month=cur_month, date__year=cur_year
+            ).aggregate(t=Sum('qty_sold'))['t'] or 0
             md_metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
 
-            # 5. Money Received & Outstanding
-            # Direct Sales Money
-            ds_qs = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
-            for ds in ds_qs:
-                md_metrics[mat]['money_received'] += float(ds.total_received)
+            # 5. Money Received (Monthly) & Outstanding (All-Time) Direct Sales
+            ds_qs_all = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+            for ds in ds_qs_all:
                 md_metrics[mat]['outstanding'] += float(ds.outstanding)
+                
+            ds_qs_month = ds_qs_all.filter(date__month=cur_month, date__year=cur_year)
+            for ds in ds_qs_month:
+                md_metrics[mat]['money_received'] += float(ds.total_received)
 
-            # SM Payments & Outstanding at SM Level
-            # Since SM Payments are tracked as money, we get the total money outstanding from SMs
-            # For Money Received from SMs:
-            # We must map `SalesManagerPayment` to materials... but SM Payments don't have material_type!
-            # Let's derive it proportionally or fall back. Actually, we must use `SalesManagerCollection` value
-            # and `SalesResult` values. But SM returns are logged by material.
-            # To be accurate and separate, we iterate over SMs below and sum it up.
-            
-            # Inventory Value
-            from django.utils import timezone
-            sm_price = PriceConfig.get_active_price('sales_team', mat, '10kg', timezone.now().date()) or 0
+            # Inventory Value - Derived from In Store
+            sm_price = PriceConfig.get_active_price('sales_team', mat, '10kg', now.date()) or 0
             md_metrics[mat]['inventory_value'] = float(md_metrics[mat]['in_store'] * sm_price)
-            
+
     # Calculate SM Money dynamically for Maize/Wheat
     if user.role == 'md':
-        # To split SM money received by material, we know:
-        # Total Owed = ∑(Collection Value) - ∑(Returns Value).
-        # We can sum the pure Owed per material.
-        # But cash paid is mixed. We will allocate the cash paid to Maize first, then Wheat, or just aggregate it globally?
-        # The user requested 'Total money received (Maize/Wheat)'. So we MUST split it.
-        # Let's approximate: If SM buys 80% maize, 20% wheat, allocate cash 80/20.
         from sales.views import get_sm_money_outstanding
         
         for sm in User.objects.filter(role='sales_manager', status='active'):
-            # Calculate value collected per material
-            m_coll = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='maize', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
-            w_coll = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='wheat', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
+            # ALL-TIME for outstanding calculation
+            m_coll_all = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='maize', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
+            w_coll_all = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='wheat', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
             
-            # Subtract commission earned per material (reduces what SM owes the company)
-            m_comm = SalesResult.objects.filter(recorded_by=sm, material_type='maize').aggregate(t=Sum('commission_amount'))['t'] or 0
-            w_comm = SalesResult.objects.filter(recorded_by=sm, material_type='wheat').aggregate(t=Sum('commission_amount'))['t'] or 0
+            m_comm_all = SalesResult.objects.filter(recorded_by=sm, material_type='maize').aggregate(t=Sum('commission_amount'))['t'] or 0
+            w_comm_all = SalesResult.objects.filter(recorded_by=sm, material_type='wheat').aggregate(t=Sum('commission_amount'))['t'] or 0
             
-            m_net_owed = float(m_coll) - float(m_comm)
-            w_net_owed = float(w_coll) - float(w_comm)
-            total_net = m_net_owed + w_net_owed
+            m_net_owed_all = float(m_coll_all) - float(m_comm_all)
+            w_net_owed_all = float(w_coll_all) - float(w_comm_all)
+            total_net_all = m_net_owed_all + w_net_owed_all
             
-            # Total money paid by this SM
             from sales.models import SalesManagerPayment
-            total_paid = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
-            total_paid = float(total_paid)
+            total_paid_all = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+            total_paid_all = float(total_paid_all)
             
-            if total_net > 0:
-                m_ratio = m_net_owed / total_net
-                w_ratio = w_net_owed / total_net
+            if total_net_all > 0:
+                m_ratio = m_net_owed_all / total_net_all
+                w_ratio = w_net_owed_all / total_net_all
             else:
                 m_ratio, w_ratio = 0.5, 0.5
                 
-            m_paid = total_paid * m_ratio
-            w_paid = total_paid * w_ratio
+            m_paid_all = total_paid_all * m_ratio
+            w_paid_all = total_paid_all * w_ratio
             
-            md_metrics['maize']['money_received'] += m_paid
-            md_metrics['wheat']['money_received'] += w_paid
-            md_metrics['maize']['outstanding'] += max(0, m_net_owed - m_paid)
-            md_metrics['wheat']['outstanding'] += max(0, w_net_owed - w_paid)
+            md_metrics['maize']['outstanding'] += max(0, m_net_owed_all - m_paid_all)
+            md_metrics['wheat']['outstanding'] += max(0, w_net_owed_all - w_paid_all)
+            
+            # MONTHLY for money_received
+            total_paid_month = SalesManagerPayment.objects.filter(
+                sales_manager=sm, status='confirmed', date__month=cur_month, date__year=cur_year
+            ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+            total_paid_month = float(total_paid_month)
+            
+            md_metrics['maize']['money_received'] += (total_paid_month * m_ratio)
+            md_metrics['wheat']['money_received'] += (total_paid_month * w_ratio)
 
-    # Staff Roster and Live Feed
     staff_roster = User.objects.filter(status='active').exclude(role='md').order_by('role', 'full_name')
     audit_feed = AuditLog.objects.all().order_by('-timestamp')[:15]
+    
+    today_activities = AuditLog.objects.filter(
+        user_id=user.pk,
+        timestamp__date=datetime.date.today()
+    ).order_by('-timestamp')
 
     recent_flagged = MillingBatch.objects.filter(flag_level__in=['warning', 'critical']).order_by('-date', '-created_at')[:5]
 
@@ -213,6 +219,7 @@ def dashboard(request):
         'pending_company_issuances': pending_company_issuances,
         'pending_sm_payments': pending_sm_payments,
         'pending_raw_costs': pending_raw_costs,
+        'today_activities': today_activities,
     })
 
 
@@ -1106,3 +1113,108 @@ def financial_summary(request):
         'expenses_list': OperationalExpense.objects.all().order_by('-date')[:10],
         'pending_raw_costs': RawMaterialReceipt.objects.filter(cost_status='pending').order_by('-date'),
     })
+
+
+@role_required('md')
+def md_ledger(request):
+    """
+    Dedicated ledger view for the MD with hierarchical drill-down:
+    Roles -> Staff Members -> Individual Records.
+    Excludes technical logins/logouts.
+    """
+    user = get_current_user(request)
+    
+    # 1. Drill-down parameters
+    f_role = request.GET.get('role_filter', '')
+    f_user = request.GET.get('user_id', '')
+    
+    # General filters (for when viewing records)
+    f_from = request.GET.get('date_from', '')
+    f_to = request.GET.get('date_to', '')
+    f_search = request.GET.get('search', '').strip()
+
+    excluded_actions = ['LOGIN', 'LOGOUT', 'IMPERSONATE_START', 'IMPERSONATE_STOP']
+    
+    # Pre-fetch roles
+    ROLE_MAP = {
+        'store_officer': 'Store Officer',
+        'production_officer': 'Production Officer',
+        'sales_manager': 'Sales Manager',
+        'manager': 'General Manager',
+        'md': 'Managing Director',
+    }
+    
+    context = {
+        'current_user': user,
+        'f_role': f_role,
+        'f_user': f_user,
+        'f_from': f_from,
+        'f_to': f_to,
+        'f_search': f_search,
+        'role_map': ROLE_MAP,
+    }
+
+    if not f_role and not f_user:
+        # LEVEL 1: Select a Role
+        raw_roles = AuditLog.objects.exclude(action__in=excluded_actions).values_list('user_role', flat=True).distinct().order_by('user_role')
+        context['available_roles'] = [(r, ROLE_MAP.get(r, r.replace('_', ' ').title())) for r in raw_roles if r]
+        context['view_level'] = 'roles'
+        
+    elif f_role and not f_user:
+        # LEVEL 2: Select a Staff Member in that role
+        context['staff_members'] = AuditLog.objects.filter(user_role=f_role).exclude(action__in=excluded_actions).values('user_id', 'user_name').distinct().order_by('user_name')
+        context['role_name'] = ROLE_MAP.get(f_role, f_role.replace('_', ' ').title())
+        context['view_level'] = 'staff'
+        
+    else:
+        # LEVEL 3: View Records for a specific user
+        logs = AuditLog.objects.filter(user_id=f_user).exclude(action__in=excluded_actions).order_by('-timestamp')
+        
+        # Apply filters
+        if f_from:
+            logs = logs.filter(timestamp__date__gte=f_from)
+        if f_to:
+            logs = logs.filter(timestamp__date__lte=f_to)
+        if f_search:
+            from django.db.models import Q
+            logs = logs.filter(Q(description__icontains=f_search) | Q(action__icontains=f_search))
+
+        # Add friendly names and enrich with current status
+        staff_name = "Unknown Staff"
+        staff_role = "Unknown Role"
+        
+        # Pre-fetch statuses to avoid N+1 queries for the same object
+        # We'll just do simple fetching for now as the ledger is usually filtered to one person anyway.
+        for l in logs:
+            l.friendly_action = l.action.replace('_', ' ').title()
+            staff_name = l.user_name
+            staff_role = ROLE_MAP.get(l.user_role, l.user_role.replace('_', ' ').title())
+            
+            # Enrich with real-time status if it's a "handshake" object
+            if l.object_type and l.object_id:
+                try:
+                    obj = None
+                    if l.object_type == 'SalesManagerCollection':
+                        from sales.models import SalesManagerCollection
+                        obj = SalesManagerCollection.objects.filter(pk=l.object_id).first()
+                    elif l.object_type == 'FinishedGoodsReceipt':
+                        from finished_store.models import FinishedGoodsReceipt
+                        obj = FinishedGoodsReceipt.objects.filter(pk=l.object_id).first()
+                    elif l.object_type == 'SalesManagerPayment':
+                        from sales.models import SalesManagerPayment
+                        obj = SalesManagerPayment.objects.filter(pk=l.object_id).first()
+                    elif l.object_type == 'DirectSalePayment':
+                        from sales.models import DirectSalePayment
+                        obj = DirectSalePayment.objects.filter(pk=l.object_id).first()
+                    
+                    if obj and hasattr(obj, 'status'):
+                        l.current_status = obj.status.replace('_', ' ').title()
+                except:
+                    pass
+
+        context['logs'] = logs
+        context['staff_name'] = staff_name
+        context['staff_role'] = staff_role
+        context['view_level'] = 'records'
+
+    return render(request, 'reports/md_ledger.html', context)

@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}MD Insights{% endblock %}
+{% block title %}Direct Insights — Noor Foods{% endblock %}
 {% block content %}
 <div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">🧠 Strategic Overview</span>
-            <h1 class="hero-title" style="color: #fff;">MD Insights & Intelligence</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">High-level tactical oversight of store holdings, financial exposure, and talent performance.</p>
+            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">🧠 MD Overview</span>
+            <h1 class="hero-title" style="color: #fff;">Direct Insights</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">Summary of how much grain we have, who owes money, and who is selling best.</p>
         </div>
     </div>
 </div>
@@ -15,72 +15,72 @@
 <div style="margin-bottom: 3rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">🏬</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Omni-Channel Store Status</h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Every Store Status</h3>
     </div>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--slate-400);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Dirty Store (Intake)</div>
+            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Main Grain Store (Raw)</div>
             <div style="display: flex; gap: 1.5rem;">
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">{{ dirty_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Sacks</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags</div>
                 </div>
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">{{ dirty_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Sacks</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags</div>
                 </div>
             </div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Clean Store (Ready)</div>
+            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Clean Grain Store</div>
             <div style="display: flex; gap: 1.5rem;">
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">{{ clean_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Sacks</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags</div>
                 </div>
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">{{ clean_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Sacks</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags</div>
                 </div>
             </div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Finished Goods (Output)</div>
+            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Finished Bag Store</div>
             <div style="display: flex; gap: 1.5rem;">
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">{{ fg_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize (10kg)</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags (10kg)</div>
                 </div>
                 <div>
                     <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">{{ fg_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat (10kg)</div>
+                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags (10kg)</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 2. Financial & Holding Liability -->
+<!-- 2. Money Owed & Bags in Hand -->
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-bottom:2rem;">
     
     <!-- Who is holding what -->
 <div class="card" style="padding: 0; overflow: hidden;">
     <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
-        <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Sales Manager Liabilities</h4>
+        <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Bags with Managers</h4>
     </div>
     <table class="premium-table">
         <thead>
             <tr>
                 <th>Manager</th>
-                <th class="num">Sacks In Hand</th>
-                <th class="num">Net Exposure</th>
+                <th class="num">Bags they have</th>
+                <th class="num">Money they owe</th>
             </tr>
         </thead>
         <tbody>
             {% for sm in sm_holdings %}
             <tr>
                 <td><strong style="color: var(--navy);">{{ sm.name }}</strong></td>
-                <td class="num" style="font-weight: 700; color: var(--amber);">{{ sm.goods }} <small>Sacks</small></td>
+                <td class="num" style="font-weight: 700; color: var(--amber);">{{ sm.goods }} <small>Bags</small></td>
                 <td class="num" style="font-weight: 900; color: var(--rose);">₦{{ sm.money|floatformat:0 }}</td>
             </tr>
             {% empty %}
@@ -92,18 +92,18 @@
 
     <!-- Brand Sales Recovery -->
 <div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
-    <h4 style="margin:0 0 1.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Brand Sales Recovery Audit</h4>
+    <h4 style="margin:0 0 1.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Byproduct Sales Check</h4>
     <div style="display:flex; flex-direction:column; gap:1.25rem;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Total GM Sales (Gross)</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Total Byproduct Sold (Gross)</span>
             <strong style="font-size: 1.2rem; color: var(--navy);">₦{{ brand_revenue|floatformat:0 }}</strong>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Actual Realized Inflow</span>
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Money Received</span>
             <strong style="font-size: 1.2rem; color: var(--emerald);">₦{{ brand_received|floatformat:0 }}</strong>
         </div>
         <div style="padding-top: 1.25rem; border-top: 2px dashed var(--slate-200); display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.8rem; font-weight: 800; color: var(--rose); text-transform: uppercase;">Outstanding Leakage</span>
+            <span style="font-size: 0.8rem; font-weight: 800; color: var(--rose); text-transform: uppercase;">Money Still Owed</span>
             <strong style="font-size: 1.5rem; color: var(--rose);">₦{{ brand_outstanding|floatformat:0 }}</strong>
         </div>
     </div>
@@ -116,7 +116,7 @@
     
     <!-- Top Performers Card -->
     <div class="card" style="padding: 1.5rem;">
-        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Elite Sales Performance</h4>
+        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Top Sellers</h4>
         <p style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Ranked by Conversion Efficiency</p>
         
         <div style="display:flex; flex-direction:column; gap:1.5rem;">
@@ -125,7 +125,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.5rem;">
                     <div>
                         <div style="font-weight: 800; color: var(--navy); font-size: 0.85rem;">{{ sp.name }}</div>
-                        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700;">{{ sp.sold }} / {{ sp.issued }} Sacks Liquidated</div>
+                        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700;">{{ sp.sold }} / {{ sp.issued }} Bags Sold</div>
                     </div>
                     <span style="font-size: 0.8rem; font-weight: 900; color: var(--emerald);">{{ sp.pct|floatformat:0 }}%</span>
                 </div>
@@ -143,8 +143,8 @@
     <!-- Collections Chart Card -->
     <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-            <h4 id="chartTitle" style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Audit: Collections vs Sales ({{ this_year }})</h4>
-            <button type="button" class="btn-modern" onclick="toggleChartMode()" id="chartToggleBtn" style="padding: 4px 12px; font-size: 0.7rem;">Drill: {{ this_month_name }}</button>
+            <h4 id="chartTitle" style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Check: Bags Taken vs Bags Sold ({{ this_year }})</h4>
+            <button type="button" class="btn-modern" onclick="toggleChartMode()" id="chartToggleBtn" style="padding: 4px 12px; font-size: 0.7rem;">Show: {{ this_month_name }}</button>
         </div>
         <div style="position: relative; height: 300px; width: 100%; flex-grow: 1;">
             <canvas id="salesTrendChart"></canvas>
@@ -153,8 +153,8 @@
 
     <!-- Product Mix Chart Card -->
     <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
-        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Tactical Product Mix</h4>
-        <p style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Sacks Sold by Dimension</p>
+        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Popular Bag Sizes</h4>
+        <p style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Bags Sold by Size</p>
         <div style="position: relative; height: 300px; width: 100%; flex-grow: 1;">
             <canvas id="productMixChart"></canvas>
         </div>
@@ -185,14 +185,14 @@ document.addEventListener("DOMContentLoaded", function() {
             labels: monthlyLabels,
             datasets: [
                 {
-                    label: 'Sacks Collected by SM',
+                    label: 'Bags Collected by SM',
                     data: monthlyColls,
                     backgroundColor: 'rgba(59, 130, 246, 0.7)',
                     borderColor: 'rgb(59, 130, 246)',
                     borderWidth: 1
                 },
                 {
-                    label: 'Sacks Sold by Promoters',
+                    label: 'Bags Sold by Promoters',
                     data: monthlySales,
                     type: 'line',
                     fill: false,
@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Number of Sacks'
+                        text: 'Number of Bags'
                     }
                 }
             },
@@ -287,7 +287,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
                             const val = context.raw;
                             const pct = ((val / total) * 100).toFixed(1);
-                            return ` ${context.label}: ${val} sacks (${pct}%)`;
+                            return ` ${context.label}: ${val} bags (${pct}%)`;
                         }
                     }
                 }

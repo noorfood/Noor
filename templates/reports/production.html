@@ -1,5 +1,5 @@
-﻿{% extends 'base.html' %}
-{% block title %}Production Loss & Yield Report — Noor Foods{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Production Waste & Results — Noor Foods{% endblock %}
 {% block nav_rp_prod_md %}active{% endblock %}
 {% block nav_rp_prod %}active{% endblock %}
 {% block content %}
@@ -8,9 +8,9 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(165, 180, 252, 0.1); color: #a5b4fc;">⚙️ Operational Audit</span>
-            <h1 class="hero-title" style="color: #fff;">Manufacturing Intelligence</h1>
-            <p class="hero-subtitle" style="color: #c7d2fe;">Deep-dive into milling efficiency, packaging yields, and critical loss tracking.</p>
+            <span class="hero-badge" style="background: rgba(165, 180, 252, 0.1); color: #a5b4fc;">⚙️ Factory Check</span>
+            <h1 class="hero-title" style="color: #fff;">Production Results</h1>
+            <p class="hero-subtitle" style="color: #c7d2fe;">Detailed look at grinding (milling) efficiency, bagging (packaging) results, and tracking waste.</p>
         </div>
     </div>
 </div>
@@ -54,20 +54,20 @@
 <div style="margin-bottom: 3rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">🌀</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Milling Efficiency Summaries</h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Grinding Results (Milling)</h3>
     </div>
     
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Raw Input</div>
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Grain Used</div>
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ milling_totals.total_raw_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Bulk Powder Output</div>
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Powder Produced</div>
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ milling_totals.total_powder_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--amber);">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Milling Loss</div>
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Grinding Waste</div>
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--rose);">{{ milling_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
     </div>
@@ -76,14 +76,14 @@
         <table class="premium-table">
           <thead>
             <tr>
-              <th>Batch Identity</th>
+              <th>Work ID</th>
               <th>Material</th>
-              <th>Shift Context</th>
+              <th>Shift</th>
               <th class="num">Bags</th>
-              <th class="num">Raw Input (KG)</th>
+              <th class="num">Grain Used (KG)</th>
               <th class="num">Output (KG)</th>
-              <th class="num">Loss Data</th>
-              <th>Health Status</th>
+              <th class="num">Waste Data</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -106,7 +106,7 @@
               <td class="num" style="font-weight: 800; color: var(--navy); font-family: 'JetBrains Mono', monospace;">{{ b.bulk_powder_kg|floatformat:1 }}</td>
               <td class="num">
                 <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">{{ b.loss_kg|floatformat:1 }} KG</div>
-                <div class="font-bold {% if b.loss_pct >= 20 %}text-rose{% elif b.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ b.loss_pct }}% Efficiency Loss</div>
+                <div class="font-bold {% if b.loss_pct >= 20 %}text-rose{% elif b.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ b.loss_pct }}% Waste</div>
               </td>
               <td>
                 <span class="{% if b.flag_level == 'critical' %}bg-danger-soft text-danger-heavy{% elif b.flag_level == 'warning' %}bg-warning-soft text-warning-heavy{% else %}bg-success-soft text-success-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
@@ -126,7 +126,7 @@
 <div style="margin-bottom: 3rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
         <span style="font-size: 1.25rem;">📦</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Packaging Yield Summaries</h3>
+        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Bagging Results (Packaging)</h3>
     </div>
 
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
@@ -135,11 +135,11 @@
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ packaging_totals.total_powder_used|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Packed Output</div>
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Packed Output (KG)</div>
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ packaging_totals.total_output_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
         <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--amber);">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Packaging Loss</div>
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Bagging Waste</div>
             <div style="font-size: 1.8rem; font-weight: 900; color: var(--rose);">{{ packaging_totals.total_loss_kg|floatformat:1|default:"0" }} <small style="font-size: 0.8rem; color: var(--slate-400);">KG</small></div>
         </div>
     </div>
@@ -148,11 +148,11 @@
         <table class="premium-table">
           <thead>
             <tr>
-              <th>Batch Identity</th>
+              <th>Work ID</th>
               <th class="num">Powder Used</th>
-              <th class="num">Finished Sacks</th>
+              <th class="num">Finished Bags</th>
               <th class="num">Output Yield</th>
-              <th class="num">Loss Analysis</th>
+              <th class="num">Waste Analysis</th>
             </tr>
           </thead>
           <tbody>
@@ -165,12 +165,12 @@
               <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ p.powder_used_kg|floatformat:1 }} KG</td>
               <td class="num">
                 <div style="font-weight: 900; color: var(--emerald); font-size: 1.1rem;">+{{ p.qty_10kg }}</div>
-                <div style="font-size: 0.6rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">10KG FINISHED SACKS</div>
+                <div style="font-size: 0.6rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">10KG FINISHED BAGS</div>
               </td>
               <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ p.total_output_kg|floatformat:1 }} KG</td>
               <td class="num">
                 <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">{{ p.loss_kg|floatformat:1 }} KG</div>
-                <div class="font-bold {% if p.loss_pct >= 20 %}text-rose{% elif p.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ p.loss_pct }}% Total Loss</div>
+                <div class="font-bold {% if p.loss_pct >= 20 %}text-rose{% elif p.loss_pct >= 10 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 0.65rem;">{{ p.loss_pct }}% Waste</div>
               </td>
             </tr>
             {% empty %}

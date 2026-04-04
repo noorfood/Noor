@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Financial Intelligence Summary — Noor Foods{% endblock %}
+{% block title %}Company Money & Profit Summary — Noor Foods{% endblock %}
 {% block nav_md_finance %}active{% endblock %}
 
 {% block content %}
@@ -10,12 +10,12 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">💰 Financial Audit Center</span>
-            <h1 class="hero-title" style="color: #fff;">Intelligence Summary</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">Strategic overview of production margins, sales revenue, and company profitability.</p>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">💰 Money Hub</span>
+            <h1 class="hero-title" style="color: #fff;">Clear Money Summary</h1>
+            <p class="hero-subtitle" style="color: #94a3b8;">A clear look at how much we spend to produce and how much profit we make.</p>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 0.7rem; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Auto-Reconciled</div>
+            <div style="font-size: 0.7rem; color: #64748b; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">System Verified</div>
             <div style="font-size: 0.9rem; font-weight: 900; color: var(--emerald);">● SYSTEM ONLINE</div>
         </div>
     </div>
@@ -26,8 +26,8 @@
     <div style="display: flex; align-items: center; gap: 1rem;">
         <span style="font-size: 1.5rem;">🚜</span>
         <div>
-            <div style="font-size: 0.9rem; font-weight: 800; color: #991b1b;">{{ pending_raw_costs|length }} Material Receipts Awaiting Cost Input</div>
-            <div style="font-size: 0.8rem; color: #b91c1c;">P&L engine requires these figures for accurate margin calculation.</div>
+            <div style="font-size: 0.9rem; font-weight: 800; color: #991b1b;">{{ pending_raw_costs|length }} New Items waiting for Price setting</div>
+            <div style="font-size: 0.8rem; color: #b91c1c;">The profit calculator needs these prices to work correctly.</div>
         </div>
     </div>
     <a href="{% url 'procurement:list' %}" class="btn-modern" style="background: var(--rose); color: white; border: none;">Set Costs Now</a>
@@ -37,25 +37,25 @@
 <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
     <!-- Maize KPI -->
     <div class="card" style="padding: 2rem; border-left: 5px solid var(--amber);">
-        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🌽 Maize Financial Flow</div>
+        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🌽 Maize Money Record</div>
         <div style="font-size: 2.5rem; font-weight: 900; color: var(--navy); margin-bottom: 0.25rem;">₦{{ metrics.maize.revenue|floatformat:0 }}</div>
-        <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem;">Gross Revenue Generated</div>
+        <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem;">Total Value of Sales</div>
         
         <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--slate-100);">
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Produced</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.produced }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.produced }} <small>Bags</small></span>
             </div>
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Confirmed Sold</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.sold }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.sold }} <small>Bags</small></span>
             </div>
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">In Store</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.in_store }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.maize.in_store }} <small>Bags</small></span>
             </div>
             <div>
-                <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Risk (Debt)</span>
+                <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Unpaid Money</span>
                 <span style="font-weight: 800; font-size: 0.9rem; color: var(--rose);">₦{{ metrics.maize.outstanding_ds|floatformat:0 }}</span>
             </div>
         </div>
@@ -63,25 +63,25 @@
 
     <!-- Wheat KPI -->
     <div class="card" style="padding: 2rem; border-left: 5px solid var(--blue);">
-        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🌾 Wheat Financial Flow</div>
+        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🌾 Wheat Money Record</div>
         <div style="font-size: 2.5rem; font-weight: 900; color: var(--navy); margin-bottom: 0.25rem;">₦{{ metrics.wheat.revenue|floatformat:0 }}</div>
-        <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem;">Gross Revenue Generated</div>
+        <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem;">Total Value of Sales</div>
         
         <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--slate-100);">
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Produced</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.produced }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.produced }} <small>Bags</small></span>
             </div>
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Confirmed Sold</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.sold }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.sold }} <small>Bags</small></span>
             </div>
             <div>
                 <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">In Store</span>
-                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.in_store }} <small>Sacks</small></span>
+                <span style="font-weight: 800; font-size: 0.9rem;">{{ metrics.wheat.in_store }} <small>Bags</small></span>
             </div>
             <div>
-                <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Risk (Debt)</span>
+                <span style="font-size: 0.65rem; color: var(--slate-400); display: block;">Unpaid Money</span>
                 <span style="font-weight: 800; font-size: 0.9rem; color: var(--rose);">₦{{ metrics.wheat.outstanding_ds|floatformat:0 }}</span>
             </div>
         </div>
@@ -89,9 +89,9 @@
 
     <!-- Financial Position Card -->
     <div class="card {% if net_profit >= 0 %}bg-success-soft border-emerald-heavy{% else %}bg-danger-soft border-rose-heavy{% endif %}" style="padding: 2rem;">
-        <div class="{% if net_profit >= 0 %}text-success-heavy{% else %}text-danger-heavy{% endif %}" style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">📈 Operational Health</div>
+        <div class="{% if net_profit >= 0 %}text-success-heavy{% else %}text-danger-heavy{% endif %}" style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem;">📈 Business Health</div>
         <div class="{% if net_profit >= 0 %}text-emerald{% else %}text-rose{% endif %}" style="font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem;">
-            {% if net_profit >= 0 %}Net Surplus Profit{% else %}Net Operating Deficit{% endif %}
+            {% if net_profit >= 0 %}Total Profit Made{% else %}Loss Recorded{% endif %}
         </div>
         <div style="font-size: 2.2rem; font-weight: 900; color: var(--navy); margin-bottom: 2rem; font-family: 'JetBrains Mono', monospace;">
             ₦{{ net_profit|floatformat:0 }}
@@ -99,18 +99,18 @@
         
         <div style="padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,0.05);">
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.5rem;">
-                <span style="color: var(--slate-500);">Gross Earnings</span>
+                <span style="color: var(--slate-500);">Total Money Expected</span>
                 <span style="color: var(--navy);">₦{{ total_rev|floatformat:0 }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem;">
-                <span style="color: var(--slate-500);">Capital Outlay</span>
+                <span style="color: var(--slate-500);">Total Money Spent</span>
                 <span style="color: var(--rose);">₦{{ total_costs|floatformat:0 }}</span>
             </div>
             <div style="height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
                 <div style="width: {{ profit_ratio_pct|floatformat:0 }}%; height: 100%;" class="{% if net_profit >= 0 %}bg-emerald{% else %}bg-rose{% endif %}"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.65rem; font-weight: 900; text-transform: uppercase;">
-                <span style="color: var(--slate-400);">Operating Margin</span>
+                <span style="color: var(--slate-400);">Profit Percentage</span>
                 <span class="{% if net_profit >= 0 %}text-emerald{% else %}text-rose{% endif %}">{{ profit_margin_pct|floatformat:1 }}%</span>
             </div>
         </div>
@@ -121,14 +121,14 @@
     <!-- P&L Table -->
     <div class="card" style="padding: 2rem;">
         <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
-            📉 Profit & Loss Analytical Engine
+            📉 Profit and Loss Calculator
         </h4>
         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
             <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--slate-100);">
-                <span style="font-size: 0.9rem; color: var(--slate-600); font-weight: 600;">Total Revenue Generated</span>
+                <span style="font-size: 0.9rem; color: var(--slate-600); font-weight: 600;">Total Value of Sales</span>
                 <span style="font-weight: 800; color: var(--emerald);">₦{{ total_rev|floatformat:2 }}</span>
             </div>
-            <div style="padding: 1rem 0 0.5rem; font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px;">Gross Operating Costs</div>
+            <div style="padding: 1rem 0 0.5rem; font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px;">Cost of Production</div>
             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0 0.5rem 1rem; border-bottom: 1px solid var(--slate-100);">
                 <span style="font-size: 0.85rem; color: var(--slate-500);">Raw Material Inventory</span>
                 <span style="font-weight: 700; color: var(--rose);">- ₦{{ raw_mat_cost|floatformat:2 }}</span>
@@ -138,17 +138,17 @@
                 <span style="font-weight: 700; color: var(--rose);">- ₦{{ packaging_cost|floatformat:2 }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--slate-100);">
-                <span style="font-size: 0.9rem; color: var(--slate-600); font-weight: 600;">Operational Overheads</span>
+                <span style="font-size: 0.9rem; color: var(--slate-600); font-weight: 600;">Business Spending (Office etc.)</span>
                 <span style="font-weight: 700; color: var(--rose);">- ₦{{ op_expenses|floatformat:2 }}</span>
             </div>
             <div style="margin-top: 1rem; padding: 1.25rem; background: var(--slate-50); border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 800; color: var(--navy); font-size: 1rem;">NET MARGIN BALANCE</span>
+                <span style="font-weight: 800; color: var(--navy); font-size: 1rem;">FINAL PROFIT</span>
                 <span class="font-bold {% if net_profit >= 0 %}text-emerald{% else %}text-rose{% endif %}" style="font-family: 'JetBrains Mono', monospace; font-size: 1.15rem;">₦{{ net_profit|floatformat:2 }}</span>
             </div>
         </div>
         
         <div style="margin-top: 2.5rem;">
-            <h5 style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🧾 Operational Burn (Recent)</h5>
+            <h5 style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">🧾 Recent Spending</h5>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                 {% for exp in expenses_list %}
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.5rem 0; border-bottom: 1px dashed var(--slate-100);">
@@ -156,7 +156,7 @@
                     <span style="font-weight: 800; color: var(--navy);">₦{{ exp.amount|floatformat:0 }}</span>
                 </div>
                 {% empty %}
-                <div style="text-align: center; padding: 1rem; color: var(--slate-400); font-size: 0.75rem; font-style: italic;">No burn events recorded.</div>
+                <div style="text-align: center; padding: 1rem; color: var(--slate-400); font-size: 0.75rem; font-style: italic;">No expenses recorded yet.</div>
                 {% endfor %}
             </div>
         </div>
@@ -165,7 +165,7 @@
     <!-- Charts Table -->
     <div class="card" style="padding: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">📈 Performance Trajectory</h4>
+            <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">📈 Sales Progress Graph</h4>
             <div style="display: flex; gap: 2px; background: var(--slate-100); padding: 3px; border-radius: 8px;">
                 <a href="?period=week" class="btn-modern {% if period == 'week' %}btn-modern-primary{% else %}text-muted bg-transparent border-0{% endif %}" style="padding: 4px 12px; font-size: 0.65rem;">Week</a>
                 <a href="?period=month" class="btn-modern {% if period == 'month' %}btn-modern-primary{% else %}text-muted bg-transparent border-0{% endif %}" style="padding: 4px 12px; font-size: 0.65rem;">Month</a>
@@ -180,19 +180,19 @@
 
 <div class="card" style="padding: 0; overflow: hidden;">
     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
-        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">👥 Sales Accountability Ledger — Per Operational Stream</h3>
+        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">👥 Staff Accounts — Who has what?</h3>
     </div>
     <div class="table-container">
       <table class="premium-table">
         <thead>
             <tr>
-                <th>Officer Identity</th>
-                <th>Material Stream</th>
-                <th class="num">Inflow (Sacks)</th>
-                <th class="num">Impact (Eq. Sacks)</th>
-                <th class="num">Holding (Sacks)</th>
-                <th class="num">Liquidation (Paid)</th>
-                <th class="num">Financial Exposure</th>
+                <th>Staff Name</th>
+                <th>Product Type</th>
+                <th class="num">Bags Taken</th>
+                <th class="num">Bags Sold</th>
+                <th class="num">Bags Still with Them</th>
+                <th class="num">Cash Given In</th>
+                <th class="num">Money Still Owed</th>
             </tr>
         </thead>
         <tbody>
@@ -200,7 +200,7 @@
             <tr class="{% if row.material == 'maize' %}border-amber{% else %}border-blue{% endif %}">
                 <td>
                     <div style="font-weight: 800; color: var(--navy);">{{ row.sm.full_name }}</div>
-                    <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">Regional Sales Sentinel</div>
+                    <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">Sales Manager</div>
                 </td>
                 <td>
                     <span class="{% if row.material == 'maize' %}bg-amber-light text-warning{% else %}bg-indigo-light text-indigo{% endif %}" style="font-size: 0.7rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
@@ -233,7 +233,7 @@
             labels: chartData.labels,
             datasets: [
                 {
-                    label: 'Production (Sacks)',
+                    label: 'Bags Produced',
                     data: chartData.production,
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -241,7 +241,7 @@
                     fill: true
                 },
                 {
-                    label: 'Sales (Sacks)',
+                    label: 'Bags Sold',
                     data: chartData.sales,
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -273,7 +273,7 @@
                     type: 'linear',
                     display: true,
                     position: 'left',
-                    title: { display: true, text: 'Units (Sacks)' }
+                    title: { display: true, text: 'Number of Bags' }
                 },
                 y1: {
                     type: 'linear',

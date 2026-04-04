@@ -40,7 +40,7 @@
           <a href="{% url 'procurement:list' %}" class="btn-modern" style="background:var(--rose); color:#fff; border-color:var(--rose);">⚠️ {{ pending_costs }} Reviews Pending</a>
         {% endif %}
       {% endif %}
-      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-200); color:var(--slate-600);">View Complete Registry →</a>
+      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-200); color:var(--slate-600);">View All Records →</a>
     </div>
   </div>
 </div>
@@ -79,4 +79,7 @@
     </tbody>
   </table>
 </div>
+
+{% include 'includes/_daily_ledger.html' %}
+
 {% endblock %}

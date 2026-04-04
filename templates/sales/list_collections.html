@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}My Collections — Noor Foods{% endblock %}
+{% block title %}My Bags from Store — Noor Foods{% endblock %}
 {% block content %}
 <style>
   .page-hero {
@@ -34,23 +34,23 @@
 </style>
 
 <div class="page-hero">
-  <span class="hero-label">📦 Goods Registry</span>
-  <h1 class="hero-title">My Collections from FG Store</h1>
-  <p class="hero-sub">Goods the Finished Goods Store has recorded as collected by you. Accept or reject each one.</p>
+  <span class="hero-label">📦 Stock Log</span>
+  <h1 class="hero-title">Bags Collected from Store</h1>
+  <p class="hero-sub">Bags that the Store says you have collected. Please confirm or reject each one.</p>
 </div>
 
 {% if current_user.role == 'sales_manager' %}
 <div class="metrics-bar">
   <div class="metric {% if maize_holding > 0 %}warn{% endif %}">
-    <div class="metric-label">🌽 Maize in Hands</div>
-    <div class="metric-value">{{ maize_holding }} sacks</div>
+    <div class="metric-label">🌽 Maize Bags with me</div>
+    <div class="metric-value">{{ maize_holding }} bags</div>
   </div>
   <div class="metric {% if wheat_holding > 0 %}warn{% endif %}">
-    <div class="metric-label">🌾 Wheat in Hands</div>
-    <div class="metric-value">{{ wheat_holding }} sacks</div>
+    <div class="metric-label">🌾 Wheat Bags with me</div>
+    <div class="metric-value">{{ wheat_holding }} bags</div>
   </div>
   <div class="metric {% if money_outstanding > 0 %}danger{% endif %}">
-    <div class="metric-label">💳 Money Outstanding</div>
+    <div class="metric-label">💳 Money I owe Company</div>
     <div class="metric-value">₦{{ money_outstanding|floatformat:0 }}</div>
   </div>
 </div>
@@ -63,7 +63,7 @@
   <a href="{% url 'sales:dashboard' %}" class="btn-pill btn-back">← Back to Dashboard</a>
 </div>
 
-<div class="section-header">📋 All Collections</div>
+<div class="section-header">📋 All Bags Received from Store</div>
 
 <div class="table-wrapper" style="box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
   <table>
@@ -100,7 +100,7 @@
         <td>
           {% if c.status == 'pending' and current_user.role == 'sales_manager' %}
           <a href="{% url 'sales:acknowledge_collection' c.pk %}"
-             style="background:#10b981;color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;">Acknowledge</a>
+             style="background:#10b981;color:#fff;padding:.35rem .8rem;border-radius:8px;font-size:.8rem;font-weight:700;text-decoration:none;">Confirm Receipt</a>
           {% elif c.status == 'rejected' and c.rejection_note %}
           <span style="color:#64748b;font-size:.8rem;" title="{{ c.rejection_note }}">Reason on file</span>
           {% else %}—{% endif %}

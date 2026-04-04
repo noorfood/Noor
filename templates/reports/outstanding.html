@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Outstanding Balances — Noor Foods{% endblock %}
+{% block title %}Money & Bags Still Owed — Noor Foods{% endblock %}
 {% block nav_rp_out_md %}active{% endblock %}
 {% block nav_rp_out %}active{% endblock %}
 {% block content %}
@@ -21,9 +21,9 @@
 <div class="page-hero" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); margin-bottom: 3rem;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(254, 242, 242, 0.1); color: #fecaca;">⚖️ Risk & Accountability</span>
-            <h1 class="hero-title" style="color: #fff;">Global Obligations Report</h1>
-            <p class="hero-subtitle" style="color: #fecaca;">Consolidated view of all unresolved material and financial burdens across company channels.</p>
+            <span class="hero-badge" style="background: rgba(254, 242, 242, 0.1); color: #fecaca;">⚖️ Checking Owed Balances</span>
+            <h1 class="hero-title" style="color: #fff;">Master List: Who is Owed What</h1>
+            <p class="hero-subtitle" style="color: #fecaca;">A full list of all bags and money that haven't been returned or paid yet.</p>
         </div>
     </div>
 </div>
@@ -33,7 +33,7 @@
 <div class="card" style="margin-bottom: 3rem;">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
         <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1rem;">⚙️</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Production: Bags-In-Hand (Floor Balances)</h3>
+        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Production: Bags Still on Factory Floor</h3>
     </div>
 
     {% if prod_outstanding %}
@@ -44,7 +44,7 @@
                     <th>Production Officer</th>
                     <th class="num">Maize Bags</th>
                     <th class="num">Wheat Bags</th>
-                    <th class="num">Agg. Outstanding</th>
+                    <th class="num">Total Owed</th>
                     <th style="text-align: right;">Action</th>
                 </tr>
             </thead>
@@ -69,8 +69,8 @@
     <div class="status-badge-ok">
         <span style="font-size: 1.5rem;">✅</span>
         <div>
-            <div style="color: var(--emerald-900); font-weight: 800;">Zero Production Exposure</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">All clean bags and powder have been fully accounted for or returned.</div>
+            <div style="color: var(--emerald-900); font-weight: 800;">All Factory Bags Accounted For</div>
+            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">Everything on the factory floor has been signed for or finished.</div>
         </div>
     </div>
     {% endif %}
@@ -81,7 +81,7 @@
 <div class="card" style="margin-bottom: 3rem; border-left: 4px solid var(--rose);">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
         <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef2f2; color: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 1rem;">💼</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Sales Team: Market Exposure (Sacks & Cash)</h3>
+        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Sales Team: Bags & Money Still Owed</h3>
     </div>
 
     {% if sales_balances %}
@@ -90,9 +90,9 @@
             <thead>
                 <tr>
                     <th>Sales Manager</th>
-                    <th class="num">Maize Sacks</th>
-                    <th class="num">Wheat Sacks</th>
-                    <th class="num">Total Sacks</th>
+                    <th class="num">Maize Bags</th>
+                    <th class="num">Wheat Bags</th>
+                    <th class="num">Total Bags Owed</th>
                     <th class="num">Batches</th>
                     <th class="num">Money Owed (₦)</th>
                     <th style="text-align: right;">Action</th>
@@ -109,7 +109,7 @@
                     <td class="num"><strong style="color: var(--rose); font-size: 1.1rem;">₦{{ row.outstanding|floatformat:0 }}</strong></td>
                     <td style="text-align: right;">
                         <a href="/sales/outstanding/" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--navy); color: #fff;">
-                            Reconcile
+                            Settle Balance
                         </a>
                     </td>
                 </tr>
@@ -121,8 +121,8 @@
     <div class="status-badge-ok">
         <span style="font-size: 1.5rem;">✅</span>
         <div>
-            <div style="color: var(--emerald-900); font-weight: 800;">Global Sales Settlement Reached</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">No outstanding material or financial debt across all sales managers.</div>
+            <div style="color: var(--emerald-900); font-weight: 800;">All Sales Accounts Settled</div>
+            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">All managers have returned their bags and paid all money due.</div>
         </div>
     </div>
     {% endif %}
@@ -133,7 +133,7 @@
 <div class="card">
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
         <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff1f2; color: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 1rem;">🚨</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Unresolved Discrepancies (Reconciliation Flags)</h3>
+        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Problem List: Missing Money or Bags</h3>
     </div>
 
     {% if recon_flags %}
@@ -146,7 +146,7 @@
                     <th>Person</th>
                     <th class="num">Expected (₦)</th>
                     <th class="num">Actual (₦)</th>
-                    <th class="num">Gap (₦)</th>
+                    <th class="num">Money Missing (₦)</th>
                     <th>Notes</th>
                 </tr>
             </thead>
@@ -170,7 +170,7 @@
         <span style="font-size: 1.5rem;">✅</span>
         <div>
             <div style="color: var(--emerald-900); font-weight: 800;">Log is Clear</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">All receipts match expected sales results. No missing funds flagged.</div>
+            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">Everything matches. No missing money found in the records.</div>
         </div>
     </div>
     {% endif %}

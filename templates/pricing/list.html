@@ -20,6 +20,28 @@
 </div>
 
 <div style="margin-top: 2.5rem;">
+    {% if pending_costs %}
+    <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem;">
+        <h4 style="margin: 0 0 1rem 0; font-weight: 800; color: #92400e; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>⚠️</span> Pending Raw Material Costs ({{ pending_costs|length }})
+        </h4>
+        <p style="font-size: 0.85rem; color: #b45309; margin-bottom: 1rem;">The store has received these batches, but their purchase cost per bag hasn't been set. You must set the cost to accurately calculate manufacturing loss.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for r in pending_costs %}
+            <div style="background: #fff; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %} mb-1">{{ r.get_material_type_display|upper }}</span>
+                    <strong style="color: var(--navy); display: block; margin-top: 4px;">{{ r.num_bags }} Bags from {{ r.supplier }}</strong>
+                    <span style="font-size: 0.8rem; color: var(--slate-500);">Received {{ r.date }} by {{ r.received_by.full_name }}</span>
+                </div>
+                <a href="{% url 'procurement:set_cost' r.pk %}" class="btn-modern btn-modern-warning" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Set Cost →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
         <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">🎯 Active Pricing Rules</h4>
         <a href="{% url 'pricing:new' %}" class="btn-modern btn-modern-primary">+ Set New Price</a>

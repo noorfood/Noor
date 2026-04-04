@@ -10,14 +10,16 @@ from audit.utils import log_action
 from procurement.models import RawMaterialReceipt, RawMaterialIssuance
 from cleaning.models import CleanRawReceipt
 from clean_store.models import CleanRawIssuance, CleanRawReturn
-from production.models import MillingBatch, PackagingBatch
-from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance
+from production.models import MillingBatch, PackagingBatch, BrandSale, ProductionThreshold
+from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance, FinishedGoodsReturn
 from sales.models import (
-    SalesRecord, SalesPerson, SalesPayment, 
-    SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment
+    SalesRecord, SalesPerson, SalesPayment, CompanyRetailLedger,
+    SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment,
+    DirectSalePayment
 )
 from reconciliation.models import MoneyReceipt, ReconciliationFlag
 from audit.models import AuditLog
+from pricing.models import PriceConfig, CommissionConfig, SalesTarget, PackagingCostConfig, OperationalExpense
 
 
 # ─── Central model registry ──────────────────────────────────────────────────
@@ -36,6 +38,7 @@ MODEL_MAP = {
     'packaging-batches':  (PackagingBatch,       ['created_at', 'date', 'material_type', 'shift', 'powder_used_kg', 'qty_10kg', 'total_output_kg', 'loss_kg', 'loss_pct']),
     'fg-receipts':        (FinishedGoodsReceipt, ['created_at', 'date', 'product_size', 'qty_received', 'received_by']),
     'fg-issuances':       (FinishedGoodsIssuance,['created_at', 'date', 'product_size', 'qty_issued', 'channel', 'status', 'sales_record', 'issued_to', 'issued_by']),
+    'fg-returns':         (FinishedGoodsReturn,  ['created_at', 'date', 'product_size', 'material_type', 'qty_returned', 'status']),
     
     # Sales & Team
     'sales-persons':      (SalesPerson,          ['created_at', 'name', 'channel', 'phone', 'status', 'created_by']),
@@ -43,10 +46,23 @@ MODEL_MAP = {
     'sp-distributions':   (SalesDistributionRecord, ['created_at', 'date', 'sales_manager', 'sales_person', 'material_type', 'qty_given']),
     'sp-results':         (SalesResult,          ['created_at', 'date', 'sales_person', 'qty_sold', 'gross_value', 'commission_amount', 'net_due_to_company']),
     'sm-payments':        (SalesManagerPayment,  ['created_at', 'date', 'sales_manager', 'amount_cash', 'amount_transfer', 'status']),
+    'retail-ledger':      (CompanyRetailLedger,  ['created_at', 'date', 'material_type', 'action', 'pieces_changed', 'recorded_by']),
+    'direct-sales':       (DirectSalePayment,    ['created_at', 'date', 'material_type', 'qty_sold', 'total_sale_value', 'status', 'buyer_name']),
+    
+    # Production — Brand Sales
+    'brand-sales':        (BrandSale,            ['created_at', 'date', 'material_type', 'qty_sacks', 'total_amount', 'buyer_name', 'payment_method']),
     
     # Financials & Reconciliation
     'money-receipts':     (MoneyReceipt,         ['created_at', 'date', 'sales_manager', 'sales_person', 'cash_received', 'transfer_received', 'notes']),
     'recon-flags':        (ReconciliationFlag,   ['created_at', 'date', 'sales_person', 'expected_amount', 'actual_amount', 'difference', 'resolved', 'flagged_by']),
+    
+    # Pricing & Config
+    'price-configs':      (PriceConfig,          ['created_at', 'channel', 'material_type', 'product_size', 'price_per_unit', 'effective_from']),
+    'commission-configs': (CommissionConfig,      ['created_at', 'channel', 'material_type', 'product_size', 'commission_pct', 'effective_from']),
+    'sales-targets':      (SalesTarget,          ['created_at', 'sales_manager', 'material_type', 'target_type', 'month', 'year', 'target_qty']),
+    'packaging-costs':    (PackagingCostConfig,  ['created_at', 'material_type', 'cost_per_sack', 'effective_from']),
+    'expenses':           (OperationalExpense,   ['created_at', 'date', 'description', 'amount']),
+    'prod-thresholds':    (ProductionThreshold,  ['created_at', 'material_type', 'normal_max_loss_pct', 'warning_max_loss_pct', 'effective_from']),
     
     # Audit
     'audit-log':          (AuditLog,             ['timestamp', 'user_name', 'user_role', 'module', 'action', 'description']),
@@ -59,9 +75,11 @@ MODEL_MAP = {
 CATEGORIZED_MODELS = [
     ('Procurement', ['raw-receipts', 'raw-issuances']),
     ('Cleaning', ['clean-receipts']),
-    ('Operations & Store', ['clean-issuances', 'clean-returns', 'milling-batches', 'packaging-batches', 'fg-receipts', 'fg-issuances']),
-    ('Sales Management', ['sales-persons', 'sm-collections', 'sp-distributions', 'sp-results', 'sm-payments']),
+    ('Operations & Store', ['clean-issuances', 'clean-returns', 'milling-batches', 'packaging-batches', 'fg-receipts', 'fg-issuances', 'fg-returns']),
+    ('Sales Management', ['sales-persons', 'sm-collections', 'sp-distributions', 'sp-results', 'sm-payments', 'retail-ledger', 'direct-sales']),
+    ('Production Sales', ['brand-sales']),
     ('Reconciliation', ['money-receipts', 'recon-flags']),
+    ('Pricing & Config', ['price-configs', 'commission-configs', 'sales-targets', 'packaging-costs', 'expenses', 'prod-thresholds']),
     ('System & Audit', ['audit-log']),
     ('Legacy Records', ['sales-records', 'sales-payments']),
 ]
@@ -243,32 +261,91 @@ def explore_bulk_delete(request, model_name):
 
 @role_required('md')
 def clear_database(request):
-    """Wipes all transactional data in the system (God Mode Action)"""
+    """Wipes all transactional data in the system (God Mode Action).
+    
+    Deletes in strict FK-dependency order: children first, parents last.
+    This ensures no constraint errors prevent deletion.
+    """
     user = get_current_user(request)
     
     if request.method == 'POST':
         success_count = 0
-        failed_count = 0
-        # Iterate over all transactional models (skipping System & Audit possibly, 
-        # or maybe we wipe AuditLog too as per 'wipe every records', but usually audit is kept?
-        # The prompt says 'the deletion shoul wipe every records'. We will wipe everything in MODEL_MAP)
-        for model_name, (Model, _) in MODEL_MAP.items():
+        errors = []
+
+        # ── Ordered list: children before parents ─────────────────────
+        # Each entry: (label, Model)
+        WIPE_ORDER = [
+            # --- Audit (wipe first so FK refs from other deletes don't matter) ---
+            ('Audit Logs',              AuditLog),
+
+            # --- Reconciliation (references SalesPerson, User) ---
+            ('Reconciliation Flags',    ReconciliationFlag),
+            ('Money Receipts',          MoneyReceipt),
+
+            # --- Sales layer 4: payments & results (reference distributions, collections) ---
+            ('Sales Manager Payments',  SalesManagerPayment),
+            ('Sales Results',           SalesResult),
+            ('Sales Distributions',     SalesDistributionRecord),
+            ('Direct Sale Payments',    DirectSalePayment),
+            ('Retail Ledger',           CompanyRetailLedger),
+
+            # --- Sales layer 3: legacy payments (reference SalesRecord) ---
+            ('Sales Payments (Legacy)', SalesPayment),
+
+            # --- Finished Store (references SalesRecord, SalesManagerCollection) ---
+            ('FG Returns',              FinishedGoodsReturn),
+            ('FG Issuances',            FinishedGoodsIssuance),
+            ('FG Receipts',             FinishedGoodsReceipt),
+
+            # --- Sales layer 2: collections (reference User) ---
+            ('SM Collections',          SalesManagerCollection),
+
+            # --- Sales layer 1: core records & persons ---
+            ('Sales Records (Legacy)',  SalesRecord),
+            ('Sales Persons',           SalesPerson),
+
+            # --- Production (PackagingBatch references MillingBatch) ---
+            ('Brand Sales',             BrandSale),
+            ('Packaging Batches',       PackagingBatch),
+            ('Milling Batches',         MillingBatch),
+
+            # --- Clean Store ---
+            ('Clean Raw Returns',       CleanRawReturn),
+            ('Clean Raw Issuances',     CleanRawIssuance),
+
+            # --- Cleaning ---
+            ('Clean Receipts',          CleanRawReceipt),
+
+            # --- Procurement ---
+            ('Raw Material Issuances',  RawMaterialIssuance),
+            ('Raw Material Receipts',   RawMaterialReceipt),
+
+            # --- Pricing & Config (safe to delete last — no children reference them at this point) ---
+            ('Sales Targets',           SalesTarget),
+            ('Operational Expenses',    OperationalExpense),
+            ('Packaging Cost Configs',  PackagingCostConfig),
+            ('Commission Configs',      CommissionConfig),
+            ('Price Configs',           PriceConfig),
+            ('Production Thresholds',   ProductionThreshold),
+        ]
+
+        for label, Model in WIPE_ORDER:
             try:
-                # We count before delete
                 count = Model.objects.count()
-                Model.objects.all().delete()
-                success_count += count
-            except Exception:
-                failed_count += 1
-                
-        # Optional: Wipe audit logs intentionally since God mode
+                if count > 0:
+                    Model.objects.all().delete()
+                    success_count += count
+            except Exception as e:
+                errors.append(f'{label}: {str(e)}')
+
+        # Log the wipe action (creates a fresh audit entry after everything is cleared)
         log_action(request, user, 'data_explorer', 'GOD_MODE_WIPE_DB',
                    f'WIPED ENTIRE DATABASE. {success_count} records removed.', 'ALL', None)
-                   
+
         messages.success(request, f'Database wipe successful. Permanently deleted {success_count} records.')
-        if failed_count > 0:
-            messages.warning(request, f'Some records could not be deleted due to constraint errors.')
-            
+        if errors:
+            messages.warning(request, f'Some tables had errors: {"; ".join(errors)}')
+
         return redirect('data_explorer:home')
     
     return redirect('data_explorer:home')

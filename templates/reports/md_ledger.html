@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}MD Ledger Book | Noor Foods{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --paper: #fdfbf7;
+        --binding: #2c3e50;
+        --ink: #2c3e50;
+        --ledger-line: #e8e1d5;
+        --stamp-red: #b91c1c;
+    }
+
+    .ledger-container {
+        background: var(--paper);
+        min-height: 100vh;
+        padding: 3rem;
+        position: relative;
+        box-shadow: inset 10px 0 20px -10px rgba(0,0,0,0.2), 0 0 40px rgba(0,0,0,0.1);
+        border-radius: 4px;
+        color: var(--ink);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* Spine Binding Effect */
+    .ledger-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 15px;
+        height: 100%;
+        background: linear-gradient(90deg, var(--binding) 0%, #34495e 100%);
+        border-radius: 4px 0 0 4px;
+    }
+
+    .ledger-header {
+        border-bottom: 2px double var(--ledger-line);
+        padding-bottom: 2rem;
+        margin-bottom: 3rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .ledger-title {
+        font-family: 'Outfit', serif;
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--navy);
+        margin: 0;
+    }
+
+    /* DRILL-DOWN NAVIGATION */
+    .breadcrumb-ledger {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--slate-400);
+    }
+
+    .breadcrumb-ledger a {
+        color: var(--navy);
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+    .breadcrumb-ledger a:hover {
+        opacity: 0.7;
+    }
+
+    /* LEVEL 1: ROLES GRID */
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .role-card {
+        background: white;
+        border: 1px solid var(--ledger-line);
+        padding: 2.5rem;
+        border-radius: 8px;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
+
+    .role-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 20px rgba(0,0,0,0.05);
+        border-color: var(--navy);
+    }
+
+    .role-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .role-label {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: var(--navy);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* LEVEL 2: STAFF LIST */
+    .staff-list {
+        background: white;
+        border: 1px solid var(--ledger-line);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .staff-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--ledger-line);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s;
+    }
+
+    .staff-item:last-child {
+        border-bottom: none;
+    }
+
+    .staff-item:hover {
+        background: #fcfaf5;
+    }
+
+    .staff-info-primary {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .staff-avatar {
+        width: 40px;
+        height: 40px;
+        background: var(--navy);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    /* LEVEL 3: LEDGER FILTERS */
+    .ledger-filter-bar {
+        background: rgba(0,0,0,0.03);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 3rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    .filter-group label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--slate-500);
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.6rem;
+        border: 1px solid var(--ledger-line);
+        background: white;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .date-section {
+        margin-bottom: 4rem;
+        position: relative;
+    }
+
+    .date-header {
+        font-weight: 800;
+        font-size: 1.25rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--navy);
+        margin-bottom: 1.5rem;
+        color: var(--navy);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ledger-entry {
+        display: grid;
+        grid-template-columns: 100px 1fr 150px;
+        gap: 2rem;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid var(--ledger-line);
+        transition: background 0.2s;
+        align-items: start;
+    }
+
+    .ledger-entry:hover {
+        background: rgba(0,0,0,0.01);
+    }
+
+    .entry-time {
+        font-size: 0.85rem;
+        color: var(--slate-500);
+        font-weight: 600;
+    }
+
+    .entry-details {
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .entry-module {
+        text-align: right;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--slate-400);
+    }
+
+    .data-box {
+        margin-top: 0.75rem;
+        background: white;
+        border: 1px dashed var(--ledger-line);
+        padding: 0.75rem;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .data-label {
+        color: var(--slate-400);
+        font-size: 0.7rem;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 5rem;
+        color: var(--slate-400);
+    }
+
+    .btn-apply {
+        background: var(--navy);
+        color: white;
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-apply:hover {
+        opacity: 0.9;
+    }
+</style>
+
+<div class="ledger-container">
+    <div class="ledger-header">
+        <div>
+            <p style="color: var(--slate-400); font-size: 0.8rem; text-transform: uppercase; font-weight: 800; margin-bottom: 0.5rem;">Corporate Operational Journal</p>
+            <h1 class="ledger-title">MD Ledger Book</h1>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: var(--navy);">NOOR FOODS & LOGISTICS</div>
+            <div style="font-size: 0.7rem; color: var(--slate-400);">Confidential | Master Record</div>
+        </div>
+    </div>
+
+    <!-- BREADCRUMBS -->
+    <div class="breadcrumb-ledger">
+        <a href="?">🏠 Ledger Home</a>
+        {% if f_role %}
+        <span>/</span> <a href="?role_filter={{ f_role }}">{{ role_name }}</a>
+        {% endif %}
+        {% if f_user %}
+        <span>/</span> <span style="color: var(--slate-600);">{{ staff_name }}</span>
+        {% endif %}
+    </div>
+
+    {% if view_level == 'roles' %}
+        <!-- LEVEL 1: SELECT ROLE -->
+        <h2 style="margin-bottom: 2rem; font-family: 'Outfit'; font-weight: 800;">Select a Department Folder:</h2>
+        <div class="roles-grid">
+            {% for role, label in available_roles %}
+            <a href="?role_filter={{ role }}" class="role-card">
+                <div class="role-icon">
+                    {% if role == 'sales_manager' %}💼
+                    {% elif role == 'production_officer' %}⚙️
+                    {% elif role == 'store_officer' %}📦
+                    {% elif role == 'manager' %}🏢
+                    {% else %}📁{% endif %}
+                </div>
+                <div class="role-label">{{ label }}</div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Open Records →</div>
+            </a>
+            {% endfor %}
+        </div>
+
+    {% elif view_level == 'staff' %}
+        <!-- LEVEL 2: SELECT STAFF -->
+        <h2 style="margin-bottom: 2rem; font-family: 'Outfit'; font-weight: 800;">Acting {{ role_name }}s:</h2>
+        <div class="staff-list">
+            {% for s in staff_members %}
+            <a href="?role_filter={{ f_role }}&user_id={{ s.user_id }}" class="staff-item">
+                <div class="staff-info-primary">
+                    <div class="staff-avatar">{{ s.user_name|slice:":1" }}</div>
+                    <div>
+                        <div style="font-size: 1.1rem; font-weight: 800;">{{ s.user_name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--slate-500); text-transform: uppercase;">Active Records Holder</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--navy);">Review Journal →</div>
+            </a>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <!-- LEVEL 3: INDIVIDUAL LEDGER -->
+        <div style="margin-bottom: 3rem;">
+            <p style="color: var(--slate-400); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Acting {{ staff_role }}</p>
+            <h2 style="font-family: 'Outfit'; font-size: 2rem; font-weight: 800; margin-bottom: 0;">{{ staff_name }}</h2>
+        </div>
+
+        <!-- FILTERS -->
+        <form method="GET" class="ledger-filter-bar">
+            <input type="hidden" name="role_filter" value="{{ f_role }}">
+            <input type="hidden" name="user_id" value="{{ f_user }}">
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="date_from" value="{{ f_from }}" class="filter-input">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="date_to" value="{{ f_to }}" class="filter-input">
+            </div>
+            <div class="filter-group" style="grid-column: span 2;">
+                <label>Search Keyword</label>
+                <input type="text" name="search" value="{{ f_search }}" placeholder="Search action or details..." class="filter-input">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn-apply">Refresh Journal</button>
+                <a href="?role_filter={{ f_role }}&user_id={{ f_user }}" class="btn-apply" style="background:var(--slate-200); color:var(--slate-600);">Clear</a>
+            </div>
+        </form>
+
+        <div class="ledger-sheets">
+            {% regroup logs by timestamp.date as date_grouped_logs %}
+            
+            {% for group in date_grouped_logs %}
+            <div class="date-section">
+                <div class="date-header">
+                    📅 {{ group.grouper|date:"l, d F Y" }}
+                </div>
+                
+                <div class="entries-list">
+                    {% for log in group.list %}
+                    <div class="ledger-entry">
+                        <div class="entry-time">
+                            {{ log.timestamp|date:"H:i:s" }}
+                        </div>
+                        
+                        <div class="entry-details">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <span style="font-weight: 800; color: var(--navy); text-transform: uppercase; font-size: 0.9rem;">
+                                    {{ log.friendly_action }}
+                                </span>
+                                {% if log.current_status %}
+                                <span style="font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--ledger-line); 
+                                    {% if log.current_status == 'Accepted' or log.current_status == 'Confirmed' %}
+                                        background: var(--emerald-50); color: var(--emerald-700);
+                                    {% elif log.current_status == 'Rejected' %}
+                                        background: var(--rose-50); color: var(--rose-700);
+                                    {% else %}
+                                        background: var(--slate-50); color: var(--slate-600);
+                                    {% endif %} text-transform: uppercase;">
+                                    Current Status: {{ log.current_status }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 1.05rem;">{{ log.description }}</div>
+                            
+                            {% if log.old_data or log.new_data %}
+                            <div class="data-box">
+                                <div>
+                                    <div class="data-label">Former Entry</div>
+                                    <div style="color: var(--rose);">{{ log.old_data|default:"N/A" }}</div>
+                                </div>
+                                <div>
+                                    <div class="data-label">Corrected Entry</div>
+                                    <div style="color: var(--emerald-600);">{{ log.new_data|default:"N/A" }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="entry-module">
+                            #{{ log.module }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📖</div>
+                <p>No business records identified for {{ staff_name }} in this period.</p>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

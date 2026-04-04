@@ -49,22 +49,22 @@
     {% if show_money %}
     <!-- EXECUTIVE FINANCIAL PULSE -->
     <div class="card" style="background: var(--navy); color: white; border: none; padding: 2.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden;">
-        <div style="position: absolute; top:0; right:0; opacity: 0.05; font-size: 10rem; transform: translate(20%, -20%);">💰</div>
+        <div style="position: absolute; top:0; right:0; opacity: 0.05; font-size: 10rem; transform: translate(20%, -20%);">₦</div>
         <div class="layout-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 3rem; position: relative; z-index: 1;">
             <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Consolidated Revenue</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL VALUE OF ALL SALES</div>
                 <div style="font-size: 2.4rem; font-weight: 900; letter-spacing: -1px;">₦{{ company_total_revenue|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">SM + GM + Byproduct Channels</p>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Total money we expect from all products sold</p>
             </div>
             <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--emerald); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Secured Inflow</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--emerald); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL CASH IN BANK</div>
                 <div style="font-size: 2.4rem; font-weight: 900; color: var(--emerald); letter-spacing: -1px;">₦{{ company_received_money|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Banked & Reconciled</p>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Actual money verified and received</p>
             </div>
             <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">Credit Exposure</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL UNPAID (DEBT)</div>
                 <div style="font-size: 2.4rem; font-weight: 900; color: var(--amber); letter-spacing: -1px;">₦{{ company_outstanding_money|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Total Field Debt</p>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Money still outside with managers/customers</p>
             </div>
         </div>
     </div>
@@ -250,12 +250,12 @@
             <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
                     <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Holding</div>
-                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ gm_maize_hand }} <small style="font-size: 0.7rem;">Sacks</small></div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ gm_maize_hand }} <small style="font-size: 0.7rem;">Bags</small></div>
                     <div style="font-size: 0.7rem; color: var(--blue); font-weight: 800;">{{ gm_maize_pieces }} Pieces</div>
                 </div>
                 <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
                     <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Holding</div>
-                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ gm_wheat_hand }} <small style="font-size: 0.7rem;">Sacks</small></div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ gm_wheat_hand }} <small style="font-size: 0.7rem;">Bags</small></div>
                     <div style="font-size: 0.7rem; color: #c2410c; font-weight: 800;">{{ gm_wheat_pieces }} Pieces</div>
                 </div>
             </div>
@@ -270,7 +270,7 @@
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Field Inventory</div>
                 <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_goods_outstanding }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Sacks with Managers</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Bags with Managers</div>
             </div>
             {% if show_money %}
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
@@ -337,7 +337,7 @@
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Byproducts Sold</div>
                 <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_brand_sacks }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Total Sacks Liquidation</div>
+                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Total Bags Sold</div>
             </div>
             {% if show_money %}
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">

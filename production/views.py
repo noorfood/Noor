@@ -33,6 +33,9 @@ def dashboard(request):
     pending_transfers = []
     today = datetime.date.today()
     
+    from audit.models import AuditLog
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
+    
     # Dashboard metrics for Production Officer
     today_milled_bags = 0
     today_packaged_sacks = 0
@@ -95,6 +98,7 @@ def dashboard(request):
         'today_milled_bags': today_milled_bags,
         'today_packaged_sacks': today_packaged_sacks,
         'all_user_stats': all_user_stats if not user.is_production_officer else None,
+        'today_activities': today_activities,
     })
 
 

@@ -12,6 +12,11 @@ import datetime
 @role_required('sales_manager', 'manager', 'md')
 def dashboard(request):
     user = get_current_user(request)
+    
+    from audit.models import AuditLog
+    import datetime
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+    
     # Recent receipts physically collected
     receipts = MoneyReceipt.objects.all().order_by('-date', '-created_at')[:10]
     flags = ReconciliationFlag.objects.filter(resolved=False).order_by('-date', '-created_at')[:5]
@@ -32,6 +37,7 @@ def dashboard(request):
         'total_actual': float(total_actual),
         'total_expected': float(total_expected),
         'total_diff': float(total_expected) - float(total_actual),
+        'today_activities': today_activities,
     })
 
 
