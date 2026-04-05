@@ -49,9 +49,23 @@ def receive_clean(request):
     from procurement.models import RawMaterialIssuance
     from cleaning.models import CleanRawReceipt
 
-    # Show issuances that have not been fully accounted for in receipts
-    all_raw_issuances = RawMaterialIssuance.objects.order_by('-date', '-created_at')
-    pending_issuances = [iss for iss in all_raw_issuances if not CleanRawReceipt.objects.filter(raw_issuance=iss).exists()]
+    # Optional: Pre-select an issuance from list
+    from django.shortcuts import get_object_or_404
+    selected_issuance_id = request.GET.get('issuance')
+    selected_issuance = None
+    if selected_issuance_id:
+        selected_issuance = get_object_or_404(RawMaterialIssuance, pk=selected_issuance_id)
+
+    # Show ONLY active issuances part of an ongoing cleaning job
+    all_raw_issuances = RawMaterialIssuance.objects.filter(is_fully_received=False).order_by('-date', '-created_at')
+    
+    # Enrich issuances with calculated balances (Expected Balance Matrix)
+    pending_issuances = []
+    for iss in all_raw_issuances:
+        bags_already_received = CleanRawReceipt.objects.filter(raw_issuance=iss).aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+        iss.already_received = bags_already_received
+        iss.outstanding = max(0, iss.num_bags_issued - bags_already_received)
+        pending_issuances.append(iss)
     
     error = None
 
@@ -61,6 +75,7 @@ def receive_clean(request):
             issuance_id = request.POST.get('issuance_id')
             clean_bags_produced = int(request.POST.get('clean_bags_produced', 0))
             approx_dirty_weight_kg = float(request.POST.get('approx_dirty_weight_kg', 0))
+            is_final = request.POST.get('is_final') == 'on' # Checkbox: "Mark as Completed"
             notes = request.POST.get('notes', '').strip()
 
             if not date_val or not issuance_id or clean_bags_produced <= 0 or approx_dirty_weight_kg <= 0:
@@ -68,7 +83,7 @@ def receive_clean(request):
             else:
                 issuance = get_object_or_404(RawMaterialIssuance, pk=issuance_id)
                 
-                # Create the Clean Raw Receipt directly linked to issuance
+                # Create the Clean Raw Receipt
                 receipt = CleanRawReceipt.objects.create(
                     date=date_val,
                     raw_issuance=issuance,
@@ -80,8 +95,14 @@ def receive_clean(request):
                     is_locked=True,
                 )
 
+                # If "Completed" checkbox was ticked, lock the issuance from further receipts
+                if is_final:
+                    issuance.is_fully_received = True
+                    issuance.save()
+
                 log_action(request, user, 'clean_store', 'RECEIVE_CLEAN',
-                           f'Recorded cleaning results for Issuance #{issuance_id}: {clean_bags_produced} bags',
+                           f'Recorded cleaning results for Issuance #{issuance_id}: {clean_bags_produced} bags' + 
+                           (' (Job Finalized)' if is_final else ' (Partial Reception)'),
                            'CleanRawReceipt', receipt.pk)
                 
                 messages.success(request, f'Clean bag receipt #{receipt.pk} saved. {clean_bags_produced} bags added to store.')
@@ -92,6 +113,7 @@ def receive_clean(request):
     return render(request, 'clean_store/receive_clean.html', {
         'current_user': user, 
         'pending_issuances': pending_issuances,
+        'selected_issuance': selected_issuance,
         'error': error, 
         'today': datetime.date.today().isoformat(),
         'balance_maize': _get_clean_store_balance('maize'),

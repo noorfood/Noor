@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.db.models import Sum, Avg, Count
 from accounts.mixins import get_current_user, role_required
 from production.models import MillingBatch, PackagingBatch
@@ -12,6 +12,9 @@ from accounts.models import User
 from audit.models import AuditLog
 from procurement.models import RawMaterialReceipt
 import datetime
+from django.db import transaction
+from django.contrib import messages
+from .models import MonthlySnapshot
 
 @role_required('manager', 'md')
 def dashboard(request):
@@ -1218,3 +1221,141 @@ def md_ledger(request):
         context['view_level'] = 'records'
 
     return render(request, 'reports/md_ledger.html', context)
+
+
+@role_required('manager', 'md')
+def record_monthly_snapshot(request):
+    """
+    MD/Manager-triggered closing of the month.
+    Aggregates all company balances and saves a permanent snapshot.
+    """
+    user = get_current_user(request)
+    now = datetime.datetime.now()
+    
+    # Default to previous month if today is early in the month, or current month
+    if now.day <= 5:
+        prev = now.replace(day=1) - datetime.timedelta(days=1)
+        default_year, default_month = prev.year, prev.month
+    else:
+        default_year, default_month = now.year, now.month
+
+    # Get from POST or use defaults
+    try:
+        year = int(request.POST.get('year', default_year))
+        month = int(request.POST.get('month', default_month))
+    except (ValueError, TypeError):
+        year, month = default_year, default_month
+
+    # --- AGGREGATE DATA ---
+    from clean_store.views import _get_clean_store_balance
+    from finished_store.views import _fg_balance
+    from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding
+    from production.views import get_sacks_in_hand, get_sacks_in_transit
+    from sales.models import CompanyRetailLedger, DirectSalePayment
+    from procurement.models import RawMaterialReceipt, RawMaterialIssuance
+
+    # 1. Store
+    raw_m_in = RawMaterialReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
+    raw_m_out = RawMaterialIssuance.objects.filter(material_type='maize').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    dirty_maize = max(0, raw_m_in - raw_m_out)
+
+    raw_w_in = RawMaterialReceipt.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    raw_w_out = RawMaterialIssuance.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    dirty_wheat = max(0, raw_w_in - raw_w_out)
+
+    clean_maize = _get_clean_store_balance('maize')
+    clean_wheat = _get_clean_store_balance('wheat')
+
+    # 2. Production
+    total_maize_hand = 0
+    total_wheat_hand = 0
+    total_maize_transit = 0
+    total_wheat_transit = 0
+    
+    prod_officers = User.objects.filter(role='production_officer', status='active')
+    for po in prod_officers:
+        total_maize_hand += get_sacks_in_hand(po, 'maize')
+        total_wheat_hand += get_sacks_in_hand(po, 'wheat')
+        total_maize_transit += get_sacks_in_transit(po, 'maize')
+        total_wheat_transit += get_sacks_in_transit(po, 'wheat')
+
+    # Monthly production activity
+    prod_m_milled = MillingBatch.objects.filter(material_type='maize', date__year=year, date__month=month).aggregate(
+        t=Sum('bags_milled_new') + Sum('outstanding_bags_milled')
+    )['t'] or 0
+    prod_w_milled = MillingBatch.objects.filter(material_type='wheat', date__year=year, date__month=month).aggregate(
+        t=Sum('bags_milled_new') + Sum('outstanding_bags_milled')
+    )['t'] or 0
+    prod_m_pack = PackagingBatch.objects.filter(material_type='maize', date__year=year, date__month=month).aggregate(t=Sum('qty_10kg'))['t'] or 0
+    prod_w_pack = PackagingBatch.objects.filter(material_type='wheat', date__year=year, date__month=month).aggregate(t=Sum('qty_10kg'))['t'] or 0
+
+    # 3. FG Store
+    fg_m_10kg = _fg_balance('maize', '10kg')
+    fg_w_10kg = _fg_balance('wheat', '10kg')
+
+    # 4. Sales Manager
+    sm_m_holding = 0
+    sm_w_holding = 0
+    sm_money_out = 0
+    for sm in User.objects.filter(role='sales_manager', status='active'):
+        sm_m_holding += get_sm_goods_holding(sm, 'maize')
+        sm_w_holding += get_sm_goods_holding(sm, 'wheat')
+        sm_money_out += float(get_sm_money_outstanding(sm))
+
+    # 5. GM
+    gm_m_hand = get_gm_goods_holding('maize')
+    gm_w_hand = get_gm_goods_holding('wheat')
+    gm_ret_m = CompanyRetailLedger.objects.filter(material_type='maize').aggregate(t=Sum('pieces_changed'))['t'] or 0
+    gm_ret_w = CompanyRetailLedger.objects.filter(material_type='wheat').aggregate(t=Sum('pieces_changed'))['t'] or 0
+    
+    ds_out = 0
+    ds_qs = DirectSalePayment.objects.filter(status='confirmed')
+    for ds in ds_qs:
+        ds_out += float(ds.outstanding)
+
+    # --- SAVE SNAPSHOT ---
+    with transaction.atomic():
+        snapshot, created = MonthlySnapshot.objects.update_or_create(
+            year=year, month=month,
+            defaults={
+                'clean_maize_bags': int(clean_maize),
+                'clean_wheat_bags': int(clean_wheat),
+                'dirty_maize_bags': int(dirty_maize),
+                'dirty_wheat_bags': int(dirty_wheat),
+                'prod_maize_hand': int(total_maize_hand),
+                'prod_wheat_hand': int(total_wheat_hand),
+                'prod_maize_transit': int(total_maize_transit),
+                'prod_wheat_transit': int(total_wheat_transit),
+                'prod_maize_milled_bags': int(prod_m_milled),
+                'prod_wheat_milled_bags': int(prod_w_milled),
+                'prod_maize_packaged_sacks': int(prod_m_pack),
+                'prod_wheat_packaged_sacks': int(prod_w_pack),
+                'fg_maize_10kg': int(fg_m_10kg),
+                'fg_wheat_10kg': int(fg_w_10kg),
+                'sm_maize_holding': int(sm_m_holding),
+                'sm_wheat_holding': int(sm_w_holding),
+                'sm_money_outstanding': sm_money_out,
+                'gm_maize_hand': int(gm_m_hand),
+                'gm_wheat_hand': int(gm_w_hand),
+                'gm_retail_pieces_maize': int(gm_ret_m),
+                'gm_retail_pieces_wheat': int(gm_ret_w),
+                'gm_direct_sale_outstanding': ds_out,
+                'recorded_by': user,
+            }
+        )
+
+        # --- LOG TO LEDGER ---
+        import calendar
+        month_name = calendar.month_name[month]
+        description = (
+            f"COMPANY-WIDE MONTH-END CLOSING RECORD: {month_name} {year}. | "
+            f"PRODUCTION: Maize {total_maize_hand} Hand/{total_maize_transit} Transit, Wheat {total_wheat_hand} Hand/{total_wheat_transit} Transit. | "
+            f"STORE: Maize {clean_maize} Clean/{dirty_maize} Dirty, Wheat {clean_wheat} Clean/{dirty_wheat} Dirty. | "
+            f"SALES: Sacks Holding {sm_m_holding + sm_w_holding}, Money Owed ₦{sm_money_out:,.2f}. | "
+            f"GM: Sacks {gm_m_hand + gm_w_hand}, Pieces {gm_ret_m + gm_ret_w}, Direct Owed ₦{ds_out:,.2f}."
+        )
+        from audit.utils import log_action
+        log_action(request, user, 'REPORTS', 'MONTHLY_SNAPSHOT', description, 'MonthlySnapshot', snapshot.pk)
+
+    messages.success(request, f"Company-wide monthly snapshot for {month_name} {year} has been successfully recorded into the ledger.")
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/reports/dashboard/'))

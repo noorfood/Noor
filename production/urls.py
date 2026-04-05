@@ -12,4 +12,5 @@ urlpatterns = [
     path('returns/new/', views.initiate_return, name='initiate_return'),
     path('thresholds/', views.manage_thresholds, name='thresholds'),
     path('transfer/<int:issuance_id>/acknowledge/', views.acknowledge_transfer, name='acknowledge_transfer'),
+    path('packaging/issue/', views.issue_to_store, name='issue_to_store'),
 ]

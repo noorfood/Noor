@@ -55,11 +55,11 @@
     </style>
 </head>
 
-<body>
+<body class="{% if request.session.impersonate_id %}is-spectating{% endif %}">
     {% if request.session.impersonate_id %}
-    <div style="background-color: #8b5cf6; color: white; text-align: center; padding: 10px; font-weight: bold; position: sticky; top: 0; z-index: 9999; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+    <div class="spectate-banner">
         👀 SPECTATING: You are currently viewing the system as {{ request.session.user_name }} ({{ request.session.user_role|title }}). 
-        <a href="{% url 'accounts:md_stop_impersonating' %}" style="color: white; text-decoration: underline; margin-left: 15px; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 4px;">Exit Spectate Mode</a>
+        <a href="{% url 'accounts:md_stop_impersonating' %}" class="spectate-exit">Exit Spectate Mode</a>
     </div>
     {% endif %}
 
@@ -129,14 +129,15 @@
                 {% if role == 'production_officer' %}
                 <a href="/production/milling/new/" class="nav-link {% block nav_pr_new %}{% endblock %}">Record Milling</a>
                 <a href="/production/packaging/new/" class="nav-link">Record Packaging</a>
+                <a href="{% url 'production:issue_to_store' %}" class="nav-link">Issue Bags to FG Store</a>
                 <a href="/production/list/" class="nav-link {% block nav_pr_list %}{% endblock %}">My Batches</a>
                 <a href="/production/outstanding/" class="nav-link {% block nav_pr_out %}{% endblock %}">Outstanding Bags</a>
                 {% endif %}
 
-                {% if role == 'sales_manager' or role == 'manager' or role == 'md' %}
-                <a href="{% url 'reconciliation:list' %}" class="nav-link {% block nav_rc_md %}{% endblock %} {% block nav_gm_recon %}{% endblock %}">⚖️ Money & Stock Checking</a>
+                {% if role == 'sales_manager' or role == 'md' %}
+                <a href="{% url 'reconciliation:list' %}" class="nav-link {% block nav_rc_md %}{% endblock %}">⚖️ Money & Stock Checking</a>
                 {% if role != 'md' %}
-                <a href="{% url 'reconciliation:flags' %}" class="nav-link {% block nav_gm_flags %}{% endblock %}">🚩 Mistakes & Mismatches</a>
+                <a href="{% url 'reconciliation:flags' %}" class="nav-link">🚩 Mistakes & Mismatches</a>
                 {% endif %}
                 {% endif %}
 
@@ -152,15 +153,15 @@
                 {% if role == 'store_officer' and store_type == 'raw' or role == 'manager' %}
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Main Grain Store</div>
                 {% if role == 'store_officer' and store_type == 'raw' %}
-                <a href="/procurement/receive/" class="nav-link {% block nav_proc_receive %}{% endblock %}">Raw Material Receipt</a>
-                <a href="/procurement/issue/" class="nav-link {% block nav_proc_issue %}{% endblock %}">Raw Material Issuance</a>
+                <a href="/procurement/receive/" class="nav-link {% block nav_proc_receive %}{% endblock %}">Receive Raw Material</a>
+                <a href="/procurement/issue/" class="nav-link {% block nav_proc_issue %}{% endblock %}">Issue Raw Material to Cleaners</a>
                 {% endif %}
                 <a href="/procurement/list/" class="nav-link {% block nav_proc_list %}{% endblock %} {% block nav_gm_proc_dash %}{% endblock %}">Raw Material Registry</a>
                 
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Clean Grain Store</div>
                 {% if role == 'store_officer' and store_type == 'raw' %}
-                <a href="/clean-store/receive/" class="nav-link {% block nav_cs_receive %}{% endblock %}">Clean Material Receipt</a>
-                <a href="/clean-store/issue/" class="nav-link {% block nav_cs_issue %}{% endblock %}">Clean Material Issuance</a>
+                <a href="/clean-store/receive/" class="nav-link {% block nav_cs_receive %}{% endblock %}">Recieve clean Bags</a>
+                <a href="/clean-store/issue/" class="nav-link {% block nav_cs_issue %}{% endblock %}">Issue Clean Bags to Production</a>
                 {% endif %}
                 <a href="/clean-store/list/" class="nav-link {% block nav_cs_list %}{% endblock %} {% block nav_gm_cs_dash %}{% endblock %}">Clean Material Registry</a>
                 {% endif %}
@@ -168,7 +169,10 @@
                 {% if role == 'store_officer' and store_type == 'finished' or role == 'md' %}
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Finished Bag Store</div>
                 {% if role == 'store_officer' and store_type == 'finished' %}
-                <a href="{% url 'finished_store:create_sm_collection' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Sales Manager FG Collection</a>
+                <a href="{% url 'finished_store:create_sm_collection' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Give to Sales Manager</a>   
+                {% endif %}
+                {% if role == 'store_officer' and store_type == 'finished' %}
+                <a href="{% url 'finished_store:issue' %}" class="nav-link {% block nav_fg_issue %}{% endblock %}" style="font-weight:600; color:#f5f7f8;">📦 Direct Company Sale</a>   
                 {% endif %}
                 <a href="{% url 'finished_store:list' %}" class="nav-link {% block nav_fg_list %}{% endblock %} {% block nav_gm_fg_handshake %}{% endblock %}">Acceptance Registry</a>
                 {% endif %}
@@ -197,7 +201,6 @@
                 {% if role == 'manager' or role == 'md' %}
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Direct Sales</div>
                 {% if role == 'manager' %}
-                <a href="{% url 'sales:record_direct_sale' %}" class="nav-link {% block nav_gm_direct_sale %}{% endblock %}">📝 Record Direct Sale (Factory)</a>
                 <a href="{% url 'sales:record_company_sale' %}" class="nav-link {% block nav_gm_company_sale %}{% endblock %}">🛒 Company Direct Sale</a>
                 <a href="{% url 'sales:record_bran_sale' %}" class="nav-link {% block nav_gm_bran %}{% endblock %}">🌾 Record Bran Sale</a>
                 {% endif %}

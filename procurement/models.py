@@ -63,6 +63,7 @@ class RawMaterialIssuance(models.Model):
     issued_to = models.CharField(max_length=200, help_text='Name of the cleaner or contractor')
     issued_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='raw_issued_by')
     notes = models.TextField(blank=True)
+    is_fully_received = models.BooleanField(default=False, help_text='Set to True when all clean bags are back in store')
     created_at = models.DateTimeField(auto_now_add=True)
     is_locked = models.BooleanField(default=True)
 

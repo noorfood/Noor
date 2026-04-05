@@ -36,12 +36,12 @@
 
 {% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
 
-<div class="layout-grid" style="grid-template-columns: 1fr 300px; gap: 2rem; align-items: start;">
+<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
     <div class="card" style="padding:2rem;">
         <form method="post">
             {% csrf_token %}
             
-            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
                 <div>
                     <label class="form-label">Issuance Date*</label>
                     <input type="date" name="date" value="{{ today }}" required class="form-input">
@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
                 <div>
                     <label class="form-label">Quantity (100kg Bags)*</label>
                     <input type="number" name="num_bags_issued" min="1" placeholder="e.g. 50" required class="form-input">

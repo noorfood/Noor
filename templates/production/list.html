@@ -114,8 +114,7 @@
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Date</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">New Bags</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Old Bags</th>
+        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Bags Milled</th>
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Out (kg)</th>
         <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Waste %</th>
         <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Flag</th>
@@ -130,7 +129,6 @@
         <td><span class="badge badge-draft">{{ m.shift|title }}</span></td>
         <td><span class="badge badge-{{ m.material_type }}">{{ m.get_material_type_display|upper }}</span></td>
         <td class="num">{{ m.bags_milled_new }}</td>
-        <td class="num" style="color:#94a3b8;">{{ m.outstanding_bags_milled|default:0 }}</td>
         <td class="num font-bold">{{ m.bulk_powder_kg|floatformat:1 }}</td>
         <td class="num {% if m.flag_level == 'critical' %}loss-red{% elif m.flag_level == 'warning' %}loss-amber{% else %}loss-ok{% endif %}">
           {{ m.loss_pct|floatformat:1 }}%
@@ -153,44 +151,10 @@
   </table>
 </div>
 
-<div class="section-header" style="margin-top:2rem;">
-  <div>📦 Bagging Work (Packaging) <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Powder → Small Sacks</span></div>
-  <div class="section-desc">Each batch goes to the Main Product Store</div>
-</div>
-
-<div class="table-wrapper" style="margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
-  <table>
-    <thead style="background: #f8fafc;">
-      <tr>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">S/N</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Date</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Used (kg)</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Small Bags</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Waste %</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in packaging_batches %}
-      <tr>
-        <td style="font-family:monospace;font-weight:600; color: #64748b;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap; font-weight: 500;">{{ p.date }}</td>
-        <td><span class="badge badge-draft">{{ p.shift|title }}</span></td>
-        <td><span class="badge badge-{{ p.material_type }}">{{ p.get_material_type_display|upper }}</span></td>
-        <td class="num">{{ p.powder_used_kg|floatformat:1 }}</td>
-        <td class="num font-bold text-success" style="color:#059669;">+{{ p.qty_10kg }}</td>
-        <td class="num {% if p.flag_level == 'critical' %}loss-red{% elif p.flag_level == 'warning' %}loss-amber{% else %}loss-ok{% endif %}">
-          {{ p.loss_pct|floatformat:1 }}%
-        </td>
-        <td style="color:#64748b;font-size:.85rem;">{{ p.production_officer.full_name }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:2.5rem;">No packaging batches match your criteria.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div style="margin-top: 2rem; padding: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; text-align: center;">
+    <h3 style="color: var(--navy); margin-bottom: 0.5rem;">📦 Sacks recorded in Hand</h3>
+    <p style="color: #64748b; margin-bottom: 1.5rem;">Manage your total sack balances directly from the dashboard.</p>
+    <a href="{% url 'production:dashboard' %}" class="btn-modern" style="background: var(--navy); color: white; padding: 0.6rem 1.5rem;">Go to Dashboard →</a>
 </div>
 
 <div style="margin-top:1.25rem;">

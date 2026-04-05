@@ -14,15 +14,20 @@
             <h1 class="hero-title" style="color: #fff;">Command Center</h1>
             <p class="hero-subtitle" style="color: var(--slate-400);">Real-time monitoring of all factory operations and money flow.</p>
         </div>
-        <div style="display: flex; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            {% if current_user.role == 'md' or current_user.role == 'manager' %}
+            <form action="{% url 'reports:record_monthly_snapshot' %}" method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-modern" style="background: var(--emerald); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="return confirm('Confirm Month-End Closing?\n\nThis will take a permanent snapshot of all Store, Production, Sales, and GM balances for the corporate ledger.');">
+                    🛡️ Record Month-End Closing
+                </button>
+            </form>
+            {% endif %}
             {% if current_user.role == 'md' %}
             <a href="/reports/md-insights/" class="btn-modern btn-modern-primary" style="background: var(--blue); border: none;">
                 Strategic Insights →
             </a>
             {% endif %}
-            <div class="btn-modern" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
-                <span class="pulse" style="display:inline-block; margin-right: 8px;"></span> Live Ledger
-            </div>
         </div>
     </div>
 </div>

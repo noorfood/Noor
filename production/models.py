@@ -84,6 +84,7 @@ class MillingBatch(models.Model):
         return f"Milling #{self.pk} | {self.material_type.upper()} | {self.bulk_powder_kg} kg | {self.date}"
 
     def calculate_outputs(self):
+        # Total bags = new bags recorded (outstanding field removed from UI)
         total_milled = self.bags_milled_new + self.outstanding_bags_milled
         total_raw = total_milled * 100
         loss = float(total_raw) - float(self.bulk_powder_kg)
@@ -160,6 +161,21 @@ class PackagingBatch(models.Model):
     is_locked = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def get_qty_issued(self):
+        """Sum of all sacks already issued to store for this batch (pending or accepted)."""
+        from django.db.models import Sum
+        return self.fg_receipts.filter(status__in=['pending', 'accepted']).aggregate(t=models.Sum('qty_received'))['t'] or 0
+
+    @property
+    def get_qty_remaining(self):
+        """Sacks still in the production officer's hand."""
+        return max(0, self.qty_10kg - self.get_qty_issued)
+
+    @property
+    def is_fully_issued(self):
+        return self.get_qty_remaining == 0
 
     class Meta:
         db_table = 'production_packaging_batch'

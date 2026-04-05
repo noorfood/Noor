@@ -13,5 +13,6 @@ urlpatterns = [
     path('flow/', views.company_flow, name='flow'),
     path('financial-summary/', views.financial_summary, name='financial_summary'),
     path('md-ledger/', views.md_ledger, name='ledger'),
+    path('snapshot/record/', views.record_monthly_snapshot, name='record_monthly_snapshot'),
 ]
 

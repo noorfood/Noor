@@ -25,12 +25,12 @@
 
 {% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
 
-<div class="layout-grid" style="grid-template-columns: 1fr 300px; gap: 2rem; align-items: start;">
+<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
     <div class="card" style="padding:2rem;">
         <form method="post">
             {% csrf_token %}
             
-            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
                 <div>
                     <label class="form-label">Receipt Date*</label>
                     <input type="date" name="date" value="{{ today }}" required class="form-input">
@@ -50,7 +50,7 @@
                 <input type="text" name="supplier" placeholder="e.g. Alhaji Musa Market or Farmer Name" required class="form-input">
             </div>
 
-            <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
                 <div>
                     <label class="form-label">Number of Bags*</label>
                     <input type="number" name="num_bags" min="1" placeholder="e.g. 50" required class="form-input">

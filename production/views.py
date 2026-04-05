@@ -5,7 +5,8 @@ from accounts.models import User
 from audit.utils import log_action
 from production.models import MillingBatch, PackagingBatch, ProductionThreshold
 from clean_store.models import CleanRawIssuance, CleanRawReturn
-from django.db.models import Sum
+from django.db.models import Sum, F
+from django.db.models.functions import Coalesce
 import datetime
 
 def get_production_balance(user, material_type):
@@ -26,6 +27,24 @@ def get_powder_balance(user, material_type):
     packaged = PackagingBatch.objects.filter(production_officer=user, material_type=material_type).aggregate(t=Sum('powder_used_kg'))['t'] or 0
     return max(0.0, float(milled) - float(packaged))
 
+def get_sacks_in_hand(user, material_type):
+    """Sacks packaged but not yet issued to store (sum of remaining qty on all batches)."""
+    from finished_store.models import FinishedGoodsReceipt
+    batches = PackagingBatch.objects.filter(production_officer=user, material_type=material_type)
+    total = 0
+    for b in batches:
+        total += b.get_qty_remaining
+    return total
+
+def get_sacks_in_transit(user, material_type):
+    """Sacks issued but not yet accepted by the Finished Goods store."""
+    from finished_store.models import FinishedGoodsReceipt
+    return FinishedGoodsReceipt.objects.filter(
+        submitted_by=user, 
+        material_type=material_type, 
+        status='pending'
+    ).aggregate(t=Sum('qty_received'))['t'] or 0
+
 
 @role_required('production_officer', 'manager', 'md')
 def dashboard(request):
@@ -44,13 +63,19 @@ def dashboard(request):
     if user.is_production_officer:
         pending_transfers = CleanRawIssuance.objects.filter(issued_to=user, status='pending').order_by('-date')
         milling_batches = MillingBatch.objects.filter(production_officer=user).order_by('-date', '-created_at')[:10]
-        packaging_batches = PackagingBatch.objects.filter(production_officer=user).order_by('-date', '-created_at')[:10]
+        packaging_batches = [] # Removed per-batch packaging list
         
         balance_maize = get_production_balance(user, 'maize')
         balance_wheat = get_production_balance(user, 'wheat')
         powder_maize = get_powder_balance(user, 'maize')
         powder_wheat = get_powder_balance(user, 'wheat')
         outstanding_total = balance_maize + balance_wheat
+
+        # New: Sack Handshake balances
+        sacks_hand_maize = get_sacks_in_hand(user, 'maize')
+        sacks_hand_wheat = get_sacks_in_hand(user, 'wheat')
+        sacks_transit_maize = get_sacks_in_transit(user, 'maize')
+        sacks_transit_wheat = get_sacks_in_transit(user, 'wheat')
 
         # Daily performance
         today_milled = MillingBatch.objects.filter(production_officer=user, date=today).aggregate(
@@ -62,11 +87,17 @@ def dashboard(request):
             sacks=Sum('qty_10kg')
         )
         today_packaged_sacks = today_packaged['sacks'] or 0
+
+        unissued_count = PackagingBatch.objects.annotate(
+            issued_qty=Coalesce(Sum('fg_receipts__qty_received'), 0)
+        ).filter(production_officer=user, issued_qty__lt=F('qty_10kg')).count()
     else:
         milling_batches = MillingBatch.objects.all().order_by('-date', '-created_at')[:10]
         packaging_batches = PackagingBatch.objects.all().order_by('-date', '-created_at')[:10]
         outstanding_total = None
         balance_maize = balance_wheat = powder_maize = powder_wheat = None
+        unissued_count = 0
+        sacks_hand_maize = sacks_hand_wheat = sacks_transit_maize = sacks_transit_wheat = 0
 
         # For MD/Manager: compute per-user totals
         prod_users = User.objects.filter(role='production_officer', status='active')
@@ -82,12 +113,20 @@ def dashboard(request):
             )['b'] or 0
             tp = PackagingBatch.objects.filter(production_officer=u, date=today).aggregate(s=Sum('qty_10kg'))['s'] or 0
             
-            if bm > 0 or bw > 0 or pm > 0 or pw > 0 or tm > 0 or tp > 0:
+            # Sack Handshake balances for manager oversight
+            shm = get_sacks_in_hand(u, 'maize')
+            shw = get_sacks_in_hand(u, 'wheat')
+            stm = get_sacks_in_transit(u, 'maize')
+            stw = get_sacks_in_transit(u, 'wheat')
+            
+            if bm > 0 or bw > 0 or pm > 0 or pw > 0 or tm > 0 or tp > 0 or shm > 0 or shw > 0 or stm > 0 or stw > 0:
                 all_user_stats.append({
                     'user': u, 
                     'bags_maize': bm, 'bags_wheat': bw, 
                     'powder_maize': pm, 'powder_wheat': pw,
-                    'today_milled': tm, 'today_packaged': tp
+                    'today_milled': tm, 'today_packaged': tp,
+                    'sacks_hand_maize': shm, 'sacks_hand_wheat': shw,
+                    'sacks_transit_maize': stm, 'sacks_transit_wheat': stw
                 })
         
     return render(request, 'production/dashboard.html', {
@@ -95,10 +134,15 @@ def dashboard(request):
         'outstanding_total': outstanding_total, 'pending_transfers': pending_transfers,
         'balance_maize': balance_maize, 'balance_wheat': balance_wheat,
         'powder_maize': powder_maize, 'powder_wheat': powder_wheat,
+        'sacks_hand_maize': sacks_hand_maize if user.is_production_officer else 0,
+        'sacks_hand_wheat': sacks_hand_wheat if user.is_production_officer else 0,
+        'sacks_transit_maize': sacks_transit_maize if user.is_production_officer else 0,
+        'sacks_transit_wheat': sacks_transit_wheat if user.is_production_officer else 0,
         'today_milled_bags': today_milled_bags,
         'today_packaged_sacks': today_packaged_sacks,
         'all_user_stats': all_user_stats if not user.is_production_officer else None,
         'today_activities': today_activities,
+        'unissued_count': unissued_count,
     })
 
 
@@ -116,7 +160,8 @@ def record_milling(request):
             material_type = request.POST.get('material_type')
             machine = request.POST.get('machine', '').strip()
             bags_milled_new = int(request.POST.get('bags_milled_new', 0))
-            outstanding_bags_milled = int(request.POST.get('outstanding_bags_milled', 0))
+            # Outstanding bags field removed from UI, defaulting to 0
+            outstanding_bags_milled = 0
             bulk_powder_kg = float(request.POST.get('bulk_powder_kg') or 0.0)
             notes = request.POST.get('notes', '').strip()
 
@@ -201,25 +246,10 @@ def record_packaging(request):
                     )
                     batch.save()
 
-                    # ── AUTO-CREATE PENDING FG RECEIPT (ledger-based handshake) ──
-                    from finished_store.models import FinishedGoodsReceipt
-                    fg_receipt = FinishedGoodsReceipt.objects.create(
-                        date=date_val,
-                        packaging_ref=f'Packaging Batch #{batch.pk}',
-                        material_type=material_type,
-                        product_size='10kg',
-                        qty_received=qty_10kg,
-                        submitted_by=user,
-                        status='pending',
-                        notes=notes,
-                        is_locked=True,
-                    )
-                    # ─────────────────────────────────────────────────────────
-
                     log_action(request, user, 'production', 'RECORD_PACKAGING',
-                               f'Packaging: Used {powder_used_kg}kg | {qty_10kg} sacks → FG Receipt #{fg_receipt.pk} pending',
+                               f'Packaging: Used {powder_used_kg}kg | {qty_10kg} sacks | Pending manual issuance',
                                'PackagingBatch', batch.pk)
-                    messages.success(request, f'Packaging Batch #{batch.pk} saved. {qty_10kg} sacks submitted to FG Store for acknowledgment.')
+                    messages.success(request, f'Packaging Batch #{batch.pk} saved. Please remember to Issue to Store when ready.')
                     return redirect('production:list')
         except Exception as e:
             error = f'Error: {str(e)}'
@@ -227,6 +257,76 @@ def record_packaging(request):
     return render(request, 'production/record_packaging.html', {
         'current_user': user, 'powder_maize': powder_maize, 'powder_wheat': powder_wheat,
         'error': error, 'today': datetime.date.today().isoformat(),
+    })
+
+
+@role_required('production_officer')
+def issue_to_store(request):
+    user = get_current_user(request)
+    material_type = request.GET.get('material', 'maize')
+    
+    # Calculate current balances for both materials
+    hand_maize = get_sacks_in_hand(user, 'maize')
+    hand_wheat = get_sacks_in_hand(user, 'wheat')
+    current_hand = hand_maize if material_type == 'maize' else hand_wheat
+    
+    if request.method == 'POST':
+        try:
+            material_type = request.POST.get('material_type')
+            qty_to_issue = int(request.POST.get('qty_to_issue', 0))
+            notes = request.POST.get('notes', '').strip()
+            
+            # Recalculate based on POST material
+            current_hand = get_sacks_in_hand(user, material_type)
+            
+            if qty_to_issue <= 0:
+                messages.error(request, 'Quantity must be at least 1 sack.')
+            elif qty_to_issue > current_hand:
+                messages.error(request, f'Insufficient sacks. You only have {current_hand} sacks in hand for {material_type}.')
+            else:
+                # FIFO Allocation across batches to maintain model integrity
+                remaining_to_allocate = qty_to_issue
+                
+                # Get batches with unissued qty for this material
+                # We need to filter manually or with annotation because of the property
+                batches = PackagingBatch.objects.filter(production_officer=user, material_type=material_type).order_by('date', 'created_at')
+                
+                for batch in batches:
+                    if remaining_to_allocate <= 0:
+                        break
+                    
+                    batch_remaining = batch.get_qty_remaining
+                    if batch_remaining > 0:
+                        take_from_this_batch = min(remaining_to_allocate, batch_remaining)
+                        
+                        from finished_store.models import FinishedGoodsReceipt
+                        FinishedGoodsReceipt.objects.create(
+                            date=datetime.date.today(),
+                            packaging_batch=batch,
+                            packaging_ref=f"Sack Handover (Total Balance)",
+                            product_size='10kg',
+                            material_type=material_type,
+                            qty_received=take_from_this_batch,
+                            submitted_by=user,
+                            status='pending',
+                            notes=f"Total Balance Issuance. Handed over {take_from_this_batch} from Batch #{batch.pk}. {notes}"
+                        )
+                        remaining_to_allocate -= take_from_this_batch
+                
+                log_action(request, user, 'production', 'ISSUE_PACKAGING',
+                           f'Issued {qty_to_issue} sacks of {material_type} to FG Store (Total Balance)',
+                           'Account', user.pk)
+                
+                messages.success(request, f'Successfully issued {qty_to_issue} sacks of {material_type} to store. Status: Pending acknowledgement.')
+                return redirect('production:dashboard')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+            
+    return render(request, 'production/issue_packaging.html', {
+        'material_type': material_type,
+        'hand_maize': hand_maize,
+        'hand_wheat': hand_wheat,
+        'current_hand': current_hand,
     })
 
 
@@ -240,7 +340,7 @@ def list_batches(request):
 
     if user.is_production_officer:
         milling_batches = MillingBatch.objects.filter(production_officer=user).order_by('-date', '-created_at')
-        packaging_batches = PackagingBatch.objects.filter(production_officer=user).order_by('-date', '-created_at')
+        packaging_batches = [] # Removed per-batch packaging list
     else:
         milling_batches = MillingBatch.objects.all().order_by('-date', '-created_at')
         packaging_batches = PackagingBatch.objects.all().order_by('-date', '-created_at')

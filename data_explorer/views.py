@@ -203,9 +203,11 @@ def explore_delete(request, model_name, pk):
 
     if request.method == 'POST':
         try:
+            # MD wants global deletion including history/audit trail
+            AuditLog.objects.filter(object_type=model_name, object_id=str(pk)).delete()
             instance.delete()
             log_action(request, user, 'data_explorer', 'GOD_MODE_DELETE',
-                       f'PERMANENTLY DELETED {model_name} #{pk}', model_name, pk)
+                       f'PERMANENTLY DELETED {model_name} #{pk} (and its audit history)', model_name, pk)
             messages.success(request, f'Record #{pk} permanently deleted from {model_name}.')
         except (ProtectedError, IntegrityError) as e:
             messages.error(request, f"Cannot delete record #{pk} because it is referenced by other data. "
@@ -233,6 +235,8 @@ def explore_bulk_delete(request, model_name):
         for pk in selected_ids:
             try:
                 instance = Model.objects.get(pk=pk)
+                # MD wants global deletion including history/audit trail
+                AuditLog.objects.filter(object_type=model_name, object_id=str(pk)).delete()
                 instance.delete()
                 success_count += 1
             except Model.DoesNotExist:

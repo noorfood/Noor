@@ -909,6 +909,7 @@ def confirm_sm_payment(request, payment_id):
                 f'Payment of ₦{payment.total:,.0f} from {payment.sales_manager.full_name} confirmed. '
                 f'Their outstanding balance has been updated.'
             )
+            return redirect('sales:list_sm_payments')
 
         elif action == 'reject':
             payment.status = 'rejected'
@@ -923,6 +924,7 @@ def confirm_sm_payment(request, payment_id):
                 request,
                 f'Payment #{payment.pk} rejected. SM will need to re-record.'
             )
+            return redirect('sales:list_sm_payments')
 
     return render(request, 'sales/confirm_sm_payment.html', {
         'current_user': user,

@@ -21,7 +21,7 @@
 </div>
 {% endif %}
 
-<div class="layout-grid" style="grid-template-columns: 1fr 340px; gap: 2.5rem;">
+<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
     <div class="main-form">
         <div class="card" style="padding: 2.5rem;">
             <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 2rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
@@ -30,7 +30,7 @@
             
             <form method="post">
                 {% csrf_token %}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
                         <label class="form-label" for="date">Collection Date</label>
                         <input type="date" name="date" id="date" value="{{ today }}" required class="form-input">
@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
                         <label class="form-label" for="material_type">Material Category</label>
                         <select name="material_type" id="material_type" required class="form-input">

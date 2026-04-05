@@ -26,7 +26,7 @@
     </div>
 </div>
 
-<div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2.5rem;">
+<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
     <div class="card" style="padding: 2rem;">
         <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
             Issuance Parameters
@@ -34,7 +34,7 @@
         
         <form method="post">
             {% csrf_token %}
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="date">Issuance Date</label>
                     <input type="date" id="date" name="date" value="{{ today }}" class="form-input" required>
@@ -48,7 +48,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="material_type">Material Category</label>
                     <select id="material_type" name="material_type" class="form-input" required>
@@ -63,7 +63,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="buyer_name">Recipient Identity</label>
                     <input type="text" id="buyer_name" name="buyer_name" placeholder="Name of recipient" class="form-input" required>
@@ -86,7 +86,7 @@
 
             <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--slate-100);">
                 <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.8rem 2rem;">
-                    Initiate Handover Record
+                    Send Record
                 </button>
                 <a href="{% url 'finished_store:list' %}" class="btn-modern" style="padding: 0.8rem 2rem; background: var(--slate-100); color: var(--slate-600);">
                     Cancel

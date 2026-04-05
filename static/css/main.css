@@ -45,6 +45,54 @@ body {
     min-height: 100vh;
 }
 
+/* ===== SPECTATE BANNER ===== */
+.spectate-banner {
+    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-weight: 700;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    font-size: 13px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.spectate-exit {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    transition: background 0.2s;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+.spectate-exit:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Adjustments when spectating */
+body.is-spectating .topbar {
+    top: 48px;
+}
+body.is-spectating .sidenav {
+    top: 96px; /* 48px banner + 48px topbar */
+}
+body.is-spectating .layout {
+    margin-top: 96px;
+}
+body.is-spectating .mobile-overlay {
+    top: 96px;
+}
+
 /* ===== TOP BAR ===== */
 .topbar {
     position: fixed;

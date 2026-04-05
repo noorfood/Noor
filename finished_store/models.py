@@ -29,6 +29,7 @@ class FinishedGoodsReceipt(models.Model):
     # Ledger reference: human-readable link back to the packaging batch ID (no FK)
     packaging_ref = models.CharField(max_length=50, blank=True,
                                      help_text='Display ref e.g. "Packaging Batch #7"')
+    packaging_batch = models.ForeignKey('production.PackagingBatch', on_delete=models.SET_NULL, null=True, blank=True, related_name='fg_receipts')
     product_size = models.CharField(max_length=5, choices=PRODUCT_SIZE_CHOICES)
     material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES, default='maize')
     qty_received = models.PositiveIntegerField()
