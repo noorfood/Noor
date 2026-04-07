@@ -1,0 +1,42 @@
+<div class="quick-ranges-wrapper" style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+    <div class="quick-ranges" style="display: flex; gap: 0.5rem; align-items: center; padding: 0.4rem 0.75rem; background: #fff; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); width: fit-content;">
+        <span style="font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 0.25rem;">Quick View:</span>
+        <button type="button" class="btn-toggle-lux" onclick="setFilterDates('week')">Week</button>
+        <button type="button" class="btn-toggle-lux" onclick="setFilterDates('month')">Month</button>
+        <button type="button" class="btn-toggle-lux" onclick="setFilterDates('year')">Year</button>
+        <button type="button" class="btn-toggle-lux btn-toggle-all" onclick="setFilterDates('all')">All Time</button>
+    </div>
+</div>
+
+<style>
+    .btn-toggle-lux {
+        background: transparent;
+        border: 1px solid transparent;
+        color: #475569;
+        padding: 4px 10px;
+        border-radius: 7px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-toggle-lux:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+        transform: translateY(-1px);
+    }
+    .btn-toggle-lux:active {
+        transform: translateY(0);
+        background: #e2e8f0;
+    }
+    .btn-toggle-all {
+        background: #f8fafc;
+        border-color: #f1f5f9;
+        color: #94a3b8;
+    }
+    .btn-toggle-all:hover {
+        background: #f1f5f9;
+        color: #64748b;
+        border-color: #e2e8f0;
+    }
+</style>

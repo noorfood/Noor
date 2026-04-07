@@ -45,7 +45,7 @@
   .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
   .btn-secondary:hover { color: #1e293b; }
 
-  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; }
+  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
   .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
   .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
 
@@ -94,20 +94,29 @@
       <div class="form-row-3">
         <div class="form-group">
           <label class="form-label">Material Type</label>
-          <select name="material_type" required class="form-control">
+          <select name="material_type" id="material_type" required class="form-control" onchange="calcTotal()">
             {% for val, label in material_choices %}
             <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">Product Size</label>
+          <select name="product_size" id="product_size" required class="form-control" onchange="calcTotal()">
+            <option value="10kg" selected>10kg Sack</option>
+            <option value="1kg">1kg Piece</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-label">Quantity</label>
           <input type="number" name="qty_sold" id="qty_sold" class="form-control" style="font-family: monospace;" min="1" placeholder="0" required oninput="calcTotal()">
         </div>
-        <div class="form-group">
-          <label class="form-label">Unit Price (₦)</label>
-          <input type="number" step="0.01" name="unit_price" id="unit_price" class="form-control" style="font-family: monospace;" placeholder="0.00" required oninput="calcTotal()">
-        </div>
+      </div>
+      
+      <!-- Auto-calculated unit price display (Read-Only) -->
+      <div style="margin-bottom: 1.5rem; text-align: right;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Official System Price: </span>
+        <span id="display_unit_price" style="font-size: 1.1rem; font-weight: 800; color: #4f46e5; font-family: monospace;">₦0.00</span> <small>per unit</small>
       </div>
       
       <div class="calc-box">
@@ -156,56 +165,106 @@
     </form>
   </div>
 
-  <div class="sidebar-card">
-    <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
-    
-    <div class="info-item">
-      <div class="info-icon">⚖️</div>
-      <div><strong>Reconciliation Queue:</strong> This sale will enter a 'pending' state and will not impact central financial ledgers until approved.</div>
-    </div>
-    
-    <div class="info-item">
-      <div class="info-icon">👨‍💼</div>
-      <div><strong>Internal Audit:</strong> The MD acts as the final gatekeeper for factory-gate sales to ensure pricing rules are followed.</div>
-    </div>
-    
-    <div class="info-item">
-      <div class="info-icon">🧾</div>
-      <div><strong>Automated Invoicing:</strong> A receipt can be generated from the Direct Sales Registry once this is submitted.</div>
+  <div>
+    <div class="sidebar-card" style="background: #f0fdf4; border-color: #bbf7d0;">
+      <h3 class="card-title" style="color: #15803d; border-color: #dcfce7; margin-bottom: 1rem;">📦 Current Inventory</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div style="background: white; padding: 0.75rem; border-radius: 10px; border: 1px solid #dcfce7;">
+          <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;">MAIZE</div>
+          <div style="font-size: 1.25rem; font-weight: 900; color: #15803d;">{{ holding_maize|floatformat:0 }}<span style="font-size:0.65rem; color:#166534">scks</span></div>
+          {% if pieces_maize > 0 %}
+          <div style="font-size: 0.85rem; font-weight: 800; color: #166534; font-family: monospace; border-top:1px dashed #dcfce7; padding-top:4px; margin-top:4px;">{{ pieces_maize }}<span style="font-size:0.6rem;"> pcs (1kg)</span></div>
+          {% endif %}
+        </div>
+        <div style="background: white; padding: 0.75rem; border-radius: 10px; border: 1px solid #dcfce7;">
+          <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;">WHEAT</div>
+          <div style="font-size: 1.25rem; font-weight: 900; color: #15803d;">{{ holding_wheat|floatformat:0 }}<span style="font-size:0.65rem; color:#166534">scks</span></div>
+          {% if pieces_wheat > 0 %}
+          <div style="font-size: 0.85rem; font-weight: 800; color: #166534; font-family: monospace; border-top:1px dashed #dcfce7; padding-top:4px; margin-top:4px;">{{ pieces_wheat }}<span style="font-size:0.6rem;"> pcs (1kg)</span></div>
+          {% endif %}
+        </div>
+      </div>
+      <p style="font-size: 0.7rem; color: #166534; margin-top: 0.75rem; font-style: italic;">Stock available in factory-gate pool.</p>
     </div>
 
-    <div style="background: #eef2ff; color: #4338ca; padding: 1.25rem; border-radius: 12px; font-size: 0.9rem; margin-top: 2rem; border: 1px solid #c7d2fe;">
-      💡 <strong>Did You Know:</strong> Any transaction with partial payment will be flagged 'incomplete' even after MD approval, until the debt is cleared.
+    <div class="sidebar-card">
+      <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
+      
+      <div class="info-item">
+        <div class="info-icon">⚖️</div>
+        <div><strong>Reconciliation Queue:</strong> This sale will enter a 'pending' state and will not impact central financial ledgers until approved.</div>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-icon">👨‍💼</div>
+        <div><strong>Internal Audit:</strong> The MD acts as the final gatekeeper for factory-gate sales to ensure pricing rules are followed.</div>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-icon">🧾</div>
+        <div><strong>Automated Invoicing:</strong> A receipt can be generated from the Direct Sales Registry once this is submitted.</div>
+      </div>
+
+      <div style="background: #eef2ff; color: #4338ca; padding: 1.25rem; border-radius: 12px; font-size: 0.9rem; margin-top: 2rem; border: 1px solid #c7d2fe;">
+        💡 <strong>Did You Know:</strong> Any transaction with partial payment will be flagged 'incomplete' even after MD approval, until the debt is cleared.
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  function formatMoney(n) {
-    return Number(n).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  // Dynamic prices injected from the backend PriceConfig
+  const PRICE_MAP = {{ price_map_json|safe }};
+
+  function formatMoney(num) {
+    if(!num || isNaN(num)) return "0.00";
+    return Number(num).toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
   }
-  
+
   function calcTotal() {
+    const mat = document.getElementById('material_type').value;
+    const size = document.getElementById('product_size').value;
     const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
-    const price = parseFloat(document.getElementById('unit_price').value) || 0;
-    const total = qty * price;
-    document.getElementById('total_value').innerText = formatMoney(total);
+    
+    // Look up the official unit price
+    const unitPrice = PRICE_MAP[mat + "_" + size] || 0;
+    
+    // Update unit price display
+    document.getElementById('display_unit_price').textContent = '₦' + formatMoney(unitPrice);
+    
+    // Calculate and update total expected value
+    const total = qty * unitPrice;
+    document.getElementById('total_value').textContent = formatMoney(total);
     calcOut();
   }
-  
+
   function calcOut() {
+    const mat = document.getElementById('material_type').value;
+    const size = document.getElementById('product_size').value;
     const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
-    const price = parseFloat(document.getElementById('unit_price').value) || 0;
-    const totalSale = qty * price;
+    const unitPrice = PRICE_MAP[mat + "_" + size] || 0;
+    
+    const totalVal = qty * unitPrice;
     
     const cash = parseFloat(document.getElementById('amount_cash').value) || 0;
     const trans = parseFloat(document.getElementById('amount_transfer').value) || 0;
-    const totalPaid = cash + trans;
+    const paid = cash + trans;
     
-    const out = Math.max(0, totalSale - totalPaid);
+    document.getElementById('total_paid').textContent = '₦' + formatMoney(paid);
     
-    document.getElementById('total_paid').innerText = '₦' + formatMoney(totalPaid);
-    document.getElementById('outstanding').innerText = '₦' + formatMoney(out);
+    const diff = totalVal - paid;
+    if(diff > 0) {
+      document.getElementById('outstanding').textContent = '₦' + formatMoney(diff);
+      document.getElementById('outstanding').style.color = '#ef4444'; // Red
+    } else {
+      document.getElementById('outstanding').textContent = '₦0.00';
+      document.getElementById('outstanding').style.color = '#10b981'; // Green
+    }
   }
+
+  // Initialize display on load
+  window.onload = function() {
+      calcTotal();
+  };
 </script>
 {% endblock %}

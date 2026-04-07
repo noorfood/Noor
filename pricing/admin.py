@@ -1,9 +1,14 @@
 from django.contrib import admin
-from .models import PriceConfig, CommissionConfig, SalesTarget, PackagingCostConfig, OperationalExpense
+from .models import PriceConfig, CommissionConfig, SalesTarget, PackagingCostConfig, CleaningCostConfig, OperationalExpense
 
 @admin.register(PackagingCostConfig)
 class PackagingCostConfigAdmin(admin.ModelAdmin):
-    list_display = ('material_type', 'cost_per_sack', 'effective_from', 'created_by')
+    list_display = ('cost_per_sack', 'nylon_cost_per_piece', 'effective_from', 'created_by')
+    list_filter = ('effective_from',)
+
+@admin.register(CleaningCostConfig)
+class CleaningCostConfigAdmin(admin.ModelAdmin):
+    list_display = ('material_type', 'cleaning_cost_per_bag', 'effective_from', 'created_by')
     list_filter = ('material_type', 'effective_from')
 
 @admin.register(OperationalExpense)

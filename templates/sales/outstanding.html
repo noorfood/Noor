@@ -2,7 +2,7 @@
 {% block title %}Outstanding Balances — Noor Foods{% endblock %}
 {% block nav_sl_out %}active{% endblock %}
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); margin-bottom: 3rem;">
+<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
             <span class="hero-badge" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">📊 Financial Accountability</span>
@@ -20,6 +20,22 @@
             <div style="font-size:1rem; font-weight:800; color:#fff; margin-top:0.25rem;">Market Risk: ACTIVE</div>
         </div>
     </div>
+</div>
+
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Liability Period: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
 </div>
 
 <div class="action-bar-modern" style="margin-bottom: 2rem;">
@@ -98,7 +114,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="9" style="text-align:center; padding:3rem; color:var(--slate-400);">No active Sales Managers found.</td></tr>
+            <tr><td colspan="9" style="text-align:center; padding:3rem; color:var(--slate-400);">No entries for this period.</td></tr>
             {% endfor %}
         </tbody>
     </table>

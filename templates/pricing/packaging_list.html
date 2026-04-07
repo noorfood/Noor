@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Constant Material Costs — Noor Foods{% endblock %}
+{% block nav_pr_pricing %}active{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
+    <div>
+        <span class="hero-badge">📦 Operational Costs</span>
+        <h1 class="hero-title">Constant Material Costs</h1>
+        <p class="hero-subtitle">MD configuration for fixed per-unit costs of packaging materials and cleaning fees. These are used for automated accounting.</p>
+    </div>
+</div>
+
+<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
+        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
+        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
+        <a href="{% url 'pricing:expenses' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Daily Expenses</a>
+        <a href="{% url 'pricing:packaging_costs' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Constant Material Costs</a>
+    </div>
+</div>
+
+<div style="margin-top: 2.5rem;">
+    <!-- Global Packaging Costs section -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">📦 Global Packaging Costs</h4>
+        <a href="{% url 'pricing:new_packaging_cost' %}" class="btn-modern btn-modern-primary">+ Update Packaging</a>
+    </div>
+    
+    <div class="table-wrapper" style="margin-bottom: 3rem;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="text-align: right;">Empty Sack (₦)</th>
+                    <th style="text-align: right;">Nylon Piece (₦)</th>
+                    <th>Effective From</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in costs %}
+                <tr>
+                    <td style="text-align: right; font-weight: 700; color: var(--navy);">₦{{ c.cost_per_sack|floatformat:2 }}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--indigo);">₦{{ c.nylon_cost_per_piece|floatformat:2 }}</td>
+                    <td style="font-weight:700; color:var(--slate-600);">{{ c.effective_from|date:"M d, Y" }}</td>
+                    <td>
+                        <div style="font-size:0.85rem; color:var(--slate-700);">{{ c.created_by.full_name }}</div>
+                        <div style="font-size:0.7rem; color:var(--slate-500);">Added {{ c.created_at|date:"M d, Y" }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:3rem; color:var(--slate-400);">No global packaging costs configured. <a href="{% url 'pricing:new_packaging_cost' %}" style="color:var(--indigo); font-weight:700;">Set initial costs</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Material Specific Cleaning section -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">🧹 Material Cleaning Fees</h4>
+        <a href="{% url 'pricing:new_cleaning_cost' %}" class="btn-modern btn-modern-primary">+ Update Cleaning</a>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Material Type</th>
+                    <th style="text-align: right;">Cleaning / Raw Bag (₦)</th>
+                    <th>Effective From</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cleaning_costs %}
+                <tr>
+                    <td><strong style="color:var(--slate-800);">{{ c.get_material_type_display|upper }}</strong></td>
+                    <td style="text-align: right; font-weight: 700; color: var(--rose-600);">₦{{ c.cleaning_cost_per_bag|floatformat:2 }}</td>
+                    <td style="font-weight:700; color:var(--slate-600);">{{ c.effective_from|date:"M d, Y" }}</td>
+                    <td>
+                        <div style="font-size:0.85rem; color:var(--slate-700);">{{ c.created_by.full_name }}</div>
+                        <div style="font-size:0.7rem; color:var(--slate-500);">Added {{ c.created_at|date:"M d, Y" }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:3rem; color:var(--slate-400);">No cleaning fees configured. <a href="{% url 'pricing:new_cleaning_cost' %}" style="color:var(--indigo); font-weight:700;">Set cleaning fees</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+        <h5 style="margin: 0 0 0.75rem 0; color: #1e293b; font-weight: 800;">💡 How this works</h5>
+        <ul style="font-size: 0.85rem; color: #475569; margin: 0; padding-left: 1.25rem; line-height: 1.6;">
+            <li><strong>Empty Sack:</strong> Recorded as an expense for every 10kg sack packaged.</li>
+            <li><strong>Nylon Piece:</strong> Recorded as 10 units of expense for every 10kg sack packaged (assuming 10kg sack holds 10 smaller units if applicable, or just per nylon used).</li>
+            <li><strong>Cleaning Fee:</strong> Recorded as an expense for every 100kg bag of raw material issued to cleaners.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

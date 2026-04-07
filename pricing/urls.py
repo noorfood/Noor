@@ -16,4 +16,8 @@ urlpatterns = [
     # Operational expenses
     path('expenses/', views.list_expenses, name='expenses'),
     path('expenses/new/', views.new_expense, name='new_expense'),
+    # Packaging & Material Costs (Constant Expenses)
+    path('packaging/', views.list_packaging_costs, name='packaging_costs'),
+    path('packaging/new-global/', views.new_packaging_cost, name='new_packaging_cost'),
+    path('packaging/new-cleaning/', views.new_cleaning_cost, name='new_cleaning_cost'),
 ]

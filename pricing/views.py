@@ -269,3 +269,98 @@ def new_expense(request):
         'today': datetime.date.today().isoformat(),
     })
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PACKAGING & MATERIAL COSTS (CONSTANT EXPENSES)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('md')
+def list_packaging_costs(request):
+    user = get_current_user(request)
+    from pricing.models import PackagingCostConfig, CleaningCostConfig
+    packaging_costs = PackagingCostConfig.objects.all().order_by('-effective_from')
+    cleaning_costs = CleaningCostConfig.objects.all().order_by('-effective_from', 'material_type')
+    return render(request, 'pricing/packaging_list.html', {
+        'current_user': user,
+        'costs': packaging_costs,
+        'cleaning_costs': cleaning_costs,
+    })
+
+
+@role_required('md')
+def new_packaging_cost(request):
+    user = get_current_user(request)
+    from pricing.models import PackagingCostConfig
+    error = None
+
+    if request.method == 'POST':
+        try:
+            cost_per_sack = float(request.POST.get('cost_per_sack', 0))
+            nylon_cost_per_piece = float(request.POST.get('nylon_cost_per_piece', 0))
+            effective_from = request.POST.get('effective_from')
+            notes = request.POST.get('notes', '').strip()
+
+            if not effective_from:
+                error = 'Effective date is required.'
+            else:
+                cost = PackagingCostConfig.objects.create(
+                    cost_per_sack=cost_per_sack,
+                    nylon_cost_per_piece=nylon_cost_per_piece,
+                    effective_from=effective_from,
+                    created_by=user,
+                    notes=notes,
+                )
+                log_action(request, user, 'pricing', 'SET_PACKAGING_COST',
+                           f'Set Packaging Costs (Global): Sack=₦{cost_per_sack}, Nylon=₦{nylon_cost_per_piece}',
+                           'PackagingCostConfig', cost.pk)
+                messages.success(request, f'Global packaging costs updated from {effective_from}.')
+                return redirect('pricing:packaging_costs')
+        except Exception as e:
+            error = f'Error: {str(e)}'
+
+    return render(request, 'pricing/new_packaging_cost.html', {
+        'current_user': user,
+        'error': error,
+        'today': datetime.date.today().isoformat(),
+    })
+
+
+@role_required('md')
+def new_cleaning_cost(request):
+    user = get_current_user(request)
+    from pricing.models import CleaningCostConfig
+    from procurement.models import MATERIAL_CHOICES
+    error = None
+
+    if request.method == 'POST':
+        try:
+            material_type = request.POST.get('material_type')
+            cleaning_cost_per_bag = float(request.POST.get('cleaning_cost_per_bag', 0))
+            effective_from = request.POST.get('effective_from')
+            notes = request.POST.get('notes', '').strip()
+
+            if not material_type or not effective_from:
+                error = 'Material type and effective date are required.'
+            else:
+                cost = CleaningCostConfig.objects.create(
+                    material_type=material_type,
+                    cleaning_cost_per_bag=cleaning_cost_per_bag,
+                    effective_from=effective_from,
+                    created_by=user,
+                    notes=notes,
+                )
+                log_action(request, user, 'pricing', 'SET_CLEANING_COST',
+                           f'Set Cleaning Cost for {material_type}: ₦{cleaning_cost_per_bag}',
+                           'CleaningCostConfig', cost.pk)
+                messages.success(request, f'Cleaning fee updated for {material_type.title()} from {effective_from}.')
+                return redirect('pricing:packaging_costs')
+        except Exception as e:
+            error = f'Error: {str(e)}'
+
+    return render(request, 'pricing/new_cleaning_cost.html', {
+        'current_user': user,
+        'error': error,
+        'material_choices': MATERIAL_CHOICES,
+        'today': datetime.date.today().isoformat(),
+    })
+

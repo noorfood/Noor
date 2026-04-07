@@ -52,6 +52,23 @@
     <div>
       <span class="hero-label">⚙️ Factory Operations</span>
       <h1 class="hero-title">Production Records</h1>
+      
+      {# Quick Period Toggles #}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+          <form method="get" id="dateFilterForm" style="display: none;">
+              <input type="date" name="date_from" value="{{ f_from }}">
+              <input type="date" name="date_to" value="{{ f_to }}">
+          </form>
+          <div>
+              {% if f_from or f_to %}
+              <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+                  Production Log: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+              </span>
+              {% endif %}
+          </div>
+          {% include 'partials/date_toggles.html' %}
+      </div>
+      
       <p class="hero-sub">History of all grinding (milling) and bagging (packaging) work. Red or Yellow rows mean there was too much waste.</p>
     </div>
     {% if current_user.is_production_officer %}

@@ -136,12 +136,7 @@
 
                 {% if role == 'sales_manager' or role == 'md' %}
                 <a href="{% url 'reconciliation:list' %}" class="nav-link {% block nav_rc_md %}{% endblock %}">⚖️ Money & Stock Checking</a>
-                {% if role != 'md' %}
-                <a href="{% url 'reconciliation:flags' %}" class="nav-link">🚩 Mistakes & Mismatches</a>
                 {% endif %}
-                {% endif %}
-
-
             </div>
             {% endif %}
 
@@ -169,7 +164,7 @@
                 {% if role == 'store_officer' and store_type == 'finished' or role == 'md' %}
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Finished Bag Store</div>
                 {% if role == 'store_officer' and store_type == 'finished' %}
-                <a href="{% url 'finished_store:create_sm_collection' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Give to Sales Manager</a>   
+                <a href="{% url 'finished_store:collect_for_sm' %}" class="nav-link {% block nav_fg_sm_coll %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📦 Give to Sales Manager</a>   
                 {% endif %}
                 {% if role == 'store_officer' and store_type == 'finished' %}
                 <a href="{% url 'finished_store:issue' %}" class="nav-link {% block nav_fg_issue %}{% endblock %}" style="font-weight:600; color:#f5f7f8;">📦 Direct Company Sale</a>   
@@ -200,11 +195,17 @@
 
                 {% if role == 'manager' or role == 'md' %}
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:8px 0 4px 12px; letter-spacing:0.5px;">Direct Sales</div>
-                {% if role == 'manager' %}
-                <a href="{% url 'sales:record_company_sale' %}" class="nav-link {% block nav_gm_company_sale %}{% endblock %}">🛒 Company Direct Sale</a>
-                <a href="{% url 'sales:record_bran_sale' %}" class="nav-link {% block nav_gm_bran %}{% endblock %}">🌾 Record Bran Sale</a>
+                {% if role == 'manager' or role == 'md' %}
+                <a href="{% url 'sales:record_direct_sale' %}" class="nav-link {% block nav_gm_direct_sale %}{% endblock %}" style="font-weight:600; color:#10b981;">🧾 Record Direct Sale</a>
+                <a href="{% url 'sales:record_bran_sale' %}" class="nav-link {% block nav_gm_bran %}{% endblock %} {% block nav_md_bran %}{% endblock %}">🌾 Record Bran Sale</a>
                 {% endif %}
                 <a href="{% url 'sales:list_direct_sales' %}" class="nav-link {% block nav_gm_direct_list %}{% endblock %} {% block nav_md_direct_sales %}{% endblock %}" style="font-weight:600; color:#0ea5e9;">📋 Direct Sales Registry</a>
+                {% if role == 'manager' %}
+                <a href="{% url 'sales:record_gm_remittance' %}" class="nav-link {% block nav_gm_remit %}{% endblock %}" style="font-weight:700; color:#f59e0b;">💸 Send Money to Company</a>
+                {% endif %}
+                {% if role == 'md' %}
+                <a href="{% url 'sales:list_gm_remittances' %}" class="nav-link {% block nav_md_gm_remit %}{% endblock %}" style="font-weight:700; color:#f59e0b;">💰 Confirm GM Remittance</a>
+                {% endif %}
 
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Collections & Payments</div>
                 <a href="{% url 'sales:list_sm_payments' %}" class="nav-link {% block nav_gm_pay_confirm %}{% endblock %}" style="color:#f59e0b;font-weight:600;">✅ Confirm SM Payments</a>
@@ -220,9 +221,9 @@
                 {% if role == 'md' %}
                 <a href="{% url 'reports:financial_summary' %}" class="nav-link {% block nav_md_finance %}{% endblock %}" style="font-weight:700; color:#dcd2f1;">💰 Financial Summary</a>
                 <a href="/reports/md-insights/" class="nav-link {% block nav_md_insights %}{% endblock %}">📊 MD Strategic Insights</a>
-                <a href="/reports/md-ledger/" class="nav-link {% block nav_md_ledger %}{% endblock %}" style="font-weight:700; color:#eef0f3;">📖 MD Ledger Book</a>
                 <a href="/reports/sales/" class="nav-link {% block nav_rp_sales %}{% endblock %}">Sales Ledger Registry</a>
                 {% endif %}
+                <a href="/reports/md-ledger/" class="nav-link {% block nav_md_ledger %}{% endblock %}" style="font-weight:700; color:#eef0f3;">📖 {% if role == 'md' %}MD Ledger Book{% else %}Staff Activity Ledger{% endif %}</a>
                 <a href="/reports/flow/" class="nav-link {% block nav_gm_flow %}{% endblock %} {% block nav_md_flow_md %}{% endblock %}" style="font-weight:600;">🔗 Live Company Flow</a>
                 <a href="/reports/store/" class="nav-link {% block nav_gm_rp_store %}{% endblock %} {% block nav_rp_store_md %}{% endblock %}">Store Status</a>
                 <a href="/reports/production/" class="nav-link {% block nav_gm_rp_prod %}{% endblock %} {% block nav_rp_prod_md %}{% endblock %}">Manufacturing Intelligence</a>
@@ -356,6 +357,69 @@
                 }
             });
         });
+    </script>
+    <!-- Auto-Dismiss Alerts & Warnings -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.alert, .error-box').forEach(el => {
+                    // Smoothly fade up and out
+                    el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(-10px)';
+                    // Remove from DOM entirely after fade completes
+                    setTimeout(() => el.remove(), 600);
+                });
+            }, 6000); // Wait 6 seconds before dismissing
+        });
+
+        // Global Date Filter Helper - Standardized for Intelligence Window
+        function setFilterDates(range) {
+            // Priority 1: Check for a form with a 'range' input (New Standard)
+            const rangeInput = document.querySelector('[name="range"]');
+            if (rangeInput) {
+                rangeInput.value = range;
+                rangeInput.closest('form').submit();
+                return;
+            }
+
+            // Priority 2: Fallback to manual date calculation for legacy forms
+            const fromInput = document.querySelector('[name="date_from"]');
+            const toInput = document.querySelector('[name="date_to"]');
+            if (!fromInput || !toInput) return;
+
+            const todayObj = new Date();
+            const offset = todayObj.getTimezoneOffset();
+            const localToday = new Date(todayObj.getTime() - (offset * 60 * 1000));
+            const todayStr = localToday.toISOString().split('T')[0];
+            
+            let fromStr = "";
+            let toStr = todayStr;
+
+            if (range === 'week') {
+                const d = new Date(todayObj);
+                const day = d.getDay();
+                const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(d.setDate(diff));
+                const localMonday = new Date(monday.getTime() - (offset * 60 * 1000));
+                fromStr = localMonday.toISOString().split('T')[0];
+            } else if (range === 'month') {
+                const firstDay = new Date(todayObj.getFullYear(), todayObj.getMonth(), 1);
+                const localFirst = new Date(firstDay.getTime() - (offset * 60 * 1000));
+                fromStr = localFirst.toISOString().split('T')[0];
+            } else if (range === 'year') {
+                const startYear = new Date(todayObj.getFullYear(), 0, 1);
+                const localYear = new Date(startYear.getTime() - (offset * 60 * 1000));
+                fromStr = localYear.toISOString().split('T')[0];
+            } else if (range === 'all') {
+                fromStr = "";
+                toStr = "";
+            }
+
+            fromInput.value = fromStr;
+            toInput.value = toStr;
+            fromInput.closest('form').submit();
+        }
     </script>
 </body>
 

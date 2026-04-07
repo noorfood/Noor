@@ -49,61 +49,79 @@ def dashboard(request):
         }
     }
 
+    from sales.models import SalesRecord, DirectSalePayment, SalesManagerCollection, SalesManagerPayment, SalesResult
+    from production.models import BrandSale
+    from finished_store.views import _fg_balance
+    from finished_store.models import FinishedGoodsIssuance
+    from pricing.models import PriceConfig
+
     if user.role == 'md':
-        from sales.models import SalesRecord, DirectSalePayment, SalesManagerCollection, SalesManagerPayment, SalesResult
-        from production.models import BrandSale
-        from finished_store.views import _fg_balance
-        from finished_store.models import FinishedGoodsIssuance
-        from pricing.models import PriceConfig
+        pass
 
-        from django.utils import timezone
+    from django.utils import timezone
+    import datetime
+
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
+    # Default to current month if NO filters at all
+    now = timezone.now()
+    if not f_from and not f_to:
+        f_from = now.replace(day=1).date().isoformat()
+        f_to   = now.date().isoformat()
+    
+    # Parse dates for query use
+    date_from_obj = datetime.date.fromisoformat(f_from) if f_from else None
+    date_to_obj   = datetime.date.fromisoformat(f_to) if f_to else None
+
+    for mat in ['maize', 'wheat']:
+        # 1. Produced (PackagingBatch) - Filtered
+        batch_qs = PackagingBatch.objects.filter(material_type=mat)
+        if date_from_obj: batch_qs = batch_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   batch_qs = batch_qs.filter(date__lte=date_to_obj)
+        md_metrics[mat]['produced'] = batch_qs.aggregate(t=Sum('qty_10kg'))['t'] or 0
+
+        # 2. In Store - Always All-time (Current Balance)
+        md_metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
+
+        # 3. Issued (Accepted FG Issuances) - Filtered
+        iss_qs = FinishedGoodsIssuance.objects.filter(material_type=mat, status='accepted')
+        if date_from_obj: iss_qs = iss_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   iss_qs = iss_qs.filter(date__lte=date_to_obj)
+        md_metrics[mat]['issued'] = iss_qs.aggregate(t=Sum('qty_issued'))['t'] or 0
+
+        # 4. Sold - Filtered
+        sm_res_qs = SalesResult.objects.filter(material_type=mat)
+        if date_from_obj: sm_res_qs = sm_res_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   sm_res_qs = sm_res_qs.filter(date__lte=date_to_obj)
+        sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_res_qs))
         
-        now = timezone.now()
-        cur_month = now.month
-        cur_year = now.year
+        ds_sold_qs = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        if date_from_obj: ds_sold_qs = ds_sold_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   ds_sold_qs = ds_sold_qs.filter(date__lte=date_to_obj)
+        ds_sold = ds_sold_qs.aggregate(t=Sum('qty_sold'))['t'] or 0
+        md_metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
 
-        for mat in ['maize', 'wheat']:
-            # 1. Produced (PackagingBatch) - Monthly
-            md_metrics[mat]['produced'] = PackagingBatch.objects.filter(
-                material_type=mat, date__month=cur_month, date__year=cur_year
-            ).aggregate(t=Sum('qty_10kg'))['t'] or 0
+        # 5. Money Received & Outstanding
+        # Money Received is period-based
+        ds_qs_period = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        if date_from_obj: ds_qs_period = ds_qs_period.filter(date__gte=date_from_obj)
+        if date_to_obj:   ds_qs_period = ds_qs_period.filter(date__lte=date_to_obj)
+        for ds in ds_qs_period:
+            md_metrics[mat]['money_received'] += float(ds.total_received)
 
-            # 2. In Store - All-time
-            md_metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
+        # Outstanding is always All-time (unpaid debt)
+        ds_qs_all = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        for ds in ds_qs_all:
+            md_metrics[mat]['outstanding'] += float(ds.outstanding)
 
-            # 3. Issued (Accepted FG Issuances) - Monthly
-            md_metrics[mat]['issued'] = FinishedGoodsIssuance.objects.filter(
-                material_type=mat, status='accepted', date__month=cur_month, date__year=cur_year
-            ).aggregate(t=Sum('qty_issued'))['t'] or 0
+        # Inventory Value
+        sm_price = PriceConfig.get_active_price('sales_team', mat, '10kg', now.date()) or 0
+        md_metrics[mat]['inventory_value'] = float(md_metrics[mat]['in_store'] * sm_price)
 
-            # 4. Sold - Monthly
-            sm_res_qs = SalesResult.objects.filter(material_type=mat, date__month=cur_month, date__year=cur_year)
-            sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_res_qs))
-            
-            ds_sold = DirectSalePayment.objects.filter(
-                material_type=mat, status='confirmed', date__month=cur_month, date__year=cur_year
-            ).aggregate(t=Sum('qty_sold'))['t'] or 0
-            md_metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
-
-            # 5. Money Received (Monthly) & Outstanding (All-Time) Direct Sales
-            ds_qs_all = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
-            for ds in ds_qs_all:
-                md_metrics[mat]['outstanding'] += float(ds.outstanding)
-                
-            ds_qs_month = ds_qs_all.filter(date__month=cur_month, date__year=cur_year)
-            for ds in ds_qs_month:
-                md_metrics[mat]['money_received'] += float(ds.total_received)
-
-            # Inventory Value - Derived from In Store
-            sm_price = PriceConfig.get_active_price('sales_team', mat, '10kg', now.date()) or 0
-            md_metrics[mat]['inventory_value'] = float(md_metrics[mat]['in_store'] * sm_price)
-
-    # Calculate SM Money dynamically for Maize/Wheat
-    if user.role == 'md':
-        from sales.views import get_sm_money_outstanding
-        
+        # Calculate SM Money dynamically for Maize/Wheat
         for sm in User.objects.filter(role='sales_manager', status='active'):
-            # ALL-TIME for outstanding calculation
+            # ALL-TIME for ratios & outstanding
             m_coll_all = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='maize', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
             w_coll_all = SalesManagerCollection.objects.filter(sales_manager=sm, material_type='wheat', status='accepted').aggregate(t=Sum('total_value'))['t'] or 0
             
@@ -130,14 +148,16 @@ def dashboard(request):
             md_metrics['maize']['outstanding'] += max(0, m_net_owed_all - m_paid_all)
             md_metrics['wheat']['outstanding'] += max(0, w_net_owed_all - w_paid_all)
             
-            # MONTHLY for money_received
-            total_paid_month = SalesManagerPayment.objects.filter(
-                sales_manager=sm, status='confirmed', date__month=cur_month, date__year=cur_year
-            ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
-            total_paid_month = float(total_paid_month)
+            # PERIOD-BASED for money_received
+            sm_pay_qs = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed')
+            if date_from_obj: sm_pay_qs = sm_pay_qs.filter(date__gte=date_from_obj)
+            if date_to_obj:   sm_pay_qs = sm_pay_qs.filter(date__lte=date_to_obj)
             
-            md_metrics['maize']['money_received'] += (total_paid_month * m_ratio)
-            md_metrics['wheat']['money_received'] += (total_paid_month * w_ratio)
+            total_paid_period = sm_pay_qs.aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+            total_paid_period = float(total_paid_period)
+            
+            md_metrics['maize']['money_received'] += (total_paid_period * m_ratio)
+            md_metrics['wheat']['money_received'] += (total_paid_period * w_ratio)
 
     staff_roster = User.objects.filter(status='active').exclude(role='md').order_by('role', 'full_name')
     audit_feed = AuditLog.objects.all().order_by('-timestamp')[:15]
@@ -441,9 +461,16 @@ def sales_report(request):
     wheat_received = (float(sum(r.total_paid for r in sales if r.material_type == 'wheat')) +
                       float(sum(r.amount_returned for r in promoter_sales if r.material_type == 'wheat')) +
                       float(sum(r.total_received for r in direct_sales_confirmed if r.material_type == 'wheat')))
-    
-    maize_outstanding = max(0, maize_value - maize_received)
-    wheat_outstanding = max(0, wheat_value - wheat_received)
+
+    # Commission offsets per material
+    maize_comm = (float(sum(r.commission_amount for r in sales if r.material_type == 'maize')) +
+                  float(sum(r.commission_amount for r in promoter_sales if r.material_type == 'maize')))
+                  
+    wheat_comm = (float(sum(r.commission_amount for r in sales if r.material_type == 'wheat')) +
+                  float(sum(r.commission_amount for r in promoter_sales if r.material_type == 'wheat')))
+
+    maize_outstanding = max(0, (maize_value - maize_comm) - maize_received)
+    wheat_outstanding = max(0, (wheat_value - wheat_comm) - wheat_received)
 
     all_persons = SalesPerson.objects.all().order_by('name')
 
@@ -474,6 +501,12 @@ def sales_report(request):
         'total_net': tn,
         'total_received': tr,
         'total_outstanding': tout,
+        'maize_value': maize_value,
+        'wheat_value': wheat_value,
+        'maize_received': maize_received,
+        'wheat_received': wheat_received,
+        'maize_outstanding': maize_outstanding,
+        'wheat_outstanding': wheat_outstanding,
         'all_persons': all_persons,
         'f_from': f_from, 'f_to': f_to, 'f_person': f_person, 'f_material': f_material,
     })
@@ -541,61 +574,129 @@ def company_flow(request):
     from finished_store.views import _fg_balance
     from procurement.models import RawMaterialReceipt, RawMaterialIssuance
     from accounts.models import User
-    from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding
+    from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding, get_company_goods_holding
     from sales.models import (
         SalesManagerCollection, SalesManagerPayment, SalesRecord,
         CompanyRetailLedger, SalesResult, DirectSalePayment
     )
     from production.models import BrandSale
 
+    # 2. Standardized Intelligence Window
+    from django.utils import timezone
+    from datetime import timedelta
+    range_type = request.GET.get('range', 'month')
+    now = timezone.now()
+    
+    start_date = None
+    end_date = now.date()
+
+    if range_type == 'week':
+        start_date = (now - timedelta(days=now.weekday())).date()
+    elif range_type == 'year':
+        start_date = now.replace(month=1, day=1).date()
+    elif range_type == 'all':
+        start_date = None
+        end_date = None
+    else: # Default: month
+        start_date = now.replace(day=1).date()
+
+    # Manual Overrides
+    f_from = request.GET.get('date_from', '')
+    f_to = request.GET.get('date_to', '')
+    if f_from: 
+        try: start_date = datetime.date.fromisoformat(f_from)
+        except: pass
+    if f_to: 
+        try: end_date = datetime.date.fromisoformat(f_to)
+        except: pass
+
+    # --- Query Helpers ---
+    def _filter_date(qs, date_field='date'):
+        if start_date:
+            lookup = f"{date_field}__gte"
+            qs = qs.filter(**{lookup: start_date})
+        if end_date:
+            lookup = f"{date_field}__lte"
+            qs = qs.filter(**{lookup: end_date})
+        return qs
+
     # Stage 1: Raw Store
-    raw_maize_in  = RawMaterialReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
-    raw_wheat_in  = RawMaterialReceipt.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
-    raw_maize_out = RawMaterialIssuance.objects.filter(material_type='maize').aggregate(t=Sum('num_bags_issued'))['t'] or 0
-    raw_wheat_out = RawMaterialIssuance.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags_issued'))['t'] or 0
-    raw_maize_bal = max(0, raw_maize_in - raw_maize_out)
-    raw_wheat_bal = max(0, raw_wheat_in - raw_wheat_out)
+    raw_maize_in  = _filter_date(RawMaterialReceipt.objects.filter(material_type='maize')).aggregate(t=Sum('num_bags'))['t'] or 0
+    raw_wheat_in  = _filter_date(RawMaterialReceipt.objects.filter(material_type='wheat')).aggregate(t=Sum('num_bags'))['t'] or 0
+    raw_maize_out = _filter_date(RawMaterialIssuance.objects.filter(material_type='maize')).aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    raw_wheat_out = _filter_date(RawMaterialIssuance.objects.filter(material_type='wheat')).aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    
+    # Balance is ALWAYS ALL-TIME
+    def _raw_bal(mat):
+        i = RawMaterialReceipt.objects.filter(material_type=mat).aggregate(t=Sum('num_bags'))['t'] or 0
+        o = RawMaterialIssuance.objects.filter(material_type=mat).aggregate(t=Sum('num_bags_issued'))['t'] or 0
+        return max(0, i - o)
+    raw_maize_bal = _raw_bal('maize')
+    raw_wheat_bal = _raw_bal('wheat')
 
     # Stage 2: Clean Store
-    from cleaning.models import CleanRawReceipt
-    clean_maize_in  = CleanRawReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
-    clean_wheat_in  = CleanRawReceipt.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    clean_maize_in  = _filter_date(CleanRawReceipt.objects.filter(material_type='maize')).aggregate(t=Sum('num_bags'))['t'] or 0
+    clean_wheat_in  = _filter_date(CleanRawReceipt.objects.filter(material_type='wheat')).aggregate(t=Sum('num_bags'))['t'] or 0
     clean_maize_bal = _get_clean_store_balance('maize')
     clean_wheat_bal = _get_clean_store_balance('wheat')
-    clean_maize_out = CleanRawIssuance.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
-    clean_wheat_out = CleanRawIssuance.objects.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    clean_maize_out = _filter_date(CleanRawIssuance.objects.filter(material_type='maize')).aggregate(t=Sum('num_bags'))['t'] or 0
+    clean_wheat_out = _filter_date(CleanRawIssuance.objects.filter(material_type='wheat')).aggregate(t=Sum('num_bags'))['t'] or 0
 
     # Stage 3: Production — split by material
     def _milled(mat):
-        n = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('bags_milled_new'))['t'] or 0
-        o = MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
+        qs = MillingBatch.objects.filter(material_type=mat)
+        qs = _filter_date(qs)
+        n = qs.aggregate(t=Sum('bags_milled_new'))['t'] or 0
+        o = qs.aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
         return n + o
+    
     maize_bags_milled = _milled('maize')
     wheat_bags_milled = _milled('wheat')
-    total_bags_milled_new = MillingBatch.objects.aggregate(t=Sum('bags_milled_new'))['t'] or 0
-    total_bags_milled_old = MillingBatch.objects.aggregate(t=Sum('outstanding_bags_milled'))['t'] or 0
-    total_powder_kg       = float(MillingBatch.objects.aggregate(t=Sum('bulk_powder_kg'))['t'] or 0)
-    total_powder_used     = float(PackagingBatch.objects.aggregate(t=Sum('powder_used_kg'))['t'] or 0)
-    maize_sacks_produced  = PackagingBatch.objects.filter(material_type='maize').aggregate(t=Sum('qty_10kg'))['t'] or 0
-    wheat_sacks_produced  = PackagingBatch.objects.filter(material_type='wheat').aggregate(t=Sum('qty_10kg'))['t'] or 0
-    total_sacks_produced  = maize_sacks_produced + wheat_sacks_produced
-    powder_bal_kg         = max(0.0, total_powder_kg - total_powder_used)
+    
+    maize_powder_produced = float(_filter_date(MillingBatch.objects.filter(material_type='maize')).aggregate(t=Sum('bulk_powder_kg'))['t'] or 0)
+    wheat_powder_produced = float(_filter_date(MillingBatch.objects.filter(material_type='wheat')).aggregate(t=Sum('bulk_powder_kg'))['t'] or 0)
+    
+    maize_powder_used = float(_filter_date(PackagingBatch.objects.filter(material_type='maize')).aggregate(t=Sum('powder_used_kg'))['t'] or 0)
+    wheat_powder_used = float(_filter_date(PackagingBatch.objects.filter(material_type='wheat')).aggregate(t=Sum('powder_used_kg'))['t'] or 0)
+    
+    maize_sacks_produced  = _filter_date(PackagingBatch.objects.filter(material_type='maize')).aggregate(t=Sum('qty_10kg'))['t'] or 0
+    wheat_sacks_produced  = _filter_date(PackagingBatch.objects.filter(material_type='wheat')).aggregate(t=Sum('qty_10kg'))['t'] or 0
+    
+    # Balance is ALWAYS ALL-TIME
+    def _powder_bal(mat):
+        p = float(MillingBatch.objects.filter(material_type=mat).aggregate(t=Sum('bulk_powder_kg'))['t'] or 0)
+        u = float(PackagingBatch.objects.filter(material_type=mat).aggregate(t=Sum('powder_used_kg'))['t'] or 0)
+        return max(0.0, p - u)
+    maize_powder_bal = _powder_bal('maize')
+    wheat_powder_bal = _powder_bal('wheat')
 
     prod_users = User.objects.filter(role='production_officer', status='active')
     prod_officer_rows = []
     for u in prod_users:
-        acc = CleanRawIssuance.objects.filter(issued_to=u, status='accepted').aggregate(t=Sum('num_bags'))['t'] or 0
-        mld = MillingBatch.objects.filter(production_officer=u).aggregate(a=Sum('bags_milled_new'), b=Sum('outstanding_bags_milled'))
+        acc_qs = CleanRawIssuance.objects.filter(issued_to=u, status='accepted')
+        acc = _filter_date(acc_qs).aggregate(t=Sum('num_bags'))['t'] or 0
+        
+        mld_qs = MillingBatch.objects.filter(production_officer=u)
+        mld = _filter_date(mld_qs).aggregate(a=Sum('bags_milled_new'), b=Sum('outstanding_bags_milled'))
         mld_total = (mld['a'] or 0) + (mld['b'] or 0)
-        ret = CleanRawReturn.objects.filter(returned_by=u, status__in=['pending', 'accepted']).aggregate(t=Sum('num_bags'))['t'] or 0
-        bal = max(0, acc - mld_total - ret)
+        
+        ret_qs = CleanRawReturn.objects.filter(returned_by=u, status__in=['pending', 'accepted'])
+        ret = _filter_date(ret_qs).aggregate(t=Sum('num_bags'))['t'] or 0
+        
+        # Officer Balance is ALWAYS ALL-TIME
+        acc_full = CleanRawIssuance.objects.filter(issued_to=u, status='accepted').aggregate(t=Sum('num_bags'))['t'] or 0
+        mld_full = MillingBatch.objects.filter(production_officer=u).aggregate(a=Sum('bags_milled_new'), b=Sum('outstanding_bags_milled'))
+        mld_f_total = (mld_full['a'] or 0) + (mld_full['b'] or 0)
+        ret_full = CleanRawReturn.objects.filter(returned_by=u, status__in=['pending', 'accepted']).aggregate(t=Sum('num_bags'))['t'] or 0
+        bal = max(0, acc_full - mld_f_total - ret_full)
+        
         prod_officer_rows.append({'user': u, 'accepted': acc, 'milled': mld_total, 'returned': ret, 'balance': bal})
 
     # Stage 4: Finished Goods Store — split by material
-    fg_maize_in  = FinishedGoodsReceipt.objects.filter(material_type='maize', status='accepted').aggregate(t=Sum('qty_received'))['t'] or 0
-    fg_wheat_in  = FinishedGoodsReceipt.objects.filter(material_type='wheat', status='accepted').aggregate(t=Sum('qty_received'))['t'] or 0
-    fg_maize_out = FinishedGoodsIssuance.objects.filter(material_type='maize', status='accepted').aggregate(t=Sum('qty_issued'))['t'] or 0
-    fg_wheat_out = FinishedGoodsIssuance.objects.filter(material_type='wheat', status='accepted').aggregate(t=Sum('qty_issued'))['t'] or 0
+    fg_maize_in  = _filter_date(FinishedGoodsReceipt.objects.filter(material_type='maize', status='accepted')).aggregate(t=Sum('qty_received'))['t'] or 0
+    fg_wheat_in  = _filter_date(FinishedGoodsReceipt.objects.filter(material_type='wheat', status='accepted')).aggregate(t=Sum('qty_received'))['t'] or 0
+    fg_maize_out = _filter_date(FinishedGoodsIssuance.objects.filter(material_type='maize', status='accepted')).aggregate(t=Sum('qty_issued'))['t'] or 0
+    fg_wheat_out = _filter_date(FinishedGoodsIssuance.objects.filter(material_type='wheat', status='accepted')).aggregate(t=Sum('qty_issued'))['t'] or 0
     fg_maize_bal = _fg_balance('maize', '10kg')
     fg_wheat_bal = _fg_balance('wheat', '10kg')
     fg_in  = fg_maize_in + fg_wheat_in
@@ -603,7 +704,7 @@ def company_flow(request):
     fg_bal = fg_maize_bal + fg_wheat_bal
 
     # Stage 5: Brand Sales & Byproducts
-    brand_sales = BrandSale.objects.all()
+    brand_sales = _filter_date(BrandSale.objects.all())
     total_brand_sacks = brand_sales.aggregate(t=Sum('qty_sacks'))['t'] or 0
     brand_sales_value = float(brand_sales.aggregate(t=Sum('total_amount'))['t'] or 0)
     brand_received    = float(brand_sales.aggregate(t=Sum('amount_cash'))['t'] or 0) + float(brand_sales.aggregate(t=Sum('amount_transfer'))['t'] or 0)
@@ -620,23 +721,21 @@ def company_flow(request):
 
     for sm in sales_managers:
         # Goods collected per material (accepted)
-        maize_coll = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='maize')
-        wheat_coll = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='wheat')
+        maize_coll = _filter_date(SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='maize'))
+        wheat_coll = _filter_date(SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='wheat'))
         maize_collected = sum(c.qty_sacks for c in maize_coll)
         wheat_collected = sum(c.qty_sacks for c in wheat_coll)
         collected = maize_collected + wheat_collected
         
-        # Sales Value (Base on actual SalesResults if real, or collection value for debt)
-        # For flow pipeline, we'll keep collection value for SM debt but show SalesResult sold
         coll_val = sum(c.total_value for c in maize_coll) + sum(c.total_value for c in wheat_coll)
         
         # Real Sold (Promoter level)
-        res_qs = SalesResult.objects.filter(recorded_by=sm)
+        res_qs = _filter_date(SalesResult.objects.filter(recorded_by=sm))
         sold_eq = float(sum(r.equivalent_sacks_sold for r in res_qs))
         res_val = res_qs.aggregate(t=Sum('gross_value'))['t'] or 0
 
         # Money received (confirmed)
-        payments = SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed')
+        payments = _filter_date(SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed'))
         received = sum(p.total for p in payments)
 
         maize_bal = get_sm_goods_holding(sm, 'maize')
@@ -665,13 +764,22 @@ def company_flow(request):
             'coll_value': coll_val,
         })
 
-    # GM Direct Sales Context (Retail pieces + Sacks)
+    # GM & MD Direct Sales Context (separate pools)
     gm_maize_hand = get_gm_goods_holding('maize')
     gm_wheat_hand = get_gm_goods_holding('wheat')
+    
+    # Per-user breakdown
+    gm_users = User.objects.filter(role='manager', status='active')
+    md_users = User.objects.filter(role='md', status='active')
+    gm_user_maize = sum(get_company_goods_holding(u, 'maize') for u in gm_users)
+    gm_user_wheat = sum(get_company_goods_holding(u, 'wheat') for u in gm_users)
+    md_user_maize = sum(get_company_goods_holding(u, 'maize') for u in md_users)
+    md_user_wheat = sum(get_company_goods_holding(u, 'wheat') for u in md_users)
+    
     gm_maize_pieces = CompanyRetailLedger.objects.filter(material_type='maize').aggregate(t=Sum('pieces_changed'))['t'] or 0
     gm_wheat_pieces = CompanyRetailLedger.objects.filter(material_type='wheat').aggregate(t=Sum('pieces_changed'))['t'] or 0
     
-    gm_ds_qs = DirectSalePayment.objects.filter(status='confirmed')
+    gm_ds_qs = _filter_date(DirectSalePayment.objects.filter(status='confirmed'))
     gm_revenue = float(gm_ds_qs.aggregate(t=Sum('total_sale_value'))['t'] or 0)
     gm_received = float(gm_ds_qs.aggregate(t=Sum('amount_received_cash') + Sum('amount_received_transfer'))['t'] or 0)
     gm_outstanding = max(0, gm_revenue - gm_received)
@@ -688,11 +796,12 @@ def company_flow(request):
         'clean_maize_in': clean_maize_in, 'clean_wheat_in': clean_wheat_in,
         'clean_maize_out': clean_maize_out, 'clean_wheat_out': clean_wheat_out,
         'clean_maize_bal': clean_maize_bal, 'clean_wheat_bal': clean_wheat_bal,
-        'total_bags_milled': total_bags_milled_new + total_bags_milled_old,
         'maize_bags_milled': maize_bags_milled, 'wheat_bags_milled': wheat_bags_milled,
-        'total_powder_kg': total_powder_kg, 'total_powder_used': total_powder_used,
-        'powder_bal_kg': powder_bal_kg, 'total_sacks_produced': total_sacks_produced,
+        'maize_powder_produced': maize_powder_produced, 'wheat_powder_produced': wheat_powder_produced,
+        'maize_powder_used': maize_powder_used, 'wheat_powder_used': wheat_powder_used,
+        'maize_powder_bal': maize_powder_bal, 'wheat_powder_bal': wheat_powder_bal,
         'maize_sacks_produced': maize_sacks_produced, 'wheat_sacks_produced': wheat_sacks_produced,
+        'total_sacks_produced': maize_sacks_produced + wheat_sacks_produced,
         'prod_officer_rows': prod_officer_rows,
         'fg_in': fg_in, 'fg_out': fg_out, 'fg_bal': fg_bal,
         'fg_maize_in': fg_maize_in, 'fg_wheat_in': fg_wheat_in,
@@ -707,11 +816,14 @@ def company_flow(request):
         'total_money_received': total_money_received,
         'total_sales_value': total_sales_value,
         'gm_maize_hand': gm_maize_hand, 'gm_wheat_hand': gm_wheat_hand,
+        'gm_user_maize': gm_user_maize, 'gm_user_wheat': gm_user_wheat,
+        'md_user_maize': md_user_maize, 'md_user_wheat': md_user_wheat,
         'gm_maize_pieces': gm_maize_pieces, 'gm_wheat_pieces': gm_wheat_pieces,
         'gm_revenue': gm_revenue,
         'company_total_revenue': company_total_revenue,
         'company_received_money': company_received_money,
         'company_outstanding_money': company_outstanding_money,
+        'active_range': range_type,
     })
 
 
@@ -730,6 +842,18 @@ def md_insights(request):
     from production.models import BrandSale
     import json
     from django.db.models.functions import TruncMonth
+    from django.utils import timezone
+
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
+    now = timezone.now()
+    if not f_from and not f_to:
+        f_from = now.replace(day=1).date().isoformat()
+        f_to   = now.date().isoformat()
+
+    date_from_obj = datetime.date.fromisoformat(f_from) if f_from else None
+    date_to_obj   = datetime.date.fromisoformat(f_to) if f_to else None
 
     # 1. Total Store Summary Layer (No money shown here)
     m_in = RawMaterialReceipt.objects.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
@@ -762,8 +886,17 @@ def md_insights(request):
     all_sps = SalesPerson.objects.filter(status='active')
     sp_ranks = []
     for sp in all_sps:
-        issued = SalesDistributionRecord.objects.filter(sales_person=sp).aggregate(t=Sum('qty_given'))['t'] or 0
+        issued_qs = SalesDistributionRecord.objects.filter(sales_person=sp)
         res_qs = SalesResult.objects.filter(sales_person=sp)
+        
+        if date_from_obj:
+            issued_qs = issued_qs.filter(date__gte=date_from_obj)
+            res_qs = res_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:
+            issued_qs = issued_qs.filter(date__lte=date_to_obj)
+            res_qs = res_qs.filter(date__lte=date_to_obj)
+
+        issued = issued_qs.aggregate(t=Sum('qty_given'))['t'] or 0
         sold = float(sum(r.equivalent_sacks_sold for r in res_qs))
         pct = (sold / float(issued) * 100) if issued > 0 else 0
         if issued > 0:
@@ -846,15 +979,21 @@ def md_insights(request):
     w_colls_list = [weekly_chart_data[w]['colls'] for w in weeks_list]
     w_sales_list = [weekly_chart_data[w]['sales'] for w in weeks_list]
 
-    # 5. Brand Recovery
-    brand_sales = BrandSale.objects.all()
-    brand_revenue = float(brand_sales.aggregate(t=Sum('total_amount'))['t'] or 0)
-    brand_received = float(brand_sales.aggregate(t=Sum('amount_cash'))['t'] or 0) + float(brand_sales.aggregate(t=Sum('amount_transfer'))['t'] or 0)
+    # 5. Brand Recovery (Filtered)
+    brand_qs = BrandSale.objects.all()
+    if date_from_obj: brand_qs = brand_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   brand_qs = brand_qs.filter(date__lte=date_to_obj)
+    
+    brand_revenue = float(brand_qs.aggregate(t=Sum('total_amount'))['t'] or 0)
+    brand_received = float(brand_qs.aggregate(t=Sum('amount_cash'))['t'] or 0) + float(brand_qs.aggregate(t=Sum('amount_transfer'))['t'] or 0)
     brand_outstanding = max(0, brand_revenue - brand_received)
 
     # Product Sales Mix (Maize vs Wheat)
     from sales.models import SalesResult
     prod_mix_qs = SalesResult.objects.all()
+    if date_from_obj: prod_mix_qs = prod_mix_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   prod_mix_qs = prod_mix_qs.filter(date__lte=date_to_obj)
+    
     mix_data = {'maize': 0.0, 'wheat': 0.0}
     for r in prod_mix_qs:
         mix_data[r.material_type] += float(r.equivalent_sacks_sold)
@@ -886,6 +1025,8 @@ def md_insights(request):
         'product_data_json': json.dumps(product_data),
         'this_year': this_year,
         'this_month_name': today.strftime('%B'),
+        'f_from': f_from, 'f_to': f_to,
+        'active_range': range_type,
     }
 
     return render(request, 'reports/md_insights.html', context)
@@ -908,6 +1049,42 @@ def financial_summary(request):
     from accounts.models import User
     import json
 
+    # --- Intelligence Window logic ---
+    from datetime import timedelta
+    range_type = request.GET.get('range', 'month')
+    now = timezone.now()
+    
+    start_date = None
+    end_date = now.date()
+
+    if range_type == 'week':
+        start_date = (now - timedelta(days=now.weekday())).date()
+    elif range_type == 'year':
+        start_date = now.replace(month=1, day=1).date()
+    elif range_type == 'all':
+        start_date = None
+        end_date = None
+    else: # Default: month
+        start_date = now.replace(day=1).date()
+
+    # Manual Overrides
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
+    if f_from: 
+        try: start_date = datetime.date.fromisoformat(f_from)
+        except: pass
+    if f_to: 
+        try: end_date = datetime.date.fromisoformat(f_to)
+        except: pass
+
+    # Synchronize string versions for template compatibility
+    f_from = start_date.isoformat() if start_date else ''
+    f_to = end_date.isoformat() if end_date else ''
+
+    date_from_obj = start_date
+    date_to_obj   = end_date
+
     # 1. High Level Material-Specific Metrics
     materials = ['maize', 'wheat']
     metrics = {mat: {
@@ -916,17 +1093,25 @@ def financial_summary(request):
     } for mat in materials}
 
     for mat in materials:
-        # Produced (Total sacks ever packaged)
-        metrics[mat]['produced'] = PackagingBatch.objects.filter(material_type=mat).aggregate(t=Sum('qty_10kg'))['t'] or 0
+        # Produced (Filtered)
+        prod_qs = PackagingBatch.objects.filter(material_type=mat)
+        if date_from_obj: prod_qs = prod_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   prod_qs = prod_qs.filter(date__lte=date_to_obj)
+        metrics[mat]['produced'] = prod_qs.aggregate(t=Sum('qty_10kg'))['t'] or 0
         
-        # In Store (Physical balance)
+        # In Store (Physical balance - always all-time)
         metrics[mat]['in_store'] = _fg_balance(mat, '10kg')
 
-        # Sold (Actual promoter results converted to sacks + MD confirmed direct sales)
-        sm_results = SalesResult.objects.filter(material_type=mat)
-        sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_results))
+        # Sold (Filtered)
+        sm_res_qs = SalesResult.objects.filter(material_type=mat)
+        if date_from_obj: sm_res_qs = sm_res_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   sm_res_qs = sm_res_qs.filter(date__lte=date_to_obj)
+        sm_sold_eq = float(sum(r.equivalent_sacks_sold for r in sm_res_qs))
         
-        ds_sold = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('qty_sold'))['t'] or 0
+        ds_sold_qs = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        if date_from_obj: ds_sold_qs = ds_sold_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   ds_sold_qs = ds_sold_qs.filter(date__lte=date_to_obj)
+        ds_sold = ds_sold_qs.aggregate(t=Sum('qty_sold'))['t'] or 0
         metrics[mat]['sold'] = sm_sold_eq + float(ds_sold)
 
         # Outstanding with SMs (Goods in their hands)
@@ -936,9 +1121,17 @@ def financial_summary(request):
             total_sm_holding += get_sm_goods_holding(sm, mat)
         metrics[mat]['sm_holding'] = total_sm_holding
 
-        # Revenue (Gross value of actual recognized sales)
-        sm_rev = SalesResult.objects.filter(material_type=mat).aggregate(t=Sum('gross_value'))['t'] or 0
-        ds_rev = DirectSalePayment.objects.filter(material_type=mat, status='confirmed').aggregate(t=Sum('total_sale_value'))['t'] or 0
+        # Revenue (Filtered)
+        sm_rev_qs = SalesResult.objects.filter(material_type=mat)
+        if date_from_obj: sm_rev_qs = sm_rev_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   sm_rev_qs = sm_rev_qs.filter(date__lte=date_to_obj)
+        sm_rev = sm_rev_qs.aggregate(t=Sum('gross_value'))['t'] or 0
+
+        ds_rev_qs = DirectSalePayment.objects.filter(material_type=mat, status='confirmed')
+        if date_from_obj: ds_rev_qs = ds_rev_qs.filter(date__gte=date_from_obj)
+        if date_to_obj:   ds_rev_qs = ds_rev_qs.filter(date__lte=date_to_obj)
+        ds_rev = ds_rev_qs.aggregate(t=Sum('total_sale_value'))['t'] or 0
+        
         metrics[mat]['revenue'] = float(sm_rev) + float(ds_rev)
 
         # Outstanding Money
@@ -999,24 +1192,61 @@ def financial_summary(request):
                     'outstanding': max(0, mat_owed)
                 })
 
-    # 3. Profit & Loss Engine
+    # 3. GM DIRECT SALES ACCOUNTABILITY
+    from sales.models import GMRemittance, DirectSalePayment
+    gm_managers = User.objects.filter(role='manager', status='active')
+    gm_rows = []
+    total_gm_received = 0
+    total_gm_remitted = 0
+
+    for gm in gm_managers:
+        gs_received = DirectSalePayment.objects.filter(
+            recorded_by=gm, status__in=['pending_md', 'confirmed']
+        ).aggregate(t=Sum('amount_received_cash') + Sum('amount_received_transfer'))['t'] or 0
+        gs_remitted = GMRemittance.objects.filter(
+            recorded_by=gm, status='confirmed'
+        ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+        pending_remittance = GMRemittance.objects.filter(
+            recorded_by=gm, status='pending_md'
+        ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+
+        gm_rows.append({
+            'gm': gm,
+            'received': float(gs_received),
+            'remitted': float(gs_remitted),
+            'pending': float(pending_remittance),
+            'outstanding': float(gs_received) - float(gs_remitted)
+        })
+        total_gm_received += float(gs_received)
+        total_gm_remitted += float(gs_remitted)
+
+    # 4. Profit & Loss Engine
     # Revenue
     total_rev = sum(m['revenue'] for m in metrics.values())
     
     # Costs
-    # a. Raw Material Cost (MD-approved costs for all RECEIPTS)
-    # We aggregate total_cost from RawMaterialReceipt where cost_status='approved'
-    raw_mat_cost = float(RawMaterialReceipt.objects.filter(cost_status='approved').aggregate(t=Sum('total_cost'))['t'] or 0)
+    # a. Raw Material Cost (MD-approved costs for all RECEIPTS in the period)
+    rm_qs = RawMaterialReceipt.objects.filter(cost_status='approved')
+    if date_from_obj: rm_qs = rm_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   rm_qs = rm_qs.filter(date__lte=date_to_obj)
+    raw_mat_cost = float(rm_qs.aggregate(t=Sum('total_cost'))['t'] or 0)
     
     # b. Packaging Cost (Produced Sacks * Active Packaging Cost at production time)
     # Since accurate per-batch matching is complex, we use total produced * current active packaging cost as a strong estimate
     packaging_cost = 0
+    active_pack_config = PackagingCostConfig.get_active_config(timezone.now().date())
+    unit_pack_cost = 0
+    if active_pack_config:
+        unit_pack_cost = float(active_pack_config.cost_per_sack) + float(active_pack_config.nylon_cost_per_piece)
+        
     for mat in materials:
-        active_pack_cost = PackagingCostConfig.get_active_cost(mat, timezone.now().date())
-        packaging_cost += metrics[mat]['produced'] * active_pack_cost
+        packaging_cost += metrics[mat]['produced'] * unit_pack_cost
     
-    # c. Operational Expenses
-    op_expenses = float(OperationalExpense.objects.aggregate(t=Sum('amount'))['t'] or 0)
+    # c. Operational Expenses (Filtered)
+    oe_qs = OperationalExpense.objects.all()
+    if date_from_obj: oe_qs = oe_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   oe_qs = oe_qs.filter(date__lte=date_to_obj)
+    op_expenses = float(oe_qs.aggregate(t=Sum('amount'))['t'] or 0)
     
     total_costs = raw_mat_cost + packaging_cost + op_expenses
     net_profit = total_rev - total_costs
@@ -1025,33 +1255,31 @@ def financial_summary(request):
     profit_ratio = (net_profit / total_rev) if total_rev > 0 else 0
 
     # 4. Trend Charts (Dynamic period aggregation)
-    period = request.GET.get('period', 'week')
+    # 4. Trend Charts (Dynamic period aggregation)
     labels = []
     prod_data = []
     sales_data = []
     rev_data = []
     profit_data = []
     
-    if period == 'year':
+    # Granularity based on Intelligence Window
+    chart_period = range_type
+    if chart_period == 'year':
         ranges = 3
-        delta_kwargs = {'days': 365} # Approximation
-    elif period == 'month':
+    elif chart_period == 'month':
         ranges = 6
-        delta_kwargs = {'days': 30} # Approximation
-    else:
-        period = 'week'
+    else: # week or all
+        chart_period = 'week'
         ranges = 5
-        delta_kwargs = {'weeks': 1}
 
     today = timezone.now().date()
     
     for i in range(ranges - 1, -1, -1):
-        if period == 'year':
+        if chart_period == 'year':
             start_date = datetime.date(today.year - i, 1, 1)
             end_date = datetime.date(today.year - i, 12, 31)
             label = str(start_date.year)
-        elif period == 'month':
-            # Simplified month logic
+        elif chart_period == 'month':
             target_month = (today.month - i - 1) % 12 + 1
             target_year = today.year + (today.month - i - 1) // 12
             start_date = datetime.date(target_year, target_month, 1)
@@ -1086,9 +1314,6 @@ def financial_summary(request):
         
         # Expenses
         w_exp = OperationalExpense.objects.filter(date__range=[start_date, end_date]).aggregate(t=Sum('amount'))['t'] or 0
-        # Also include raw material costs and packaging costs for that period if we want "Net Profit" per period
-        # For simplicity in the trend, we use Rev - OpEx as a proxy, or calculate full P&L per period.
-        # Let's do Rev - OpEx for the trend to show "Cash Performance"
         profit_data.append(w_rev - float(w_exp))
 
     chart_data = {
@@ -1099,11 +1324,26 @@ def financial_summary(request):
         'profit': profit_data,
     }
 
+    # Filter the lists shown at the bottom too
+    recent_expenses = OperationalExpense.objects.all()
+    pending_raw = RawMaterialReceipt.objects.filter(cost_status='pending')
+    if date_from_obj:
+        recent_expenses = recent_expenses.filter(date__gte=date_from_obj)
+        pending_raw = pending_raw.filter(date__gte=date_from_obj)
+    if date_to_obj:
+        recent_expenses = recent_expenses.filter(date__lte=date_to_obj)
+        pending_raw = pending_raw.filter(date__lte=date_to_obj)
+
     return render(request, 'reports/financial_summary.html', {
         'current_user': user,
-        'period': period,
+        'f_from': f_from, 'f_to': f_to,
+        'active_range': range_type,
+        'chart_data_json': json.dumps(chart_data),
         'metrics': metrics,
         'sm_rows': sm_rows,
+        'gm_rows': gm_rows,
+        'total_gm_received': total_gm_received,
+        'total_gm_remitted': total_gm_remitted,
         'total_rev': total_rev,
         'raw_mat_cost': raw_mat_cost,
         'packaging_cost': packaging_cost,
@@ -1113,12 +1353,12 @@ def financial_summary(request):
         'profit_margin_pct': profit_margin_pct,
         'profit_ratio_pct': profit_ratio * 100,
         'chart_data_json': json.dumps(chart_data),
-        'expenses_list': OperationalExpense.objects.all().order_by('-date')[:10],
-        'pending_raw_costs': RawMaterialReceipt.objects.filter(cost_status='pending').order_by('-date'),
+        'expenses_list': recent_expenses.order_by('-date')[:10],
+        'pending_raw_costs': pending_raw.order_by('-date'),
     })
 
 
-@role_required('md')
+@role_required('manager', 'md')
 def md_ledger(request):
     """
     Dedicated ledger view for the MD with hierarchical drill-down:
@@ -1131,12 +1371,43 @@ def md_ledger(request):
     f_role = request.GET.get('role_filter', '')
     f_user = request.GET.get('user_id', '')
     
-    # General filters (for when viewing records)
+    # 2. Standardized Intelligence Window
+    from django.utils import timezone
+    from datetime import timedelta
+    range_type = request.GET.get('range', 'month')
+    now = timezone.now()
+    
+    start_date = None
+    end_date = now.date()
+
+    if range_type == 'week':
+        start_date = (now - timedelta(days=now.weekday())).date()
+    elif range_type == 'year':
+        start_date = now.replace(month=1, day=1).date()
+    elif range_type == 'all':
+        start_date = None
+        end_date = None
+    else: # Default: month
+        start_date = now.replace(day=1).date()
+
+    # Manual Overrides
     f_from = request.GET.get('date_from', '')
     f_to = request.GET.get('date_to', '')
+    if f_from: 
+        try: start_date = datetime.date.fromisoformat(f_from)
+        except: pass
+    if f_to: 
+        try: end_date = datetime.date.fromisoformat(f_to)
+        except: pass
+    
     f_search = request.GET.get('search', '').strip()
 
     excluded_actions = ['LOGIN', 'LOGOUT', 'IMPERSONATE_START', 'IMPERSONATE_STOP']
+    
+    # Establish base logs with role-based restriction
+    base_logs = AuditLog.objects.exclude(action__in=excluded_actions)
+    if user.role == 'manager':
+        base_logs = base_logs.exclude(user_role='md')
     
     # Pre-fetch roles
     ROLE_MAP = {
@@ -1155,29 +1426,30 @@ def md_ledger(request):
         'f_to': f_to,
         'f_search': f_search,
         'role_map': ROLE_MAP,
+        'active_range': range_type,
     }
 
     if not f_role and not f_user:
         # LEVEL 1: Select a Role
-        raw_roles = AuditLog.objects.exclude(action__in=excluded_actions).values_list('user_role', flat=True).distinct().order_by('user_role')
+        raw_roles = base_logs.values_list('user_role', flat=True).distinct().order_by('user_role')
         context['available_roles'] = [(r, ROLE_MAP.get(r, r.replace('_', ' ').title())) for r in raw_roles if r]
         context['view_level'] = 'roles'
         
     elif f_role and not f_user:
         # LEVEL 2: Select a Staff Member in that role
-        context['staff_members'] = AuditLog.objects.filter(user_role=f_role).exclude(action__in=excluded_actions).values('user_id', 'user_name').distinct().order_by('user_name')
+        context['staff_members'] = base_logs.filter(user_role=f_role).values('user_id', 'user_name').distinct().order_by('user_name')
         context['role_name'] = ROLE_MAP.get(f_role, f_role.replace('_', ' ').title())
         context['view_level'] = 'staff'
         
     else:
         # LEVEL 3: View Records for a specific user
-        logs = AuditLog.objects.filter(user_id=f_user).exclude(action__in=excluded_actions).order_by('-timestamp')
+        logs = base_logs.filter(user_id=f_user).order_by('-timestamp')
         
-        # Apply filters
-        if f_from:
-            logs = logs.filter(timestamp__date__gte=f_from)
-        if f_to:
-            logs = logs.filter(timestamp__date__lte=f_to)
+        # Apply Intelligence Window / Manual Filters
+        if start_date:
+            logs = logs.filter(timestamp__date__gte=start_date)
+        if end_date:
+            logs = logs.filter(timestamp__date__lte=end_date)
         if f_search:
             from django.db.models import Q
             logs = logs.filter(Q(description__icontains=f_search) | Q(action__icontains=f_search))
@@ -1249,7 +1521,7 @@ def record_monthly_snapshot(request):
     # --- AGGREGATE DATA ---
     from clean_store.views import _get_clean_store_balance
     from finished_store.views import _fg_balance
-    from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding
+    from sales.views import get_sm_goods_holding, get_sm_money_outstanding, get_gm_goods_holding, get_company_goods_holding
     from production.views import get_sacks_in_hand, get_sacks_in_transit
     from sales.models import CompanyRetailLedger, DirectSalePayment
     from procurement.models import RawMaterialReceipt, RawMaterialIssuance
@@ -1347,12 +1619,19 @@ def record_monthly_snapshot(request):
         # --- LOG TO LEDGER ---
         import calendar
         month_name = calendar.month_name[month]
+        # GM Liability
+        from sales.models import GMRemittance
+        gm_received_all = DirectSalePayment.objects.filter(status__in=['pending_md', 'confirmed']).aggregate(t=Sum('amount_received_cash') + Sum('amount_received_transfer'))['t'] or 0
+        gm_remitted_all = GMRemittance.objects.filter(status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+        gm_pending_all = GMRemittance.objects.filter(status='pending_md').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0
+        gm_debt = float(gm_received_all) - float(gm_remitted_all)
+
         description = (
             f"COMPANY-WIDE MONTH-END CLOSING RECORD: {month_name} {year}. | "
             f"PRODUCTION: Maize {total_maize_hand} Hand/{total_maize_transit} Transit, Wheat {total_wheat_hand} Hand/{total_wheat_transit} Transit. | "
             f"STORE: Maize {clean_maize} Clean/{dirty_maize} Dirty, Wheat {clean_wheat} Clean/{dirty_wheat} Dirty. | "
             f"SALES: Sacks Holding {sm_m_holding + sm_w_holding}, Money Owed ₦{sm_money_out:,.2f}. | "
-            f"GM: Sacks {gm_m_hand + gm_w_hand}, Pieces {gm_ret_m + gm_ret_w}, Direct Owed ₦{ds_out:,.2f}."
+            f"GM: Sacks {gm_m_hand + gm_w_hand}, Direct Sales Case: Received ₦{gm_received_all:,.2f}, Remitted ₦{gm_remitted_all:,.2f}, Pending ₦{gm_pending_all:,.2f}, Owed ₦{gm_debt:,.2f}."
         )
         from audit.utils import log_action
         log_action(request, user, 'REPORTS', 'MONTHLY_SNAPSHOT', description, 'MonthlySnapshot', snapshot.pk)

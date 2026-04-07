@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% block title %}Immutable Audit Ledger — Noor Foods{% endblock %}
 {% block nav_audit %}active{% endblock %}
 {% block content %}
@@ -6,6 +6,9 @@
     <div class="page-title">Immutable Audit Ledger</div>
     <div class="page-subtitle">Every write action performed by every user, recorded automatically and permanently. Cannot be edited or deleted. This is the single source of truth for all system activity.</div>
 </div>
+
+{# Quick Date Toggles at Absolute Top #}
+{% include 'partials/date_toggles.html' %}
 
 {# Filters #}
 <div style="background:white;padding:1rem 1.5rem;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:1.5rem;">

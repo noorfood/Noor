@@ -3,7 +3,7 @@
 {% block nav_sm_dash %}active{% endblock %}
 {% block content %}
 {# ═══ HERO ═══════════════════════════════════════════════════════════ #}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 3rem;">
+<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
             <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #818cf8;">💼 Sales Area</span>
@@ -29,6 +29,22 @@
     </div>
 </div>
 
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Activity Window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
+</div>
+
 {# ═══ SM VIEW ═══════════════════════════════════════════════════════ #}
 {% if current_user.role == 'sales_manager' %}
 
@@ -37,12 +53,12 @@
     <div class="balance-card" style="border-left: 4px solid var(--amber);">
         <div class="balance-label">🌽 Maize Bags with me</div>
         <div class="balance-value" style="color: var(--amber);">{{ maize_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Bags with you right now</div>
+        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Current Stock in Hand</div>
     </div>
     <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
         <div class="balance-label">🌾 Wheat Bags with me</div>
         <div class="balance-value" style="color: #8b5cf6;">{{ wheat_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Bags with you right now</div>
+        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Current Stock in Hand</div>
     </div>
     <div class="balance-card" style="border-left: 4px solid var(--rose);">
         <div class="balance-label">💳 Money I owe Company</div>
@@ -57,8 +73,6 @@
     </div>
     {% endif %}
 </div>
-
-{# Quick Actions removed - redundant with sidenav #}
 
 {# Collections Queue #}
 <div class="action-bar-modern">
@@ -88,7 +102,7 @@
 {% endfor %}
 {% else %}
 <div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:2rem;text-align:center;color:#94a3b8;">
-  No collections yet. The FG Store officer will create a collection when you pick up goods.
+  No recent collections for this period.
 </div>
 {% endif %}
 
@@ -135,8 +149,6 @@
     {% endif %}
     {% endfor %}
 </div>
-
-{# Quick Actions removed - redundant with sidenav #}
 
 <div class="action-bar-modern">
     <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📊 Who has what? (Managers List)</h3>

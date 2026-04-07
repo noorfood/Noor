@@ -34,13 +34,19 @@ class PriceConfig(models.Model):
     @classmethod
     def get_active_price(cls, channel, material_type, product_size, sale_date):
         """Return the correct price for a given channel, material, size, and date."""
+        query_size = '10kg' if product_size == '1kg' else product_size
         config = cls.objects.filter(
             channel=channel,
             material_type=material_type,
-            product_size=product_size,
+            product_size=query_size,
             effective_from__lte=sale_date
         ).order_by('-effective_from').first()
-        return config.price_per_unit if config else None
+        
+        if config:
+            if product_size == '1kg' and config.product_size == '10kg':
+                return config.price_per_unit / 10
+            return config.price_per_unit
+        return None
 
 
 class CommissionConfig(models.Model):
@@ -73,10 +79,11 @@ class CommissionConfig(models.Model):
     def get_active_pct(cls, channel, material_type, product_size, sale_date):
         """Return the active commission % for a channel/material/size on a given date."""
         # Force looking up the 'sales_team' configuration as per user request
+        query_size = '10kg' if product_size == '1kg' else product_size
         config = cls.objects.filter(
             channel='sales_team',
             material_type=material_type,
-            product_size=product_size,
+            product_size=query_size,
             effective_from__lte=sale_date
         ).order_by('-effective_from').first()
         return float(config.commission_pct) if config else 0.0
@@ -144,9 +151,9 @@ class SalesTarget(models.Model):
                 f"{self.month}/{self.year} | {self.target_qty} sacks")
 
 class PackagingCostConfig(models.Model):
-    """MD-only configuration for the cost of packaging per sack."""
-    material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES, default='maize')
+    """MD-only configuration for the global cost of packaging (sacks + nylon)."""
     cost_per_sack = models.DecimalField(max_digits=10, decimal_places=2, help_text='Cost of one empty sack + stitching/branding')
+    nylon_cost_per_piece = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Cost of one nylon liner')
     effective_from = models.DateField()
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role': 'md'})
     created_at = models.DateTimeField(auto_now_add=True)
@@ -154,19 +161,41 @@ class PackagingCostConfig(models.Model):
 
     class Meta:
         db_table = 'pricing_packaging_cost'
+        ordering = ['-effective_from']
+
+    def __str__(self):
+        return f"Global Packaging Cost | ₦{self.cost_per_sack} | From {self.effective_from}"
+
+    @classmethod
+    def get_active_config(cls, date):
+        """Return the active config object on a given date."""
+        return cls.objects.filter(
+            effective_from__lte=date
+        ).order_by('-effective_from').first()
+
+class CleaningCostConfig(models.Model):
+    """MD-only configuration for material-specific cleaning fees."""
+    material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES, default='maize')
+    cleaning_cost_per_bag = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Pre-cleaning payment per 100kg raw bag')
+    effective_from = models.DateField()
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role': 'md'})
+    created_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'pricing_cleaning_cost'
         ordering = ['-effective_from', 'material_type']
 
     def __str__(self):
-        return f"Packaging Cost | {self.material_type} | ₦{self.cost_per_sack} | From {self.effective_from}"
+        return f"Cleaning Cost | {self.material_type} | ₦{self.cleaning_cost_per_bag} | From {self.effective_from}"
 
     @classmethod
-    def get_active_cost(cls, material_type, date):
-        """Return the active packaging cost for a material on a given date."""
-        config = cls.objects.filter(
+    def get_active_config(cls, material_type, date):
+        """Return the active cleaning config for a material on a given date."""
+        return cls.objects.filter(
             material_type=material_type,
             effective_from__lte=date
         ).order_by('-effective_from').first()
-        return float(config.cost_per_sack) if config else 0.0
 
 class OperationalExpense(models.Model):
     """General operational expenses recorded by the MD for P&L tracking."""

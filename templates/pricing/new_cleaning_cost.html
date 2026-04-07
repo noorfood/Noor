@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Update Cleaning Fee — Noor Foods{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+        <div style="background: var(--navy); padding: 1.5rem; color: white;">
+            <h3 style="margin: 0; font-weight: 800; font-size: 1.25rem;">Update Material Cleaning Fee</h3>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; opacity: 0.8;">Set cleaning fee per bag for a specific material.</p>
+        </div>
+        
+        <form method="POST" style="padding: 2rem;">
+            {% csrf_token %}
+            
+            {% if error %}
+            <div style="background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Material Type</label>
+                <select name="material_type" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600;" required>
+                    <option value="" disabled selected>Select Material</option>
+                    {% for val, label in material_choices %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sack/Nylon fields removed for cleaning fee config -->
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Cleaning Fee per Raw Bag (₦)</label>
+                <input type="number" name="cleaning_cost_per_bag" step="0.01" value="0.00" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 700;" required>
+                <small style="color: #64748b; font-size: 0.75rem;">This is what you pay cleaners for processing 100kg of raw material.</small>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Effective From</label>
+                <input type="date" name="effective_from" value="{{ today }}" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600;" required>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Notes (Optional)</label>
+                <textarea name="notes" placeholder="Reason for update..." style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; height: 80px; resize: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <a href="{% url 'pricing:packaging_costs' %}" class="btn-modern" style="flex: 1; text-align: center; background: #f1f5f9; color: #475569; text-decoration: none;">Cancel</a>
+                <button type="submit" class="btn-modern btn-modern-primary" style="flex: 2;">Save Cleaning Fee →</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

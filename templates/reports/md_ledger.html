@@ -285,6 +285,18 @@
     .btn-apply:hover {
         opacity: 0.9;
     }
+
+    .status-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 12px;
+        border: 1px solid var(--ledger-line);
+        text-transform: uppercase;
+    }
+    .status-confirmed { background: #ecfdf5; color: #047857; }
+    .status-rejected { background: #fef2f2; color: #b91c1c; }
+    .status-pending { background: #f8fafc; color: #475569; }
 </style>
 
 <div class="ledger-container">
@@ -298,6 +310,18 @@
             <div style="font-size: 0.7rem; color: var(--slate-400);">Confidential | Master Record</div>
         </div>
     </div>
+
+    <div style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--ledger-line); padding-bottom: 1.5rem;">
+        <form method="get" id="dateFilterForm" style="display: none;">
+            <input type="hidden" name="range" value="{{ active_range }}">
+            <input type="hidden" name="role_filter" value="{{ f_role }}">
+            <input type="hidden" name="user_id" value="{{ f_user }}">
+            <input type="hidden" name="date_from" value="{{ f_from }}">
+            <input type="hidden" name="date_to" value="{{ f_to }}">
+        </form>
+        {% include 'partials/date_toggles.html' with active_range=active_range %}
+    </div>
+
 
     <!-- BREADCRUMBS -->
     <div class="breadcrumb-ledger">
@@ -349,10 +373,14 @@
 
     {% else %}
         <!-- LEVEL 3: INDIVIDUAL LEDGER -->
-        <div style="margin-bottom: 3rem;">
-            <p style="color: var(--slate-400); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Acting {{ staff_role }}</p>
-            <h2 style="font-family: 'Outfit'; font-size: 2rem; font-weight: 800; margin-bottom: 0;">{{ staff_name }}</h2>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+            <div>
+                <p style="color: var(--slate-400); font-size: 0.8rem; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Acting {{ staff_role }}</p>
+                <h2 style="font-family: 'Outfit'; font-size: 2rem; font-weight: 800; margin-bottom: 0;">{{ staff_name }}</h2>
+            </div>
+            {% include 'partials/date_toggles.html' %}
         </div>
+
 
         <!-- FILTERS -->
         <form method="GET" class="ledger-filter-bar">
@@ -398,14 +426,7 @@
                                     {{ log.friendly_action }}
                                 </span>
                                 {% if log.current_status %}
-                                <span style="font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid var(--ledger-line); 
-                                    {% if log.current_status == 'Accepted' or log.current_status == 'Confirmed' %}
-                                        background: var(--emerald-50); color: var(--emerald-700);
-                                    {% elif log.current_status == 'Rejected' %}
-                                        background: var(--rose-50); color: var(--rose-700);
-                                    {% else %}
-                                        background: var(--slate-50); color: var(--slate-600);
-                                    {% endif %} text-transform: uppercase;">
+                                <span class="status-badge {% if log.current_status == 'Accepted' or log.current_status == 'Confirmed' %}status-confirmed{% elif log.current_status == 'Rejected' %}status-rejected{% else %}status-pending{% endif %}">
                                     Current Status: {{ log.current_status }}
                                 </span>
                                 {% endif %}

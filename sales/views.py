@@ -8,7 +8,7 @@ from audit.utils import log_action
 from sales.models import (
     SalesRecord, SalesPerson, SalesPayment, CompanyRetailLedger,
     SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment,
-    DirectSalePayment,
+    DirectSalePayment, GMRemittance,
 )
 from pricing.models import PriceConfig, CommissionConfig
 from finished_store.models import FinishedGoodsIssuance, FinishedGoodsReturn
@@ -19,6 +19,29 @@ import datetime
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
+
+def get_gm_direct_money_outstanding(user):
+    """
+    Amount of money the GM has collected from Direct Sales but hasn't yet remitted to the company.
+    = Sum(DirectSalePayment.total_received for confirmed/pending_md) - Sum(Confirmed GMRemittances)
+    """
+    from sales.models import DirectSalePayment, GMRemittance
+    received = DirectSalePayment.objects.filter(
+        recorded_by=user, 
+        status__in=['pending_md', 'confirmed']
+    ).aggregate(
+        t=Sum('amount_received_cash') + Sum('amount_received_transfer')
+    )['t'] or 0
+    
+    remitted = GMRemittance.objects.filter(
+        recorded_by=user, 
+        status='confirmed'
+    ).aggregate(
+        t=Sum('amount_cash') + Sum('amount_transfer')
+    )['t'] or 0
+    
+    return max(0.0, float(received) - float(remitted))
+
 
 def get_sm_goods_holding(sales_manager, material_type=None):
     """
@@ -53,13 +76,47 @@ def get_sm_goods_holding(sales_manager, material_type=None):
     return max(0, float(total_collected) - float(total_distributed) + float(total_returned))
 
 
-def get_gm_goods_holding(material_type, size='10kg'):
+def get_company_goods_holding(user, material_type, size='10kg'):
     """
-    Physical sacks held by the General Manager for Company Direct sales.
-    = Accepted Company Issuances - Total Company Sales recorded - Sacks opened for retail.
+    Physical sacks held by a specific manager (GM or MD) for Company Direct sales.
+    = Accepted Company Issuances (where approver=user) - Company Sales by this user - Sacks opened for retail by this user.
     """
     total_issued = FinishedGoodsIssuance.objects.filter(
-        channel='company', status='accepted', 
+        channel='company', status='accepted',
+        material_type=material_type, product_size=size,
+        approver=user
+    ).aggregate(t=Sum('qty_issued'))['t'] or 0
+
+    total_sold = SalesRecord.objects.filter(
+        channel='company', material_type=material_type, product_size=size,
+        recorded_by=user
+    ).aggregate(t=Sum('qty_sold'))['t'] or 0
+
+    total_direct_sold = DirectSalePayment.objects.filter(
+        material_type=material_type, product_size=size,
+        status__in=['pending_md', 'confirmed'],
+        recorded_by=user
+    ).aggregate(t=Sum('qty_sold'))['t'] or 0
+
+    total_sold += total_direct_sold
+
+    # Also subtract sacks that were "opened" to replenish the 1kg retail piece ledger
+    total_opened_pieces = CompanyRetailLedger.objects.filter(
+        material_type=material_type, action='open_sack',
+        recorded_by=user
+    ).aggregate(t=Sum('pieces_changed'))['t'] or 0
+    total_opened_sacks = total_opened_pieces / 10 if total_opened_pieces > 0 else 0
+
+    return max(0, total_issued - total_sold - total_opened_sacks)
+
+
+def get_gm_goods_holding(material_type, size='10kg'):
+    """
+    Legacy wrapper: Total company channel holding across ALL managers.
+    Used by reports that show aggregate company holdings.
+    """
+    total_issued = FinishedGoodsIssuance.objects.filter(
+        channel='company', status='accepted',
         material_type=material_type, product_size=size
     ).aggregate(t=Sum('qty_issued'))['t'] or 0
 
@@ -67,7 +124,13 @@ def get_gm_goods_holding(material_type, size='10kg'):
         channel='company', material_type=material_type, product_size=size
     ).aggregate(t=Sum('qty_sold'))['t'] or 0
 
-    # Also subtract sacks that were "opened" to replenish the 1kg retail piece ledger
+    total_direct_sold = DirectSalePayment.objects.filter(
+        material_type=material_type, product_size=size,
+        status__in=['pending_md', 'confirmed']
+    ).aggregate(t=Sum('qty_sold'))['t'] or 0
+
+    total_sold += total_direct_sold
+
     total_opened_pieces = CompanyRetailLedger.objects.filter(
         material_type=material_type, action='open_sack'
     ).aggregate(t=Sum('pieces_changed'))['t'] or 0
@@ -141,27 +204,27 @@ def dashboard(request):
     import datetime
     today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
 
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
     if user.role == 'sales_manager':
-        # Pending collections waiting for SM to acknowledge
+        # Pending collections always show (they need action)
         pending_collections = SalesManagerCollection.objects.filter(
             sales_manager=user, status='pending'
         ).order_by('-date', '-created_at')
 
-        # Goods holding per material
+        # Recent collections - Filtered
+        recent_collections = SalesManagerCollection.objects.filter(sales_manager=user)
+        if f_from: recent_collections = recent_collections.filter(date__gte=f_from)
+        if f_to:   recent_collections = recent_collections.filter(date__lte=f_to)
+        recent_collections = recent_collections.order_by('-date', '-created_at')[:15]
+
+        # Financials (Holding/Outstanding) are ALWAYS Current/All-Time as they represent actual liability/stock
         maize_holding = get_sm_goods_holding(user, 'maize')
         wheat_holding = get_sm_goods_holding(user, 'wheat')
-
-        # Money outstanding
         money_outstanding = get_sm_money_outstanding(user)
 
-        # Recent ALL collections — pending first, then accepted
-        recent_collections = SalesManagerCollection.objects.filter(
-            sales_manager=user
-        ).order_by('-date', '-created_at')[:10]
-
-        pending_count = SalesManagerCollection.objects.filter(
-            sales_manager=user, status='pending'
-        ).count()
+        pending_count = pending_collections.count()
 
         return render(request, 'sales/dashboard.html', {
             'current_user': user,
@@ -172,6 +235,7 @@ def dashboard(request):
             'recent_collections': recent_collections,
             'show_money': True,
             'today_activities': today_activities,
+            'f_from': f_from, 'f_to': f_to,
         })
 
     else:
@@ -179,28 +243,31 @@ def dashboard(request):
         sales_managers = User.objects.filter(role='sales_manager', status='active')
         sm_summaries = []
         for sm in sales_managers:
-            maize = get_sm_goods_holding(sm, 'maize')
-            wheat = get_sm_goods_holding(sm, 'wheat')
-            money = get_sm_money_outstanding(sm)
-            pending_count = SalesManagerCollection.objects.filter(
-                sales_manager=sm, status='pending'
-            ).count()
+            # Stats for the table
+            pending_qs = SalesManagerCollection.objects.filter(sales_manager=sm, status='pending')
+            if f_from: pending_qs = pending_qs.filter(date__gte=f_from)
+            if f_to:   pending_qs = pending_qs.filter(date__lte=f_to)
+            p_count = pending_qs.count()
+
             sm_summaries.append({
                 'sm': sm,
-                'maize_holding': maize,
-                'wheat_holding': wheat,
-                'goods_balance': maize + wheat,
-                'money_outstanding': money,
-                'pending_count': pending_count,
+                'maize_holding': get_sm_goods_holding(sm, 'maize'),
+                'wheat_holding': get_sm_goods_holding(sm, 'wheat'),
+                'money_outstanding': get_sm_money_outstanding(sm),
+                'pending_count': p_count,
             })
 
-        # Recent collections across all SMs for GM overview
-        recent_collections = SalesManagerCollection.objects.all().order_by('-date', '-created_at')[:15]
+        # Recent collections across all SMs - Filtered
+        recent_coll_qs = SalesManagerCollection.objects.all()
+        if f_from: recent_coll_qs = recent_coll_qs.filter(date__gte=f_from)
+        if f_to:   recent_coll_qs = recent_coll_qs.filter(date__lte=f_to)
+        recent_collections = recent_coll_qs.order_by('-date', '-created_at')[:20]
 
-        # Pending SM payments awaiting GM confirmation
-        pending_payments = SalesManagerPayment.objects.filter(
-            status='pending_gm'
-        ).order_by('-date', '-created_at')
+        # Pending SM payments - Filtered
+        pending_pay_qs = SalesManagerPayment.objects.filter(status='pending_gm')
+        if f_from: pending_pay_qs = pending_pay_qs.filter(date__gte=f_from)
+        if f_to:   pending_pay_qs = pending_pay_qs.filter(date__lte=f_to)
+        pending_payments = pending_pay_qs.order_by('-date', '-created_at')
 
         return render(request, 'sales/dashboard.html', {
             'current_user': user,
@@ -209,6 +276,7 @@ def dashboard(request):
             'pending_payments': pending_payments,
             'show_money': user.role in ('md', 'manager'),
             'today_activities': today_activities,
+            'f_from': f_from, 'f_to': f_to,
         })
 
 
@@ -969,37 +1037,43 @@ def outstanding_view(request):
     """
     user = get_current_user(request)
 
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+    
     # SM sees only themselves. GM/MD see all Sales Managers.
     if user.role == 'sales_manager':
         sales_managers = User.objects.filter(pk=user.pk)
     else:
         sales_managers = User.objects.filter(role='sales_manager', status='active')
+    
     sm_outstanding = []
     for sm in sales_managers:
-        maize_holding = get_sm_goods_holding(sm, 'maize')
-        wheat_holding = get_sm_goods_holding(sm, 'wheat')
-        goods = maize_holding + wheat_holding
-        money = get_sm_money_outstanding(sm)
-        # collected split by material
-        maize_collected = SalesManagerCollection.objects.filter(
-            sales_manager=sm, status='accepted', material_type='maize'
-        ).aggregate(t=Sum('qty_sacks'))['t'] or 0
-        wheat_collected = SalesManagerCollection.objects.filter(
-            sales_manager=sm, status='accepted', material_type='wheat'
-        ).aggregate(t=Sum('qty_sacks'))['t'] or 0
-        collected = maize_collected + wheat_collected
-        pending_collections = SalesManagerCollection.objects.filter(
-            sales_manager=sm, status='pending'
-        ).count()
+        # Collected split by material - Filtered
+        m_coll_qs = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='maize')
+        w_coll_qs = SalesManagerCollection.objects.filter(sales_manager=sm, status='accepted', material_type='wheat')
+        p_coll_qs = SalesManagerCollection.objects.filter(sales_manager=sm, status='pending')
+
+        if f_from:
+            m_coll_qs = m_coll_qs.filter(date__gte=f_from)
+            w_coll_qs = w_coll_qs.filter(date__gte=f_from)
+            p_coll_qs = p_coll_qs.filter(date__gte=f_from)
+        if f_to:
+            m_coll_qs = m_coll_qs.filter(date__lte=f_to)
+            w_coll_qs = w_coll_qs.filter(date__lte=f_to)
+            p_coll_qs = p_coll_qs.filter(date__lte=f_to)
+
+        maize_collected = m_coll_qs.aggregate(t=Sum('qty_sacks'))['t'] or 0
+        wheat_collected = w_coll_qs.aggregate(t=Sum('qty_sacks'))['t'] or 0
+        pending_collections = p_coll_qs.count()
+
         sm_outstanding.append({
             'sm': sm,
-            'total_collected': collected,
+            'total_collected': maize_collected + wheat_collected,
             'maize_collected': maize_collected,
             'wheat_collected': wheat_collected,
-            'maize_holding': maize_holding,
-            'wheat_holding': wheat_holding,
-            'goods_holding': goods,
-            'money_outstanding': money,
+            'maize_holding': get_sm_goods_holding(sm, 'maize'),
+            'wheat_holding': get_sm_goods_holding(sm, 'wheat'),
+            'money_outstanding': get_sm_money_outstanding(sm),
             'pending_collection_count': pending_collections,
         })
 
@@ -1007,6 +1081,7 @@ def outstanding_view(request):
         'current_user': user,
         'sm_outstanding': sm_outstanding,
         'show_money': (user.role in ('md', 'manager')),
+        'f_from': f_from, 'f_to': f_to,
     })
 
 
@@ -1043,149 +1118,7 @@ def list_salespersons_view(request):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @role_required('manager', 'md')
-def record_company_sale(request):
-    """
-    Company direct sale — buyer comes to the factory.
-    Sales Manager is NOT involved. Only GM handles this.
-    FG Store records the issuance, GM records the payment.
-    """
-    user = get_current_user(request)
-    error = None
-    today = datetime.date.today().isoformat()
-    from procurement.models import MATERIAL_CHOICES
-    from finished_store.views import _fg_balance
-    import math
 
-    if request.method == 'POST':
-        date_val = request.POST.get('date')
-        buyer_name = request.POST.get('buyer_name', '').strip()
-        material_type = request.POST.get('material_type', 'maize')
-        unit = request.POST.get('unit')
-        qty = int(request.POST.get('qty', 0))
-        amount_paid = float(request.POST.get('amount_paid', 0))
-        notes = request.POST.get('notes', '').strip()
-
-        if not date_val or not buyer_name or not material_type or not unit or qty <= 0:
-            error = 'All fields are required.'
-        else:
-            if unit == '1kg':
-                # Retail piece sale (1kg)
-                current_pieces = CompanyRetailLedger.objects.filter(
-                    material_type=material_type
-                ).aggregate(t=Sum('pieces_changed'))['t'] or 0
-
-                if current_pieces < qty:
-                    # Not enough pieces. Can we open a sack from our HAND?
-                    sacks_in_hand = get_gm_goods_holding(material_type)
-                    needed_pieces = qty - current_pieces
-                    sacks_to_open = math.ceil(needed_pieces / 10)
-
-                    if sacks_in_hand >= sacks_to_open:
-                        # Success! Open a sack from our hand immediately.
-                        CompanyRetailLedger.objects.create(
-                            date=date_val,
-                            material_type=material_type,
-                            action='open_sack',
-                            pieces_changed=sacks_to_open * 10,
-                            recorded_by=user,
-                            notes=f"Auto-opened {sacks_to_open} sacks from my hand to fulfill retail sale."
-                        )
-                        messages.info(request, f"Automatically opened {sacks_to_open} sack(s) from your 'In Hand' stock.")
-                    else:
-                        # Not enough in hand either. Request restock from FG store.
-                        # This request is "Company channel" so it eventually comes back to the GM's hand.
-                        rem_after_hand = needed_pieces - (sacks_in_hand * 10)
-                        sacks_required = math.ceil(rem_after_hand / 10)
-                        
-                        # Trigger the handshake flow
-                        FinishedGoodsIssuance.objects.create(
-                            date=date_val,
-                            material_type=material_type,
-                            product_size='10kg',
-                            qty_issued=sacks_required,
-                            channel='company',
-                            issued_by=user,
-                            notes="Auto-request: Restock needed for retail pieces."
-                        )
-                        messages.warning(
-                            request,
-                            f"Insufficient stock in hand. A restock request for {sacks_required} sacks has been sent to the store."
-                        )
-                        # We still proceed with the sale if the business allows "selling out of stock" potentially leading to a negative ledger temporarily, 
-                        # or we can block it. User said "must remove from his balance", implying he shouldn't sell what he doesn't have.
-                        # However, previous logic sent a request and proceeded. I'll maintain that but with a warning.
-
-                sale = SalesRecord.objects.create(
-                    date=date_val,
-                    recorded_by=user,
-                    buyer_name=buyer_name,
-                    material_type=material_type,
-                    product_size='1kg',
-                    channel='company',
-                    qty_sold=qty,
-                    unit_price=amount_paid / qty if qty > 0 else 0,
-                    total_value=amount_paid,
-                    status='paid',
-                    is_locked=True,
-                    notes=notes
-                )
-                CompanyRetailLedger.objects.create(
-                    date=date_val,
-                    material_type=material_type,
-                    action='retail_sale',
-                    pieces_changed=-qty,
-                    sales_record=sale,
-                    recorded_by=user,
-                )
-                log_action(request, user, 'sales', 'RECORD_COMPANY_SALE',
-                           f'Company Sale (Pieces): {qty}x 1kg {material_type}',
-                           'SalesRecord', sale.pk)
-                messages.success(request, f'Recorded retail piece sale to {buyer_name}.')
-                return redirect('reports:dashboard')
-
-            elif unit == '10kg':
-                # Standard sack sale — fulfill from GM's "In Hand" holding
-                current_holding = get_gm_goods_holding(material_type)
-                
-                if qty > current_holding:
-                    error = (f'Insufficient {material_type.upper()} 10kg sacks in your hand. '
-                             f'You currently have {current_holding} sacks. '
-                             f'Please request and accept an issuance from the FG Store first.')
-                else:
-                    sale = SalesRecord.objects.create(
-                        date=date_val,
-                        recorded_by=user,
-                        buyer_name=buyer_name,
-                        material_type=material_type,
-                        product_size='10kg',
-                        channel='company',
-                        qty_sold=qty,
-                        unit_price=amount_paid / qty if qty > 0 else 0,
-                        total_value=amount_paid,
-                        status='paid',
-                        is_locked=True,
-                        notes=notes
-                    )
-                    log_action(request, user, 'sales', 'RECORD_COMPANY_SALE',
-                               f'Company Sale (Sacks): {qty}x 10kg {material_type}',
-                               'SalesRecord', sale.pk)
-                    messages.success(request, f'Recorded company sack sale to {buyer_name}.')
-                    return redirect('reports:dashboard')
-
-    # Calculate current piece balances for display
-    pieces_maize = CompanyRetailLedger.objects.filter(material_type='maize').aggregate(t=Sum('pieces_changed'))['t'] or 0
-    pieces_wheat = CompanyRetailLedger.objects.filter(material_type='wheat').aggregate(t=Sum('pieces_changed'))['t'] or 0
-
-    return render(request, 'sales/record_company_sale.html', {
-        'current_user': user,
-        'error': error,
-        'today': today,
-        'material_choices': MATERIAL_CHOICES,
-        'holding_maize': get_gm_goods_holding('maize'),
-        'holding_wheat': get_gm_goods_holding('wheat'),
-        'pieces_maize': pieces_maize,
-        'pieces_wheat': pieces_wheat,
-    })
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1301,51 +1234,127 @@ def record_payment(request, sale_id):
 # COMPANY DIRECT SALES (GM records sale & payment → MD confirms)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@role_required('manager')
+@role_required('manager', 'md')
 def record_direct_sale(request):
-    """General Manager records a factory-gate company sale with payment details."""
+    """General Manager or MD records a factory-gate company sale with payment details."""
     user = get_current_user(request)
     error = None
+    import math
+    from procurement.models import MATERIAL_CHOICES
+
+    # Provide all prices ahead of time for the frontend to calculate dynamically without ajax
+    price_map = {}
+    today_date = datetime.date.today().isoformat()
+    for mat_val, mat_label in MATERIAL_CHOICES:
+        for size_val, size_label in [('10kg', '10kg Sack'), ('1kg', '1kg Piece')]:
+            pr = PriceConfig.get_active_price('company', mat_val, size_val, today_date)
+            price_map[f"{mat_val}_{size_val}"] = float(pr) if pr else 0
 
     if request.method == 'POST':
         try:
             date_val = request.POST.get('date')
             material_type = request.POST.get('material_type')
+            product_size = request.POST.get('product_size', '10kg')
             buyer_name = request.POST.get('buyer_name', '').strip()
             qty_sold = int(request.POST.get('qty_sold', 0))
-            unit_price = float(request.POST.get('unit_price', 0))
             amount_received_cash = float(request.POST.get('amount_received_cash', 0))
             amount_received_transfer = float(request.POST.get('amount_received_transfer', 0))
             notes = request.POST.get('notes', '').strip()
 
-            if not date_val or not material_type or qty_sold <= 0 or unit_price <= 0:
-                error = 'Date, material type, quantity, and unit price are required.'
+            unit_price = PriceConfig.get_active_price('company', material_type, product_size, date_val)
+            if unit_price is None:
+                error = f"No active price configuration found for Company Channel: {material_type.title()} ({product_size}) on {date_val}."
+            elif not date_val or not material_type or qty_sold <= 0:
+                error = 'Date, material type, product size, and quantity are required.'
             else:
-                sale = DirectSalePayment.objects.create(
-                    date=date_val,
-                    material_type=material_type,
-                    product_size='10kg',
-                    qty_sold=qty_sold,
-                    unit_price=unit_price,
-                    amount_received_cash=amount_received_cash,
-                    amount_received_transfer=amount_received_transfer,
-                    buyer_name=buyer_name,
-                    recorded_by=user,
-                    notes=notes,
-                    status='pending_md'
-                )
-                log_action(request, user, 'sales', 'RECORD_DIRECT_SALE',
-                           f'Recorded direct sale of {qty_sold} {material_type} sacks for ₦{sale.total_sale_value:,.0f}',
-                           'DirectSalePayment', sale.pk)
-                messages.success(request, f'Direct Sale #{sale.pk} recorded successfully. Awaiting MD confirmation.')
-                return redirect('sales:list_direct_sales')
+                unit_price = float(unit_price)
+
+                if product_size == '1kg':
+                    # Retail piece sale (1kg)
+                    current_pieces = CompanyRetailLedger.objects.filter(
+                        material_type=material_type, recorded_by=user
+                    ).aggregate(t=Sum('pieces_changed'))['t'] or 0
+
+                    if current_pieces < qty_sold:
+                        # Auto-open sacks from GM's hand to fulfill the missing pieces
+                        sacks_in_hand = get_company_goods_holding(user, material_type, '10kg')
+                        needed_pieces = qty_sold - current_pieces
+                        sacks_to_open = math.ceil(needed_pieces / 10)
+
+                        if sacks_in_hand >= sacks_to_open:
+                            CompanyRetailLedger.objects.create(
+                                date=date_val,
+                                material_type=material_type,
+                                action='open_sack',
+                                pieces_changed=sacks_to_open * 10,
+                                recorded_by=user,
+                                notes=f"Auto-opened {sacks_to_open} sacks from my hand to fulfill direct retail sale."
+                            )
+                            messages.info(request, f"Automatically opened {sacks_to_open} sack(s) from your 'In Hand' stock to cover the 1kg pieces.")
+                        else:
+                            error = f"You don't have enough {material_type} in hand to fulfill {qty_sold} pieces. Please request {math.ceil((needed_pieces - (sacks_in_hand * 10)) / 10)} more sacks from the store."
+
+                elif product_size == '10kg':
+                    current_holding = get_company_goods_holding(user, material_type, '10kg')
+                    if qty_sold > current_holding:
+                        error = f"You don't have enough {material_type} 10kg sacks in your hand. You have {int(current_holding)} sacks available."
+
+                if not error:
+                    sale = DirectSalePayment.objects.create(
+                        date=date_val,
+                        material_type=material_type,
+                        product_size=product_size,
+                        qty_sold=qty_sold,
+                        unit_price=unit_price,
+                        amount_received_cash=amount_received_cash,
+                        amount_received_transfer=amount_received_transfer,
+                        buyer_name=buyer_name,
+                        recorded_by=user,
+                        notes=notes,
+                        status='pending_md' if user.role == 'manager' else 'confirmed'
+                    )
+                    if user.role == 'md':
+                        sale.confirmed_by = user
+                        sale.confirmed_at = timezone.now()
+                        sale.save()
+
+                    if product_size == '1kg':
+                        # Deduct the pieces sold
+                        CompanyRetailLedger.objects.create(
+                            date=date_val,
+                            material_type=material_type,
+                            action='retail_sale',
+                            pieces_changed=-qty_sold,
+                            recorded_by=user,
+                            notes=f"Direct Sale #{sale.pk}"
+                        )
+
+                    log_action(request, user, 'sales', 'RECORD_DIRECT_SALE',
+                               f'Recorded direct sale of {qty_sold}x {material_type} ({product_size}) for ₦{sale.total_sale_value:,.0f}',
+                               'DirectSalePayment', sale.pk)
+                    
+                    success_msg = f'Direct Sale #{sale.pk} recorded successfully.'
+                    if user.role == 'manager':
+                        success_msg += ' Awaiting MD confirmation.'
+                    messages.success(request, success_msg)
+                    return redirect('sales:list_direct_sales')
         except Exception as e:
             error = f'Error saving sale: {e}'
 
+    # Calculate current piece balances for the active user
+    pieces_maize = CompanyRetailLedger.objects.filter(material_type='maize', recorded_by=user).aggregate(t=Sum('pieces_changed'))['t'] or 0
+    pieces_wheat = CompanyRetailLedger.objects.filter(material_type='wheat', recorded_by=user).aggregate(t=Sum('pieces_changed'))['t'] or 0
+
+    import json
     return render(request, 'sales/direct_sale_form.html', {
         'current_user': user, 'error': error,
-        'today': datetime.date.today().isoformat(),
-        'material_choices': [('maize', 'Maize'), ('wheat', 'Wheat')],
+        'today': today_date,
+        'material_choices': MATERIAL_CHOICES,
+        'price_map_json': json.dumps(price_map),
+        'holding_maize': get_company_goods_holding(user, 'maize', '10kg'),
+        'holding_wheat': get_company_goods_holding(user, 'wheat', '10kg'),
+        'pieces_maize': pieces_maize,
+        'pieces_wheat': pieces_wheat,
     })
 
 
@@ -1399,4 +1408,113 @@ def md_confirm_direct_sale(request, pk):
     return render(request, 'sales/md_confirm_sale.html', {
         'current_user': user,
         'sale': sale,
+    })
+# ─────────────────────────────────────────────────────────────────────────────
+# GM DIRECT SALE REMITTANCE (GM sends money to MD/Company)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('manager', 'md')
+def record_gm_remittance(request):
+    """View for GM to record money being sent to the company/MD."""
+    user = get_current_user(request)
+    today = datetime.date.today()
+    error = None
+    
+    outstanding = get_gm_direct_money_outstanding(user)
+    
+    if request.method == 'POST':
+        try:
+            date = request.POST.get('date')
+            cash = float(request.POST.get('amount_cash', 0) or 0)
+            transfer = float(request.POST.get('amount_transfer', 0) or 0)
+            notes = request.POST.get('notes', '').strip()
+            
+            total = cash + transfer
+            if total <= 0:
+                error = "Total remittance amount must be greater than zero."
+            else:
+                remittance = GMRemittance.objects.create(
+                    date=date,
+                    amount_cash=cash,
+                    amount_transfer=transfer,
+                    recorded_by=user,
+                    notes=notes
+                )
+                log_action(request, user, 'sales', 'RECORD_GM_REMITTANCE',
+                           f'GM recorded remittance of ₦{total:,.0f} pending MD receipt.',
+                           'GMRemittance', remittance.pk)
+                messages.success(
+                    request,
+                    f'Remittance of ₦{total:,.0f} recorded. It is now pending MD confirmation.'
+                )
+                return redirect('sales:list_gm_remittances')
+        except Exception as e:
+            error = f'Error: {str(e)}'
+
+    history = GMRemittance.objects.filter(recorded_by=user).order_by('-date', '-created_at')[:20]
+
+    return render(request, 'sales/record_gm_remittance.html', {
+        'current_user': user,
+        'today': today,
+        'outstanding': outstanding,
+        'history': history,
+        'error': error,
+    })
+
+
+@role_required('md')
+def confirm_gm_remittance(request, remittance_id):
+    """MD confirms receipt of money sent by the GM."""
+    user = get_current_user(request)
+    remittance = get_object_or_404(GMRemittance, pk=remittance_id, status='pending_md')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        md_notes = request.POST.get('md_notes', '').strip()
+
+        if action == 'confirm':
+            remittance.status = 'confirmed'
+            remittance.confirmed_by = user
+            remittance.confirmed_at = timezone.now()
+            remittance.md_notes = md_notes
+            remittance.save()
+            log_action(request, user, 'sales', 'CONFIRM_GM_REMITTANCE',
+                       f'MD confirmed GM remittance #{remittance.pk} of ₦{remittance.total:,.0f}',
+                       'GMRemittance', remittance.pk)
+            messages.success(request, f'Remittance of ₦{remittance.total:,.0f} confirmed and accounted for.')
+            return redirect('sales:list_gm_remittances')
+
+        elif action == 'reject':
+            remittance.status = 'rejected'
+            remittance.confirmed_by = user
+            remittance.confirmed_at = timezone.now()
+            remittance.md_notes = md_notes
+            remittance.save()
+            log_action(request, user, 'sales', 'REJECT_GM_REMITTANCE',
+                       f'MD rejected GM remittance #{remittance.pk}: {md_notes}',
+                       'GMRemittance', remittance.pk)
+            messages.warning(request, f'Remittance #{remittance.pk} rejected. GM must re-submit.')
+            return redirect('sales:list_gm_remittances')
+
+    return render(request, 'sales/confirm_gm_remittance.html', {
+        'current_user': user,
+        'remittance': remittance,
+    })
+
+
+@role_required('manager', 'md')
+def list_gm_remittances(request):
+    """Log of all GM remittances."""
+    user = get_current_user(request)
+    if user.role == 'manager':
+        remittances = GMRemittance.objects.filter(recorded_by=user).order_by('-date', '-created_at')
+    else:
+        remittances = GMRemittance.objects.all().order_by('-date', '-created_at')
+
+    pending = remittances.filter(status='pending_md')
+
+    return render(request, 'sales/list_gm_remittances.html', {
+        'current_user': user,
+        'remittances': remittances,
+        'pending': pending,
     })

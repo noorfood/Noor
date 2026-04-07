@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Verify GM Remittance — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .verification-card { background: #fff; border-radius: 20px; padding: 2.5rem; border: 1px solid #e2e8f0; box-shadow: 0 15px 35px -5px rgba(0,0,0,.1); max-width: 600px; margin: 3rem auto; }
+  .detail-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid #f1f5f9; }
+  .detail-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .detail-value { font-size: 1rem; font-weight: 800; color: #1e293b; }
+  .remittance-amount { font-size: 2.5rem; font-weight: 900; color: #0ea5e9; font-family: 'JetBrains Mono', monospace; text-align: center; margin: 1.5rem 0; }
+  
+  .action-form { margin-top: 2.5rem; padding-top: 2rem; border-top: 2px dashed #e2e8f0; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-label { display: block; font-size: .85rem; font-weight: 800; color: #334155; margin-bottom: .5rem; }
+  .form-control { width: 100%; box-sizing: border-box; padding: .75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; }
+  .form-control:focus { outline: none; border-color: #1e293b; }
+
+  .btn-group { display: flex; gap: 1rem; }
+  .btn-confirm { flex: 2; background: #1e293b; color: white; border: none; padding: 1rem; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all .2s; }
+  .btn-confirm:hover { background: #000; transform: translateY(-2px); }
+  .btn-reject { flex: 1; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 1rem; border-radius: 12px; font-weight: 700; cursor: pointer; }
+</style>
+
+<div class="verification-card">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <span style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; padding: 0.5rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">💰 MD Verification Required</span>
+        <h2 style="margin-top: 1rem; font-size: 1.5rem; font-weight: 900; color: #1e293b;">Confirm GM Remittance</h2>
+        <p style="color: #64748b; font-size: 0.9rem;">Please verify that you have received this amount before confirming.</p>
+    </div>
+
+    <div class="remittance-amount">₦{{ remittance.total|floatformat:0 }}</div>
+
+    <div class="detail-row">
+        <span class="detail-label">GM / Manager</span>
+        <span class="detail-value">{{ remittance.recorded_by.full_name }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Payment Date</span>
+        <span class="detail-value">{{ remittance.date }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Cash Component</span>
+        <span class="detail-value">₦{{ remittance.amount_cash|floatformat:0 }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-label">Transfer Component</span>
+        <span class="detail-value">₦{{ remittance.amount_transfer|floatformat:0 }}</span>
+    </div>
+    <div class="detail-row" style="border-bottom: none;">
+        <span class="detail-label">GM Notes</span>
+        <span class="detail-value" style="font-weight: 500; font-style: italic; color: #475569;">{{ remittance.notes|default:"—" }}</span>
+    </div>
+
+    <form method="post" class="action-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-label">MD Notes (Optional)</label>
+            <textarea name="md_notes" class="form-control" rows="3" placeholder="e.g. Received via Zenith Bank..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" name="action" value="confirm" class="btn-confirm">✅ Confirm & Accept Payment</button>
+            <button type="submit" name="action" value="reject" class="btn-reject" onclick="return confirm('Reject this remittance? The GM will be notified.');">Reject</button>
+        </div>
+        <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="{% url 'sales:list_gm_remittances' %}" style="color: #64748b; text-decoration: none; font-size: 0.85rem; font-weight: 600;">← Back to List</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

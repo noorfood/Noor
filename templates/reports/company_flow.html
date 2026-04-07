@@ -46,6 +46,14 @@
     </div>
 </div>
 
+<div style="margin-bottom: 2.5rem;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="hidden" name="range" value="{{ active_range }}">
+    </form>
+    {% include 'partials/date_toggles.html' with active_range=active_range %}
+</div>
+
+
     {% if show_money %}
     <!-- EXECUTIVE FINANCIAL PULSE -->
     <div class="card" style="background: var(--navy); color: white; border: none; padding: 2.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden;">
@@ -127,6 +135,7 @@
             <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 3: Manufacturing & Transformation</h3>
         </div>
         <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+            <!-- Milled -->
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Milled</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
@@ -135,6 +144,8 @@
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Milled</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
             </div>
+            
+            <!-- Packaged -->
             <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Packaged</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
@@ -143,13 +154,17 @@
                 <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Packaged</div>
                 <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
             </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Powder Output</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ total_powder_kg|floatformat:0 }} <small style="font-size: 0.7rem;">kg</small></div>
+            
+            <!-- Powder Balance -->
+            <div style="padding: 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: #0369a1; text-transform: uppercase;">Maize Powder Bal</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #0c4a6e;">{{ maize_powder_bal|floatformat:1 }} <small style="font-size: 0.7rem;">kg</small></div>
+                <div style="font-size: 0.6rem; color: #0284c7; font-weight: 700;">Produced: {{ maize_powder_produced|floatformat:0 }}kg</div>
             </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border: 1px dashed var(--amber);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--amber); text-transform: uppercase;">Unpackaged</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--amber);">{{ powder_bal_kg|floatformat:0 }} <small style="font-size: 0.7rem;">kg</small></div>
+            <div style="padding: 1rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px;">
+                <div style="font-size: 0.65rem; font-weight: 800; color: #6d28d9; text-transform: uppercase;">Wheat Powder Bal</div>
+                <div style="font-size: 1.4rem; font-weight: 900; color: #4c1d95;">{{ wheat_powder_bal|floatformat:1 }} <small style="font-size: 0.7rem;">kg</small></div>
+                <div style="font-size: 0.6rem; color: #7c3aed; font-weight: 700;">Produced: {{ wheat_powder_produced|floatformat:0 }}kg</div>
             </div>
         </div>
 
@@ -233,12 +248,12 @@
             <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 5: Distribution & Monetization</h3>
         </div>
 
-        <!-- GM COMMAND CENTER (DIRECT SALES) -->
+        <!-- COMPANY DIRECT CHANNEL -->
         <div style="background:rgba(79, 70, 229, 0.03); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px dashed var(--indigo);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
                 <div>
-                    <div style="font-weight:900; color:var(--indigo); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">🏢 GM Direct Channel</div>
-                    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700;">Retail & Tactical Sales Execution</div>
+                    <div style="font-weight:900; color:var(--indigo); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">🏢 Company Direct Channel</div>
+                    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700;">Factory-Gate Sales (GM + MD Pools)</div>
                 </div>
                 {% if show_money %}
                 <div style="text-align: right;">
@@ -247,16 +262,46 @@
                 </div>
                 {% endif %}
             </div>
-            <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
-                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Holding</div>
-                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ gm_maize_hand }} <small style="font-size: 0.7rem;">Bags</small></div>
-                    <div style="font-size: 0.7rem; color: var(--blue); font-weight: 800;">{{ gm_maize_pieces }} Pieces</div>
+
+            <!-- GM Pool -->
+            <div style="margin-bottom: 1rem;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #0f766e; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">👔 General Manager Pool</div>
+                <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ccfbf1; border-left: 3px solid #0d9488;">
+                        <div style="font-size: 0.6rem; font-weight: 800; color: #0f766e; text-transform: uppercase;">Maize</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ gm_user_maize }} <small style="font-size: 0.65rem;">Bags</small></div>
+                    </div>
+                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ccfbf1; border-left: 3px solid #0d9488;">
+                        <div style="font-size: 0.6rem; font-weight: 800; color: #0f766e; text-transform: uppercase;">Wheat</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ gm_user_wheat }} <small style="font-size: 0.65rem;">Bags</small></div>
+                    </div>
                 </div>
-                <div style="background: white; padding: 1rem; border-radius: 12px; border: 1px solid var(--slate-100);">
-                    <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Holding</div>
-                    <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ gm_wheat_hand }} <small style="font-size: 0.7rem;">Bags</small></div>
-                    <div style="font-size: 0.7rem; color: #c2410c; font-weight: 800;">{{ gm_wheat_pieces }} Pieces</div>
+            </div>
+
+            <!-- MD Pool -->
+            <div style="margin-bottom: 1rem;">
+                <div style="font-size: 0.7rem; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">👑 Managing Director Pool</div>
+                <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ede9fe; border-left: 3px solid #7c3aed;">
+                        <div style="font-size: 0.6rem; font-weight: 800; color: #7c3aed; text-transform: uppercase;">Maize</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ md_user_maize }} <small style="font-size: 0.65rem;">Bags</small></div>
+                    </div>
+                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ede9fe; border-left: 3px solid #7c3aed;">
+                        <div style="font-size: 0.6rem; font-weight: 800; color: #7c3aed; text-transform: uppercase;">Wheat</div>
+                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ md_user_wheat }} <small style="font-size: 0.65rem;">Bags</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Retail Pieces (Combined) -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #fef3c7;">
+                    <div style="font-size: 0.6rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Maize Pieces</div>
+                    <div style="font-size: 1rem; font-weight: 900; color: #92400e;">{{ gm_maize_pieces }}</div>
+                </div>
+                <div style="background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #fef3c7;">
+                    <div style="font-size: 0.6rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Wheat Pieces</div>
+                    <div style="font-size: 1rem; font-weight: 900; color: #92400e;">{{ gm_wheat_pieces }}</div>
                 </div>
             </div>
         </div>

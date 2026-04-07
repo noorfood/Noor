@@ -1,237 +1,135 @@
 {% extends 'base.html' %}
-{% block title %}FG Store Dashboard — Noor Foods{% endblock %}
+{% block title %}Finished Goods Dashboard — Noor Foods{% endblock %}
 {% block nav_fg_dash %}active{% endblock %}
-
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); margin-bottom: 3rem;">
+<style>
+    .border-maize { border-left: 4px solid var(--amber) !important; }
+    .border-wheat { border-left: 4px solid var(--indigo) !important; }
+</style>
+<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); margin-bottom: 3rem;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">🎯 Tactical Operations</span>
-            <h1 class="hero-title" style="color: #fff;">Finished Goods Command</h1>
-            <p class="hero-subtitle" style="color: rgba(255,255,255,0.8);">Real-time inventory management and supply chain coordination.</p>
+            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">🏷️ Store Operations</span>
+            <h1 class="hero-title" style="color: #fff;">Finished Goods Store</h1>
+            <p class="hero-subtitle" style="color: var(--slate-400);">Managing acknowledged stock from production and out-loading to sales.</p>
         </div>
-        <div style="display: flex; gap: 2rem; text-align: right;">
-            <div>
-                <div style="font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem; font-weight: 800; text-transform: uppercase;">Duty Officer</div>
-                <div style="font-weight: 700; color: #fff;">{{ current_user.full_name }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem; font-weight: 800; text-transform: uppercase;">Station</div>
-                <div style="font-weight: 700; color: #fff;">Main FG Store</div>
-            </div>
+        <div style="text-align:right;">
+            <div style="font-size:0.7rem; color:#0ea5e9; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">{{ "now"|date:"l, d F Y" }}</div>
+            <div style="font-size:1.1rem; font-weight:800; color:#fff; margin-top:0.25rem;">{{ current_user.full_name }}</div>
         </div>
     </div>
 </div>
 
-<div class="balance-grid" style="margin-bottom: 2rem;">
-    {% for key, data in balances.items %}
-    <div class="card" style="padding: 1.25rem; position: relative; overflow: hidden;">
-        <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
-            {{ data.material_label }} {{ data.size_label }}
-        </div>
-        <div style="font-size: 1.75rem; font-weight: 900; color: var(--navy);">
-            {{ data.qty }} <small style="font-size: 0.8rem; color: var(--slate-400); font-weight: 600;">Sacks</small>
-        </div>
-        <div style="margin-top: 0.75rem; font-size: 0.7rem; color: var(--emerald); font-weight: 800; display: flex; align-items: center; gap: 4px;">
-            <span style="width: 6px; height: 6px; background: var(--emerald); border-radius: 50%;"></span>
-            QUALITY VERIFIED
-        </div>
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Inventory window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
+</div>
+
+<div class="section-header" style="margin-bottom: 1.5rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0;">📦 Current Stock in Hand</h3>
+</div>
+<div class="balance-grid" style="margin-bottom: 3rem;">
+    {% for key, bal in balances.items %}
+    <div class="balance-card {% if bal.material_val == 'maize' %}border-maize{% else %}border-wheat{% endif %}">
+        <div class="balance-label">{{ bal.material_label }} | {{ bal.size_label }}</div>
+        <div class="balance-value" style="color: var(--navy);">{{ bal.qty }} <small style="font-size: 0.8rem; color: var(--slate-400);">sacks</small></div>
     </div>
     {% endfor %}
+    {% if f_from or f_to %}
+    <div class="balance-card" style="border-left: 4px solid var(--emerald);">
+        <div class="balance-label">Period Net Change</div>
+        <div class="balance-value" style="color: var(--emerald);">
+            +{{ p_rec }} / -{{ p_iss }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 600;">Acknowledged Rec vs Issued</div>
+    </div>
+    {% endif %}
 </div>
 
-{# ═══ PENDING HANDSHAKES (FINISHED STORE) ══════════════════════════════════════ #}
-{% if pending_collections or pending_receipts %}
-<div class="action-bar-modern" style="background: linear-gradient(90deg, #fffbeb, #fff); border-left: 5px solid #f59e0b; margin-bottom: 2.5rem;">
-  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-    <div>
-      <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #92400e; display: flex; align-items: center; gap: 0.5rem;">
-        <span style="font-size: 1.1rem;">⏱️</span> Action Required: Acceptance Pending
-      </h3>
-      <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #b45309; font-weight: 500;">
-        Internal transfers waiting for your official registry confirmation.
-      </p>
+<div class="action-bar-modern">
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
+        <a href="{% url 'finished_store:collect_for_sm' %}" class="btn-modern btn-modern-primary">+ Collect for Sales Manager</a>
+        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Company →</a>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
-      {% if pending_receipts %}
-      <a href="/finished-store/list/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; padding: 0.5rem 1rem; font-size: 0.8rem;">
-        📥 {{ pending_receipts|length }} Production Receipts 
-      </a>
-      {% endif %}
-      {% if pending_collections %}
-      <a href="/finished-store/list/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; padding: 0.5rem 1rem; font-size: 0.8rem;">
-        🚚 {{ pending_collections|length }} Returns
-      </a>
-      {% endif %}
+    <a href="{% url 'finished_store:list' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-200);">View Full Log</a>
+</div>
+
+{% if pending_receipts and current_user.is_store_officer %}
+<div class="card mb-24" style="border: 2px solid #0ea5e9; background: #f0f9ff; margin-top: 2rem;">
+    <div style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #0369a1;">🚧 Production Handshake: New arrivals to verify</h3>
+        <span class="badge-soft badge-soft-primary">{{ pending_receipts|length }} PENDING</span>
     </div>
-  </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th><th>Material</th><th>Qty</th><th>Shift/Batch</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in pending_receipts %}
+                <tr>
+                    <td>{{ r.date }}</td>
+                    <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.material_type|upper }} {{ r.product_size }}</span></td>
+                    <td style="font-weight: 800; color: var(--navy);">{{ r.qty_received }} sacks</td>
+                    <td style="font-size: 0.8rem; color: var(--slate-500);">#{{ r.packaging_ref }} ({{ r.shift|title }})</td>
+                    <td>
+                        <form method="post" action="{% url 'finished_store:acknowledge_receipt' r.pk %}" style="display:flex; gap:0.5rem;">
+                            {% csrf_token %}
+                            <input type="text" name="rejection_note" placeholder="Reason if rejecting..." class="form-input" style="flex:1; padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                            <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--emerald); color: #fff; padding: 0.3rem 0.75rem; font-size: 0.75rem;">Verify & Accept</button>
+                            <button type="submit" name="action" value="reject" class="btn-modern" style="background: var(--rose); color: #fff; padding: 0.3rem 0.75rem; font-size: 0.75rem;" onclick="return confirm('Reject this receipt?');">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
-<div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2rem;">
-    <div style="display: flex; flex-direction: column; gap: 2.5rem;">
-        <!-- PENDING HANDSHAKES (SM) -->
-        <div class="card">
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #fff1f2;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #9f1239; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>⏱</span> Sales Manager Acknowledgments
-                </h3>
-                <span class="badge-soft badge-soft-danger">{{ pending_collections|length }} Awaiting SM</span>
-            </div>
-            <div class="table-wrapper">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>S/N</th>
-                            <th>Date</th>
-                            <th>Material</th>
-                            <th style="text-align: right;">Sacks</th>
-                            <th>Sales Manager</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for coll in pending_collections %}
-                        <tr>
-                            <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
-                            <td style="font-weight: 600; color: var(--slate-700);">{{ coll.date }}</td>
-                            <td><span class="badge-soft {% if coll.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ coll.material_type|upper }}</span></td>
-                            <td style="text-align: right; font-weight: 800; color: var(--navy);">{{ coll.qty_sacks }}</td>
-                            <td style="font-weight: 700; color: var(--slate-800);">{{ coll.sales_manager.full_name }}</td>
-                            <td><span class="badge-soft badge-soft-warning">SM HANDSHAKE</span></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="6" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No pending collections. All goods accounted for.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PENDING COMPANY HANDOVERS (GM HANDSHAKE) -->
-        <div class="card">
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #fef3c7;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>🏢</span> Company Handovers Awaiting GM
-                </h3>
-                <span class="badge-soft" style="background: rgba(245, 158, 11, 0.1); color: #92400e;">{{ pending_company_issuances|length }} PENDING</span>
-            </div>
-            <div class="table-wrapper">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>S/N</th>
-                            <th>Date</th>
-                            <th>Material</th>
-                            <th style="text-align: right;">Sacks</th>
-                            <th>Status / Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for iss in pending_company_issuances %}
-                        <tr>
-                            <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
-                            <td style="font-weight: 600; color: var(--slate-700);">{{ iss.date }}</td>
-                            <td><span class="badge-soft {% if iss.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ iss.material_type|upper }}</span></td>
-                            <td style="text-align: right; font-weight: 800; color: var(--navy);">{{ iss.qty_issued }}</td>
-                            <td>
-                                <span class="badge-soft badge-soft-warning" style="font-size: 0.75rem;">AWAITING GM ACCEPTANCE</span>
-                                <div style="margin-top:4px; font-size: 0.8rem; color: var(--slate-500);">{{ iss.notes|truncatechars:40 }}</div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No pending company handovers.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PENDING RECEIPTS FROM PRODUCTION -->
-        <div class="card">
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #f0fdf4;">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>📥</span> New Receipts from Production
-                </h3>
-                <span class="badge-soft badge-soft-success">{{ pending_receipts|length }} NEW BATCHES</span>
-            </div>
-            <div class="table-wrapper">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>S/N</th>
-                            <th>Date</th>
-                            <th>Ref #</th>
-                            <th>Product</th>
-                            <th style="text-align: right;">Qty</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rec in pending_receipts %}
-                        <tr>
-                            <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
-                            <td style="font-weight: 600; color: var(--slate-700);">{{ rec.date }}</td>
-                            <td style="font-family:monospace; font-size:0.85rem; color: var(--blue);">{{ rec.packaging_ref }}</td>
-                            <td style="font-weight: 700; color: var(--slate-800);">{{ rec.material_type|upper }} ({{ rec.product_size }})</td>
-                            <td style="text-align: right; font-weight: 800; color: var(--emerald);">{{ rec.qty_received }}</td>
-                            <td>
-                                <a href="{% url 'finished_store:list' %}" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--navy); color: #fff;">Acknowledge →</a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="6" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">All production batches have been received.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+{% if pending_collections and current_user.is_store_officer %}
+<div class="card mb-24" style="border: 2px solid var(--amber); background: #fffbeb; margin-top: 2rem;">
+    <div style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <h3 style="margin: 0; font-size: 1rem; font-weight: 800; color: #92400e;">💼 Waiting for Sales Manager acknowledgement</h3>
     </div>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div class="card">
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">⚡ Quick Actions</h3>
-            </div>
-            <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <a href="{% url 'finished_store:create_sm_collection' %}" class="btn-modern btn-modern-primary" style="background: var(--blue); border-color: var(--blue); text-align: left; justify-content: space-between; padding: 1rem;">
-                    <span>📦 Record Issue to SM</span>
-                    <span>→</span>
-                </a>
-                <a href="{% url 'finished_store:list' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); text-align: left; justify-content: space-between; padding: 1rem;">
-                    <span>📄 View Full Registry</span>
-                    <span>→</span>
-                </a>
-                <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background: #fefce8; border-color: #fde68a; color: #854d0e; text-align: left; justify-content: space-between; padding: 1rem;">
-                    <span>🏢 Issuances to Company</span>
-                    <span>→</span>
-                </a>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-                <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📊 Historical Overview</h3>
-            </div>
-            <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; color: var(--slate-500); font-weight: 600;">Daily Receipts</span>
-                    <span style="font-size: 1rem; font-weight: 800; color: var(--emerald);">{{ receipts_today_count|default:"0" }} <small style="font-size: 0.7rem; color: var(--slate-400);">BATCHES</small></span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; color: var(--slate-500); font-weight: 600;">Daily Issuances</span>
-                    <span style="font-size: 1rem; font-weight: 800; color: var(--rose);">{{ issuances_today_count|default:"0" }} <small style="font-size: 0.7rem; color: var(--slate-400);">ORDERS</small></span>
-                </div>
-                <hr style="border: 0; border-top: 1px solid var(--slate-100); margin: 0.5rem 0;">
-                <p style="font-size:0.75rem; color: var(--slate-400); font-style: italic; line-height: 1.4;">
-                    Historical data is pulled from the immutable digital registry. Any discrepancy must be reported to the Auditor.
-                </p>
-            </div>
-        </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th><th>Manager</th><th>Material</th><th>Qty</th><th>Price</th><th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in pending_collections %}
+                <tr>
+                    <td>{{ c.date }}</td>
+                    <td><strong>{{ c.sales_manager.full_name }}</strong></td>
+                    <td><span class="badge-soft {% if c.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ c.material_type|upper }}</span></td>
+                    <td style="font-weight: 800;">{{ c.qty_sacks }} sacks</td>
+                    <td style="color: var(--slate-500);">₦{{ c.price_per_sack|floatformat:0 }}/unit</td>
+                    <td style="font-size: 0.8rem; font-style: italic; color: var(--slate-400);">{{ c.notes|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+{% endif %}
 
 {% include 'includes/_daily_ledger.html' %}
-
 {% endblock %}

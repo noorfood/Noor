@@ -59,7 +59,7 @@
 {% if current_user.role == 'md' %}
 <div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; margin-bottom: 3rem;">
     <h3 style="color: #60a5fa; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center &mdash; {% now "F Y" %}
+        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center &mdash; {% if f_from == f_to and f_from == today_str %}Today{% elif not f_from and not f_to %}All Time{% else %}Period View{% endif %}
     </h3>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
         <div>
@@ -97,7 +97,7 @@
 
 <div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #2e1065, #1e1b4b); border: 1px solid #4c1d95; margin-bottom: 3rem;">
     <h3 style="color: #c084fc; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center &mdash; {% now "F Y" %}
+        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center &mdash; {% if f_from == f_to and f_from == today_str %}Today{% elif not f_from and not f_to %}All Time{% else %}Period View{% endif %}
     </h3>
     <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
         <div>
@@ -264,7 +264,7 @@
 <div class="action-bar-modern" style="background: transparent; border: none; padding: 0; margin-bottom: 1.5rem;">
     <h3 style="font-size: 1rem; font-weight: 800; color: var(--navy); margin: 0;">🏬 Direct & Bran Sales Channel</h3>
     <div class="action-group">
-        <a href="{% url 'sales:record_company_sale' %}" class="btn-modern btn-modern-primary">🛒 Record Retail Sale</a>
+        <a href="{% url 'sales:record_direct_sale' %}" class="btn-modern btn-modern-primary">🛒 Record Retail Sale</a>
         <a href="{% url 'sales:record_bran_sale' %}" class="btn-modern" style="background: var(--emerald); color: white; border: none;">🌾 Record Bran Sale</a>
     </div>
 </div>

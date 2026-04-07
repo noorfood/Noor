@@ -10,6 +10,8 @@
         transition: all 0.2s;
     }
     .form-input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); background: #fff; }
+    .row-selected { background: #fffbeb; }
+    .form-disabled { opacity: 0.6; pointer-events: none; }
 </style>
 
 <div class="page-hero">
@@ -56,7 +58,7 @@
             </thead>
             <tbody>
                 {% for iss in pending_issuances %}
-                <tr style="{% if selected_issuance.pk == iss.pk %}background: #fffbeb;{% endif %}">
+                <tr class="{% if selected_issuance.pk == iss.pk %}row-selected{% endif %}">
                     <td>{{ iss.date|date:"M d" }}</td>
                     <td style="font-weight: 800; color: var(--navy);">{{ iss.issued_to }}</td>
                     <td>
@@ -82,7 +84,7 @@
 </div>
 
 <div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
-    <div class="card" id="reception-form" style="padding:2rem; {% if not selected_issuance %}opacity: 0.6; pointer-events: none;{% endif %}">
+    <div class="card {% if not selected_issuance %}form-disabled{% endif %}" id="reception-form" style="padding:2rem;">
         {% if not selected_issuance %}
         <div style="text-align: center; padding: 2rem; border: 2px dashed var(--slate-200); border-radius: 12px; margin-bottom: 2rem;">
             <p style="color: var(--slate-500); font-weight: 600;">Please select a pending cleaning from the list above to record reception.</p>

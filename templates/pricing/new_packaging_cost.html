@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Update Global Packaging Costs — Noor Foods{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden;">
+        <div style="background: var(--navy); padding: 1.5rem; color: white;">
+            <h3 style="margin: 0; font-weight: 800; font-size: 1.25rem;">Update Global Packaging Costs</h3>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; opacity: 0.8;">Set global price per unit for sacks and nylon.</p>
+        </div>
+        
+        <form method="POST" style="padding: 2rem;">
+            {% csrf_token %}
+            
+            {% if error %}
+            <div style="background: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Material dropdown removed for global config -->
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Price per Empty Sack (₦)</label>
+                    <input type="number" name="cost_per_sack" step="0.01" value="0.00" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 700;" required>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Price per Nylon Piece (₦)</label>
+                    <input type="number" name="nylon_cost_per_piece" step="0.01" value="0.00" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 700;" required>
+                </div>
+            </div>
+
+            <!-- Cleaning cost removed for global config -->
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Effective From</label>
+                <input type="date" name="effective_from" value="{{ today }}" style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; font-weight: 600;" required>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem;">Notes (Optional)</label>
+                <textarea name="notes" placeholder="Reason for update..." style="width: 100%; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; height: 80px; resize: none;"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <a href="{% url 'pricing:packaging_costs' %}" class="btn-modern" style="flex: 1; text-align: center; background: #f1f5f9; color: #475569; text-decoration: none;">Cancel</a>
+                <button type="submit" class="btn-modern btn-modern-primary" style="flex: 2;">Save Packaging Costs →</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

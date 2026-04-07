@@ -30,13 +30,17 @@ urlpatterns = [
     path('outstanding/', views.outstanding_view, name='outstanding'),
 
     # ── Company Direct Sales & Brand (GM only — separate flow) ────────────
-    path('company-sale/new/', views.record_company_sale, name='record_company_sale'),
     path('bran-sale/new/', views.record_bran_sale, name='record_bran_sale'),
     
     # ── GM Factory-Gate Direct Sales & MD Confirmation ─────────────────────
     path('direct-sale/new/', views.record_direct_sale, name='record_direct_sale'),
     path('direct-sales/', views.list_direct_sales, name='list_direct_sales'),
     path('direct-sale/<int:pk>/confirm/', views.md_confirm_direct_sale, name='md_confirm_direct_sale'),
+
+    # ── GM Remittance (GM sends money → MD confirms) ────────────────────────
+    path('gm-remittance/new/', views.record_gm_remittance, name='record_gm_remittance'),
+    path('gm-remittance/<int:remittance_id>/confirm/', views.confirm_gm_remittance, name='confirm_gm_remittance'),
+    path('gm-remittances/', views.list_gm_remittances, name='list_gm_remittances'),
 
     # ── Legacy routes (historical SalesRecord / SalesPayment viewing) ──────
     path('list/', views.list_sales, name='list'),

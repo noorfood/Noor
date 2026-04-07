@@ -1282,6 +1282,22 @@ body {
         box-shadow: 4px 0 24px rgba(0,0,0,0.3);
     }
 
+    /* Spectate mode on mobile: ensure banner + nav work together */
+    body.is-spectating .spectate-banner {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+    body.is-spectating .sidenav {
+        top: 96px;
+        height: calc(100vh - 96px);
+    }
+    body.is-spectating .mobile-overlay {
+        top: 96px;
+    }
+    body.is-spectating .layout {
+        margin-top: 96px;
+    }
+
     /* Main content full width */
     .main-content {
         margin-left: 0;

@@ -564,3 +564,50 @@ class DirectSalePayment(models.Model):
         return (f"DirectSale #{self.pk} | {self.material_type.upper()} × {self.qty_sold} "
                 f"| ₦{self.total_sale_value:,.0f} | {self.status.upper()} | {self.date}")
 
+
+class GMRemittance(models.Model):
+    """
+    Payment recorded by the General Manager (manager) when sending money 
+    collected from Direct Sales back to the company (confirmed by MD).
+    """
+    REMITTANCE_STATUS = [
+        ('pending_md', 'Pending MD Confirmation'),
+        ('confirmed', 'Confirmed by MD'),
+        ('rejected', 'Rejected by MD'),
+    ]
+
+    date = models.DateField()
+    amount_cash = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    amount_transfer = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+
+    # GM records this remittance
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='gm_remittances_recorded',
+        limit_choices_to={'role': 'manager'}
+    )
+    notes = models.TextField(blank=True)
+
+    # MD confirmation
+    status = models.CharField(max_length=15, choices=REMITTANCE_STATUS, default='pending_md')
+    confirmed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='gm_remittances_confirmed',
+        limit_choices_to={'role': 'md'}
+    )
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    md_notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_locked = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'sales_gm_remittance'
+        ordering = ['-date', '-created_at']
+
+    @property
+    def total(self):
+        return float(self.amount_cash) + float(self.amount_transfer)
+
+    def __str__(self):
+        return (f"GM Remittance #{self.pk} | ₦{self.total:,.0f} | "
+                f"{self.status.upper()} | {self.date}")

@@ -21,6 +21,23 @@
     </div>
 </div>
 
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+        <input type="hidden" name="range" value="{{ active_range }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Performance Window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
+</div>
+
 {% if pending_raw_costs %}
 <div class="action-bar-modern" style="background: #fff1f2; border: 1px solid #fecaca; margin-bottom: 2rem;">
     <div style="display: flex; align-items: center; gap: 1rem;">
@@ -107,7 +124,7 @@
                 <span style="color: var(--rose);">₦{{ total_costs|floatformat:0 }}</span>
             </div>
             <div style="height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
-                <div style="width: {{ profit_ratio_pct|floatformat:0 }}%; height: 100%;" class="{% if net_profit >= 0 %}bg-emerald{% else %}bg-rose{% endif %}"></div>
+                <div style="width:{{ profit_ratio_pct|floatformat:0|default:0 }}%; height: 100%;" class="{% if net_profit >= 0 %}bg-emerald{% else %}bg-rose{% endif %}"></div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.65rem; font-weight: 900; text-transform: uppercase;">
                 <span style="color: var(--slate-400);">Profit Percentage</span>
@@ -166,11 +183,6 @@
     <div class="card" style="padding: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">📈 Sales Progress Graph</h4>
-            <div style="display: flex; gap: 2px; background: var(--slate-100); padding: 3px; border-radius: 8px;">
-                <a href="?period=week" class="btn-modern {% if period == 'week' %}btn-modern-primary{% else %}text-muted bg-transparent border-0{% endif %}" style="padding: 4px 12px; font-size: 0.65rem;">Week</a>
-                <a href="?period=month" class="btn-modern {% if period == 'month' %}btn-modern-primary{% else %}text-muted bg-transparent border-0{% endif %}" style="padding: 4px 12px; font-size: 0.65rem;">Month</a>
-                <a href="?period=year" class="btn-modern {% if period == 'year' %}btn-modern-primary{% else %}text-muted bg-transparent border-0{% endif %}" style="padding: 4px 12px; font-size: 0.65rem;">Year</a>
-            </div>
         </div>
         <div style="height: 400px; position: relative;">
             <canvas id="trendsChart"></canvas>
@@ -223,8 +235,48 @@
     </div>
 </div>
 
+<div class="card" style="padding: 0; overflow: hidden; margin-top: 2rem;">
+    <div style="padding: 1.25rem 2rem; border-bottom: 1px solid var(--slate-100); background: #f0f9ff;">
+        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; color: #0369a1;">🗳️ GM Direct Sales Accountability — Factory Gate Cash</h3>
+    </div>
+    <div class="table-container">
+      <table class="premium-table">
+        <thead>
+            <tr>
+                <th>Manager Name</th>
+                <th class="num">Customer Paid</th>
+                <th class="num">Remitted to Company</th>
+                <th class="num">Pending MD Check</th>
+                <th class="num">Cash Owed to Co.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in gm_rows %}
+            <tr style="border-left: 4px solid #0ea5e9;">
+                <td>
+                    <div style="font-weight: 800; color: var(--navy);">{{ row.gm.full_name }}</div>
+                    <div style="font-size: 0.65rem; color: #0ea5e9; font-weight: 700; text-transform: uppercase;">General Manager</div>
+                </td>
+                <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">₦{{ row.received|floatformat:0 }}</td>
+                <td class="num" style="font-weight: 800; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ row.remitted|floatformat:0 }}</td>
+                <td class="num" style="font-weight: 800; color: var(--amber); font-family: 'JetBrains Mono', monospace;">₦{{ row.pending|floatformat:0 }}</td>
+                <td class="num font-bold {% if row.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-family: 'JetBrains Mono', monospace;">
+                    ₦{{ row.outstanding|floatformat:0 }}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No GM direct sale records detected.</td></tr>
+            {% endfor %}
+        </tbody>
+      </table>
+    </div>
+</div>
+
+<div id="chart-data-provider" data-json="{{ chart_data_json }}" style="display: none;"></div>
+
 <script>
-    const chartData = {{ chart_data_json|safe }};
+    const chartDataProvider = document.getElementById('chart-data-provider');
+    const chartData = JSON.parse(chartDataProvider.dataset.json);
     
     const ctx = document.getElementById('trendsChart').getContext('2d');
     new Chart(ctx, {

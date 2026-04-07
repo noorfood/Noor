@@ -1,384 +1,124 @@
 {% extends 'base.html' %}
-{% block title %}Product Store Registry — Noor Foods{% endblock %}
+{% block title %}Finished Store Registry — Noor Foods{% endblock %}
 {% block nav_fg_list %}active{% endblock %}
 {% block content %}
-
 <style>
-  /* Premium Table & Handshake Specifics */
-  .handshake-status {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: center;
-    text-align: center;
-  }
-  .handshake-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: var(--slate-500);
-  }
+    .border-maize { border-left: 4px solid var(--amber) !important; }
+    .border-wheat { border-left: 4px solid var(--indigo) !important; }
 </style>
-
-{# ══════════════════════════════════════════════════════════ #}
-{# HERO HEADER + LIVE BALANCES                               #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ HERO HEADER + LIVE BALANCES ════ #}
-{% if not current_user.is_general_manager %}
-<div class="page-hero">
+<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
         <div>
-            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📑 Digital Registry</span>
-            <h1 class="hero-title">Product Store Registry</h1>
-            <p class="hero-subtitle">Log of all bags received from production and those given out for sale.</p>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.75rem; color: var(--emerald); font-weight: 800; display: flex; align-items: center; gap: 6px; justify-content: flex-end;">
-                <span class="pulse-badge" style="background: var(--emerald); width: 6px; height: 6px;"></span>
-                LIVE INVENTORY SYNC
-            </div>
-            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 0.25rem; font-style: italic;">
-                Last calculated: {% now "H:i" %}
-            </div>
+            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📑 Store Registry</span>
+            <h1 class="hero-title" style="color: #fff;">Finished Goods Record</h1>
+            <p class="hero-subtitle" style="color: var(--slate-400);">Master log of all arrivals from production and departures to sales channels.</p>
         </div>
     </div>
 </div>
 
-<div class="balance-grid" style="margin-bottom: 2rem;">
-    {% for key, data in balances.items %}
-    <div class="card {% if data.qty == 0 %}border-rose{% elif data.qty < 10 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1rem;">
-        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.25rem;">
-            {{ data.material_label }} {{ data.size_label }}
-        </div>
-        <div class="{% if data.qty == 0 %}text-rose{% else %}text-navy{% endif %}" style="font-size: 1.5rem; font-weight: 900;">
-            {{ data.qty }} <small style="font-size: 0.75rem; color: var(--slate-400); font-weight: 600;">Sacks</small>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
-{# ══════════════════════════════════════════════════════════ #}
-{# QUICK ACTIONS                                             #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ QUICK ACTIONS ════ #}
-{% if current_user.is_store_officer or current_user.is_manager_or_above %}
-<div class="action-bar-modern" style="margin-bottom: 2rem;">
-    <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
-        <span class="badge-soft badge-soft-primary" style="padding: 0.5rem 0.75rem;">⚡ Operations</span>
-        <div style="height: 20px; width: 1px; background: var(--slate-200);"></div>
-        {% if current_user.is_store_officer %}
-        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700);">🏢 Give to Company Sale</a>
-        <a href="{% url 'finished_store:create_sm_collection' %}" class="btn-modern btn-modern-primary">📦 Give Bags to Manager</a>
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Registry View: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
         {% endif %}
     </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="." class="btn-modern" style="padding: 0.6rem;">↺</a>
-    </div>
+    {% include 'partials/date_toggles.html' %}
 </div>
-{% endif %}
 
-{# ══════════════════════════════════════════════════════════ #}
-{# PENDING RECEIPTS FROM PRODUCTION                           #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ PENDING RECEIPTS FROM PRODUCTION ════ #}
-{% if pending_receipts %}
-<div class="card mb-16" style="border: 1px solid var(--emerald); background: #f0fdf4;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: space-between;">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            <span class="pulse-badge" style="background: var(--emerald);"></span>
-            New Production Bags waiting for Confirmation
-        </h3>
-        <span class="badge-soft badge-soft-success">{{ pending_receipts|length }} PENDING</span>
+<div class="balance-grid" style="margin-bottom: 3rem;">
+    {% for key, bal in balances.items %}
+    <div class="balance-card {% if bal.material_val == 'maize' %}border-maize{% else %}border-wheat{% endif %}" style="padding: 1.25rem;">
+        <div class="balance-label">{{ bal.material_label }} | {{ bal.size_label }}</div>
+        <div class="balance-value" style="font-size: 1.5rem;">{{ bal.qty }} <small style="font-size: 0.75rem; color: var(--slate-400);">sacks</small></div>
     </div>
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Ref #</th>
-                    <th>Officer</th>
-                    <th>Material</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th style="width: 320px;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rec in pending_receipts %}
-                <tr>
-                    <td style="font-weight: 600; color: var(--slate-700);">{{ rec.date }}</td>
-                    <td style="font-family: monospace; color: var(--blue);">{{ rec.packaging_ref|default:"No Ref" }}</td>
-                    <td>
-                        <div style="font-weight: 700; color: var(--slate-800);">{{ rec.submitted_by.full_name }}</div>
-                        <div style="font-size: 0.75rem; color: var(--slate-500);">Production Team</div>
-                    </td>
-                    <td>
-                        <span class="badge-soft {% if rec.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ rec.get_material_type_display|upper }}</span>
-                        <strong>{{ rec.product_size }}</strong>
-                    </td>
-                    <td style="text-align: right; font-weight: 800; color: var(--emerald); font-size: 1.1rem;">+{{ rec.qty_received }}</td>
-                    <td>
-                        <form method="post" action="{% url 'finished_store:acknowledge_receipt' rec.pk %}" style="display:flex; gap:0.5rem;">
-                            {% csrf_token %}
-                            <input type="text" name="rejection_note" placeholder="Optional note..." class="form-input" style="flex:1; padding: 0.4rem 0.75rem; font-size: 0.8rem;">
-                            <button type="submit" name="action" value="accept" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--emerald); color: #fff;">Accept</button>
-                            <button type="submit" name="action" value="reject" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--rose); color: #fff;" onclick="return confirm('Reject this delivery?');">Reject</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    {% endfor %}
+    {% if f_from or f_to %}
+    <div class="balance-card" style="border-left: 4px solid var(--emerald); padding: 1.25rem;">
+        <div class="balance-label">Period Activity</div>
+        <div class="balance-value" style="color: var(--emerald); font-size: 1.3rem;">
+            +{{ p_rec }}/-{{ p_iss }}{% if p_ret %} (+{{ p_ret }} ret){% endif %}
+        </div>
+        <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700; margin-top: 0.25rem;">Net arrivals vs departures</div>
     </div>
+    {% endif %}
 </div>
-{% endif %}
 
-{# ══════════════════════════════════════════════════════════ #}
-{# PENDING RETURNS FROM SALES                                #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ PENDING RETURNS FROM SALES ════ #}
-{% if pending_returns %}
-<div class="card mb-16" style="border: 1px solid var(--amber); background: #fffbeb;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(245, 158, 11, 0.1); display: flex; align-items: center; justify-content: space-between;">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: #92400e; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            ⚠️ Bags returned by Sales Team waiting for Check-in
-        </h3>
-        <span class="badge-soft badge-soft-warning">{{ pending_returns|length }} AWAITING</span>
-    </div>
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Product</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th>Returned By</th>
-                    <th style="width: 320px;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ret in pending_returns %}
-                <tr>
-                    <td style="font-weight: 600; color: var(--slate-700);">{{ ret.date }}</td>
-                    <td>
-                        <span class="badge-soft {% if ret.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ ret.get_material_type_display|upper }}</span>
-                        <strong>{{ ret.product_size }}</strong>
-                    </td>
-                    <td style="text-align: right; font-weight: 800; color: var(--rose);">{{ ret.qty_returned }}</td>
-                    <td style="color: var(--slate-600); font-weight: 600;">{{ ret.returned_by.full_name }}</td>
-                    <td>
-                        <form method="post" action="{% url 'finished_store:acknowledge_return' ret.pk %}" style="display:flex; gap:0.5rem;">
-                            {% csrf_token %}
-                            <input type="text" name="rejection_note" placeholder="Verification note..." class="form-input" style="flex:1; padding: 0.4rem 0.75rem; font-size: 0.8rem;">
-                            <button type="submit" name="action" value="accept" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--emerald); color: #fff;">Accept</button>
-                            <button type="submit" name="action" value="reject" class="btn-modern" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: var(--rose); color: #fff;" onclick="return confirm('Reject this return?');">Reject</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-{# ══════════════════════════════════════════════════════════ #}
-{# PENDING SALES ISSUANCES — HANDSHAKE QUEUE                 #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ PENDING SALES ISSUANCES — HANDSHAKE QUEUE ════ #}
-{% if pending_issuances %}
-<div class="card mb-16">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; background: #f0f9ff;">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--blue); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🔄</span> Bags waiting to be Collected
-        </h3>
-        <span class="badge-soft badge-soft-primary">{{ pending_issuances|length }} NOT YET COLLECTED</span>
-    </div>
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th style="width: 60px;">S/N</th>
-                    <th>Approval Date</th>
-                    <th>Product</th>
-                    <th class="num">Sacks</th>
-                    <th>Who is collecting?</th>
-                    <th>Channel</th>
-                    <th style="text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for iss in pending_issuances %}
-                <tr>
-                    <td style="text-align: center;"><span style="font-weight: 800; color: var(--slate-400);">#{{ forloop.counter }}</span></td>
-                    <td><strong style="color: var(--navy);">{{ iss.date }}</strong></td>
-                    <td>
-                        <span class="{% if iss.material_type == 'maize' %}bg-amber{% else %}bg-purple{% endif %}" style="font-size: 0.7rem; color: #fff; border-radius: 6px; padding: 0.2rem 0.6rem; font-weight: 800; text-transform: uppercase;">
-                            {{ iss.get_material_type_display|upper }}
-                        </span>
-                        <strong style="color: var(--navy);">{{ iss.product_size }}</strong>
-                    </td>
-                    <td class="num"><strong style="color: var(--navy);">{{ iss.qty_issued }}</strong></td>
-                    <td>
-                        <div style="font-weight: 700; color: var(--slate-800);">
-                            {% if iss.channel == 'company' and iss.buyer_name %}{{ iss.buyer_name }}
-                            {% elif iss.sales_record and iss.sales_record.sales_person %}{{ iss.sales_record.sales_person.name }}
-                            {% elif iss.issued_to %}{{ iss.issued_to.full_name }}
-                            {% else %}—{% endif %}
-                        </div>
-                    </td>
-                    <td><span class="badge-soft badge-soft-primary" style="font-size: 0.7rem; font-weight: 800;">{{ iss.get_channel_display|upper }}</span></td>
-                    <td style="text-align: right;">
-                        {% if iss.channel == 'sales_manager' %}
-                            <span class="badge-soft badge-soft-warning">WAITING FOR MANAGER TO SIGN</span>
-                        {% elif iss.channel == 'company' %}
-                            {% if current_user == iss.approver %}
-                                <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
-                                    {% csrf_token %}
-                                    <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm handover of bags?');">Give Products Now</button>
-                                </form>
-                            {% else %}
-                                <span class="badge-soft badge-soft-warning">PENDING: {{ iss.approver.full_name|truncatechars:10 }}</span>
-                            {% endif %}
-                        {% else %}
-                            <form method="post" action="{% url 'finished_store:acknowledge_issuance' iss.pk %}" style="margin:0;">
-                                {% csrf_token %}
-                                <button type="submit" name="action" value="accept" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="return confirm('Confirm handover of bags?');">Give Products Now</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% else %}
-<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
-    <span style="font-size: 1.5rem;">✅</span>
-    <div>
-        <div style="font-weight: 800; color: #166534;">Queue Clear</div>
-        <div style="font-size: 0.85rem; color: #15803d;">All authorized releases have been physically collected.</div>
-    </div>
-</div>
-{% endif %}
-
-{# ══════════════════════════════════════════════════════════ #}
-{# RECENT RECEIPTS FROM PRODUCTION                           #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ RECENT RECEIPTS FROM PRODUCTION ════ #}
-<div class="card mb-16">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Bags Received from Production (History)</h3>
-    </div>
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>S/N</th>
-                    <th>Date</th>
-                    <th>Material</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th>Received By</th>
-                    {% if current_user.role == 'md' %}<th style="text-align: center;">Actions</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in receipts %}
-                <tr>
-                    <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
-                    <td style="font-weight: 600; color: var(--slate-700);">{{ r.date }}</td>
-                    <td>
-                        <span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.get_material_type_display|upper }}</span>
-                        <strong>{{ r.product_size }}</strong>
-                    </td>
-                    <td style="text-align: right; font-weight: 800; color: var(--emerald);">+{{ r.qty_received }}</td>
-                    <td style="color: var(--slate-600); font-weight: 600;">{{ r.received_by.full_name }}</td>
-                    {% if current_user.role == 'md' %}
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <a href="{% url 'data_explorer:edit' 'fgreceipt' r.pk %}" class="btn-modern" style="padding: 0.4rem; background: var(--slate-100); color: var(--slate-600);">✏</a>
-                            <a href="{% url 'data_explorer:delete' 'fgreceipt' r.pk %}" class="btn-modern" style="padding: 0.4rem; background: #fff1f2; color: var(--rose);" onclick="return confirm('Delete?');">🗑</a>
-                        </div>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr><td colspan="6" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No receipts recorded.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="action-bar-modern">
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
+        <a href="{% url 'finished_store:collect_for_sm' %}" class="btn-modern btn-modern-primary">+ Collect for Sales Manager</a>
+        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Company →</a>
     </div>
 </div>
 
-{# ══════════════════════════════════════════════════════════ #}
-{# ISSUANCE HISTORY                                          #}
-{# ══════════════════════════════════════════════════════════ #}
-{# ════ ISSUANCE HISTORY ════ #}
-<div class="card">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100);">
-        <h3 style="font-size: 0.95rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Past Record: Bags Given Out from Store</h3>
-    </div>
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>S/N</th>
-                    <th>Date</th>
-                    <th>Material</th>
-                    <th style="text-align: right;">Qty</th>
-                    <th>Recipient</th>
-                    <th>Channel</th>
-                    <th>Status</th>
-                    {% if current_user.role == 'md' %}<th style="text-align: center;">Actions</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for i in issuances %}
-                <tr {% if i.status == 'pending' %}style="background: #f0f9ff;"{% endif %}>
-                    <td style="font-family:monospace; color:var(--slate-400); font-weight: 600;">{{ forloop.counter }}</td>
-                    <td style="font-weight: 600; color: var(--slate-700);">{{ i.date }}</td>
-                    <td>
-                        <span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.get_material_type_display|upper }}</span>
-                        <strong>{{ i.product_size }}</strong>
-                    </td>
-                    <td style="text-align: right; font-weight: 800; color: var(--rose);">-{{ i.qty_issued }}</td>
-                    <td>
-                        <div style="font-weight: 700; color: var(--slate-800);">
-                            {% if i.channel == 'company' and i.buyer_name %}
-                                {{ i.buyer_name }}
-                            {% elif i.sales_record and i.sales_record.sales_person %}
-                                {{ i.sales_record.sales_person.name }}
-                            {% elif i.issued_to %}
-                                {{ i.issued_to.full_name }}
-                            {% else %}—{% endif %}
-                        </div>
-                    </td>
-                    <td><span class="badge-soft badge-soft-primary" style="font-size: 0.75rem;">{{ i.get_channel_display }}</span></td>
-                    <td>
-                        {% if i.status == 'accepted' %}
-                        <span class="badge-soft badge-soft-success">✓ ISSUED</span>
-                        {% elif i.status == 'pending' %}
-                        <span class="badge-soft badge-soft-warning">⏱ PENDING</span>
-                        {% else %}
-                        <span class="badge-soft">{{ i.status|upper }}</span>
-                        {% endif %}
-                    </td>
-                    {% if current_user.role == 'md' %}
-                    <td style="text-align: center;">
-                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <a href="{% url 'data_explorer:edit' 'fgissuance' i.pk %}" class="btn-modern" style="padding: 0.4rem; background: var(--slate-100); color: var(--slate-600);">✏</a>
-                            <a href="{% url 'data_explorer:delete' 'fgissuance' i.pk %}" class="btn-modern" style="padding: 0.4rem; background: #fff1f2; color: var(--rose);" onclick="return confirm('Delete?');">🗑</a>
-                        </div>
-                    </td>
-                    {% endif %}
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" style="text-align:center; padding: 2.5rem; color: var(--slate-400);">No issuances recorded.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<div class="section-header" style="margin-top: 3rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Acknowledged Arrivals (from Production)</h3>
+</div>
+<div class="table-wrapper" style="margin-bottom: 3rem;">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>S/N</th><th>Date</th><th>Material</th><th class="num">Qty</th><th>Batch Ref</th><th>Handled By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in receipts %}
+            {% if r.status == 'accepted' %}
+            <tr>
+                <td style="font-family:monospace; color: var(--slate-400);">{{ forloop.counter }}</td>
+                <td>{{ r.date }}</td>
+                <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.material_type|upper }} {{ r.product_size }}</span></td>
+                <td class="num"><strong style="color: var(--emerald);">+{{ r.qty_received }}</strong></td>
+                <td style="font-size: 0.85rem; color: var(--slate-500);">#{{ r.packaging_ref }}</td>
+                <td>{{ r.received_by.full_name }}</td>
+            </tr>
+            {% endif %}
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--slate-400);">No arrivals for this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
+<div class="section-header" style="margin-top: 3rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Goods Dispatched (Outwards)</h3>
+</div>
+<div class="table-wrapper">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>S/N</th><th>Date</th><th>Material</th><th class="num">Qty</th><th>Channel / Buyer</th><th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in issuances %}
+            <tr>
+                <td style="font-family:monospace; color: var(--slate-400);">{{ forloop.counter }}</td>
+                <td>{{ i.date }}</td>
+                <td><span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.material_type|upper }} {{ i.product_size }}</span></td>
+                <td class="num"><strong style="color: var(--rose);">-{{ i.qty_issued }}</strong></td>
+                <td><strong>{{ i.buyer_name|default:i.get_channel_display }}</strong></td>
+                <td>
+                    <span class="badge-soft {% if i.status == 'accepted' %}badge-soft-success{% elif i.status == 'pending' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">
+                        {{ i.get_status_display }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--slate-400);">No dispatches found for this period.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="margin-top:2rem;">
+    <a href="{% url 'finished_store:dashboard' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-300); color:var(--slate-600);">← Back to Dashboard</a>
+</div>
 {% endblock %}

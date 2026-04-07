@@ -24,6 +24,9 @@ def dashboard(request):
     from sales.models import SalesManagerCollection
     user = get_current_user(request)
     today = datetime.date.today()
+    
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
 
     from audit.models import AuditLog
     today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
@@ -40,29 +43,40 @@ def dashboard(request):
                     'material_val': mat_val
                 }
 
+    # Period Activity
+    receipts_qs = FinishedGoodsReceipt.objects.filter(status='accepted')
+    issuances_qs = FinishedGoodsIssuance.objects.filter(status='accepted')
+    if f_from:
+        receipts_qs = receipts_qs.filter(date__gte=f_from)
+        issuances_qs = issuances_qs.filter(date__gte=f_from)
+    if f_to:
+        receipts_qs = receipts_qs.filter(date__lte=f_to)
+        issuances_qs = issuances_qs.filter(date__lte=f_to)
+    
+    p_rec = receipts_qs.aggregate(t=Sum('qty_received'))['t'] or 0
+    p_iss = issuances_qs.aggregate(t=Sum('qty_issued'))['t'] or 0
+
     # Dashboard Metrics
     pending_collections = SalesManagerCollection.objects.filter(status='pending').order_by('-date', '-created_at')
     pending_receipts = FinishedGoodsReceipt.objects.filter(status='pending').order_by('-date', '-created_at')
     
-    receipts_today = FinishedGoodsReceipt.objects.filter(date=today, status='accepted').count()
-    issuances_today = SalesManagerCollection.objects.filter(date=today, status='accepted').count()
-
     # Real-world handshake: Goods issued to Company channel but not yet GM-acknowledged
     pending_company_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
 
     return render(request, 'finished_store/dashboard.html', {
         'current_user': user,
         'balances': balances,
+        'p_rec': p_rec, 'p_iss': p_iss,
         'pending_collections': pending_collections,
         'pending_receipts': pending_receipts,
         'pending_company_issuances': pending_company_issuances,
-        'receipts_today_count': receipts_today,
-        'issuances_today_count': issuances_today,
         'today_activities': today_activities,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': today.isoformat(),
     })
 
 
-@role_required('store_officer', 'md')
+@role_required('store_officer')
 @store_type_required('finished')
 def acknowledge_receipt(request, receipt_id):
     """FG Store Officer accepts or rejects a pending FG Receipt submitted by Production."""
@@ -254,7 +268,7 @@ def create_sm_collection(request):
     })
 
 
-@role_required('store_officer', 'md')
+@role_required('store_officer')
 @store_type_required('finished')
 def acknowledge_return(request, return_id):
     from finished_store.models import FinishedGoodsReturn
@@ -349,15 +363,30 @@ def acknowledge_issuance(request, issuance_id):
 def list_records(request):
     from finished_store.models import FinishedGoodsReturn
     user = get_current_user(request)
-    if user.role == 'store_officer':
-        receipts = FinishedGoodsReceipt.objects.all().order_by('-date', '-created_at')
-        issuances = FinishedGoodsIssuance.objects.all().order_by('-date', '-created_at')
-        historical_returns = FinishedGoodsReturn.objects.all().order_by('-date', '-created_at')
-    else:
-        receipts = FinishedGoodsReceipt.objects.all().order_by('-date', '-created_at')
-        issuances = FinishedGoodsIssuance.objects.all().order_by('-date', '-created_at')
-        historical_returns = FinishedGoodsReturn.objects.all().order_by('-date', '-created_at')
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
     
+    receipts = FinishedGoodsReceipt.objects.all()
+    issuances = FinishedGoodsIssuance.objects.all()
+    historical_returns = FinishedGoodsReturn.objects.all()
+
+    if f_from:
+        receipts = receipts.filter(date__gte=f_from)
+        issuances = issuances.filter(date__gte=f_from)
+        historical_returns = historical_returns.filter(date__gte=f_from)
+    if f_to:
+        receipts = receipts.filter(date__lte=f_to)
+        issuances = issuances.filter(date__lte=f_to)
+        historical_returns = historical_returns.filter(date__lte=f_to)
+    
+    p_rec = receipts.filter(status='accepted').aggregate(t=Sum('qty_received'))['t'] or 0
+    p_iss = issuances.filter(status='accepted').aggregate(t=Sum('qty_issued'))['t'] or 0
+    p_ret = historical_returns.filter(status='accepted').aggregate(t=Sum('qty_returned'))['t'] or 0
+
+    receipts = receipts.order_by('-date', '-created_at')
+    issuances = issuances.order_by('-date', '-created_at')
+    historical_returns = historical_returns.order_by('-date', '-created_at')
+
     from procurement.models import MATERIAL_CHOICES
     balances = {}
     for mat_val, mat_label in MATERIAL_CHOICES:
@@ -380,4 +409,7 @@ def list_records(request):
         'balances': balances, 'pending_returns': pending_returns,
         'pending_issuances': pending_issuances, 'pending_receipts': pending_receipts,
         'returns': historical_returns,
+        'p_rec': p_rec, 'p_iss': p_iss, 'p_ret': p_ret,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': datetime.date.today().isoformat(),
     })

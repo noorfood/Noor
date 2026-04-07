@@ -18,20 +18,42 @@ def _get_raw_store_balance(material_type):
 @store_type_required('raw')
 def dashboard(request):
     user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
     
     from audit.models import AuditLog
-    import datetime
-    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+    today = datetime.date.today()
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
     
-    receipts = RawMaterialReceipt.objects.filter(received_by=user).order_by('-date', '-created_at')[:10] if user.is_store_officer else RawMaterialReceipt.objects.all().order_by('-date', '-created_at')[:20]
+    receipts_qs = RawMaterialReceipt.objects.all()
+    issuances_qs = RawMaterialIssuance.objects.all()
+    
+    if f_from:
+        receipts_qs = receipts_qs.filter(date__gte=f_from)
+        issuances_qs = issuances_qs.filter(date__gte=f_from)
+    if f_to:
+        receipts_qs = receipts_qs.filter(date__lte=f_to)
+        issuances_qs = issuances_qs.filter(date__lte=f_to)
+
+    p_rec_m = receipts_qs.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
+    p_rec_w = receipts_qs.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    p_iss_m = issuances_qs.filter(material_type='maize').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    p_iss_w = issuances_qs.filter(material_type='wheat').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+
+    recent_receipts = RawMaterialReceipt.objects.filter(received_by=user).order_by('-date', '-created_at')[:10] if user.is_store_officer else RawMaterialReceipt.objects.all().order_by('-date', '-created_at')[:20]
     balance_maize = _get_raw_store_balance('maize')
     balance_wheat = _get_raw_store_balance('wheat')
     pending_costs = RawMaterialReceipt.objects.filter(cost_status='pending').count() if user.role == 'md' else 0
+    
     return render(request, 'procurement/dashboard.html', {
-        'current_user': user, 'receipts': receipts,
+        'current_user': user, 'receipts': recent_receipts,
         'balance_maize': balance_maize, 'balance_wheat': balance_wheat,
+        'p_rec_m': p_rec_m, 'p_rec_w': p_rec_w,
+        'p_iss_m': p_iss_m, 'p_iss_w': p_iss_w,
         'pending_costs': pending_costs,
         'today_activities': today_activities,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': today.isoformat(),
     })
 
 
@@ -114,6 +136,23 @@ def issue_raw(request):
                         notes=notes,
                         is_locked=True,
                     )
+
+                    # Automated Operational Expense: Cleaning Fee
+                    try:
+                        from pricing.models import CleaningCostConfig, OperationalExpense
+                        cost_config = CleaningCostConfig.get_active_config(material_type, date_val)
+                        if cost_config and cost_config.cleaning_cost_per_bag > 0:
+                            cleaning_amt = float(cost_config.cleaning_cost_per_bag) * num_bags_issued
+                            OperationalExpense.objects.create(
+                                date=date_val,
+                                description=f"Automated: Cleaning Fee for {num_bags_issued} bags of {material_type.title()}",
+                                amount=cleaning_amt,
+                                notes=f"Generated from Raw Issuance #{issuance.pk} to {issued_to_name}",
+                                recorded_by=user if user.role == 'md' else User.objects.filter(role='md').first()
+                            )
+                    except Exception as exp_err:
+                        print(f"Failed to record auto-expense: {str(exp_err)}")
+
                     log_action(request, user, 'procurement', 'ISSUE_RAW',
                                f'Issued {num_bags_issued} bags of {material_type} to {issued_to_name}',
                                'RawMaterialIssuance', issuance.pk)
@@ -133,12 +172,30 @@ def issue_raw(request):
 @store_type_required('raw')
 def list_records(request):
     user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+    
+    receipts = RawMaterialReceipt.objects.all()
+    issuances = RawMaterialIssuance.objects.all()
+
+    if f_from:
+        receipts = receipts.filter(date__gte=f_from)
+        issuances = issuances.filter(date__gte=f_from)
+    if f_to:
+        receipts = receipts.filter(date__lte=f_to)
+        issuances = issuances.filter(date__lte=f_to)
+
+    p_rec_m = receipts.filter(material_type='maize').aggregate(t=Sum('num_bags'))['t'] or 0
+    p_rec_w = receipts.filter(material_type='wheat').aggregate(t=Sum('num_bags'))['t'] or 0
+    p_iss_m = issuances.filter(material_type='maize').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+    p_iss_w = issuances.filter(material_type='wheat').aggregate(t=Sum('num_bags_issued'))['t'] or 0
+
     if user.is_store_officer:
-        receipts = RawMaterialReceipt.objects.filter(received_by=user).order_by('-date', '-created_at')
-        issuances = RawMaterialIssuance.objects.filter(issued_by=user).order_by('-date', '-created_at')
-    else:
-        receipts = RawMaterialReceipt.objects.all().order_by('-date', '-created_at')
-        issuances = RawMaterialIssuance.objects.all().order_by('-date', '-created_at')
+        receipts = receipts.filter(received_by=user)
+        issuances = issuances.filter(issued_by=user)
+        
+    receipts = receipts.order_by('-date', '-created_at')
+    issuances = issuances.order_by('-date', '-created_at')
 
     # Compute cleaning loss warnings
     loss_warnings = {}
@@ -152,7 +209,11 @@ def list_records(request):
         'current_user': user, 'receipts': receipts, 'issuances': issuances,
         'balance_maize': _get_raw_store_balance('maize'),
         'balance_wheat': _get_raw_store_balance('wheat'),
+        'p_rec_m': p_rec_m, 'p_rec_w': p_rec_w,
+        'p_iss_m': p_iss_m, 'p_iss_w': p_iss_w,
         'loss_warnings': loss_warnings,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': today.isoformat(),
     })
 
 

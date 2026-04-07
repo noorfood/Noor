@@ -50,20 +50,20 @@ def get_sacks_in_transit(user, material_type):
 def dashboard(request):
     user = get_current_user(request)
     pending_transfers = []
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
     today = datetime.date.today()
-    
     from audit.models import AuditLog
     today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
     
     # Dashboard metrics for Production Officer
-    today_milled_bags = 0
-    today_packaged_sacks = 0
+    period_milled_bags = 0
+    period_packaged_sacks = 0
     all_user_stats = []
     
     if user.is_production_officer:
         pending_transfers = CleanRawIssuance.objects.filter(issued_to=user, status='pending').order_by('-date')
         milling_batches = MillingBatch.objects.filter(production_officer=user).order_by('-date', '-created_at')[:10]
-        packaging_batches = [] # Removed per-batch packaging list
         
         balance_maize = get_production_balance(user, 'maize')
         balance_wheat = get_production_balance(user, 'wheat')
@@ -77,16 +77,22 @@ def dashboard(request):
         sacks_transit_maize = get_sacks_in_transit(user, 'maize')
         sacks_transit_wheat = get_sacks_in_transit(user, 'wheat')
 
-        # Daily performance
-        today_milled = MillingBatch.objects.filter(production_officer=user, date=today).aggregate(
-            bags=Sum('bags_milled_new') + Sum('outstanding_bags_milled')
-        )
-        today_milled_bags = today_milled['bags'] or 0
+        # Period performance
+        milled_qs = MillingBatch.objects.filter(production_officer=user)
+        if f_from: milled_qs = milled_qs.filter(date__gte=f_from)
+        if f_to:   milled_qs = milled_qs.filter(date__lte=f_to)
         
-        today_packaged = PackagingBatch.objects.filter(production_officer=user, date=today).aggregate(
-            sacks=Sum('qty_10kg')
+        m_perf = milled_qs.aggregate(
+            bags=Coalesce(Sum('bags_milled_new'), 0) + Coalesce(Sum('outstanding_bags_milled'), 0)
         )
-        today_packaged_sacks = today_packaged['sacks'] or 0
+        period_milled_bags = m_perf['bags'] or 0
+        
+        packaged_qs = PackagingBatch.objects.filter(production_officer=user)
+        if f_from: packaged_qs = packaged_qs.filter(date__gte=f_from)
+        if f_to:   packaged_qs = packaged_qs.filter(date__lte=f_to)
+        
+        p_perf = packaged_qs.aggregate(sacks=Sum('qty_10kg'))
+        period_packaged_sacks = p_perf['sacks'] or 0
 
         unissued_count = PackagingBatch.objects.annotate(
             issued_qty=Coalesce(Sum('fg_receipts__qty_received'), 0)
@@ -107,11 +113,19 @@ def dashboard(request):
             pm = get_powder_balance(u, 'maize')
             pw = get_powder_balance(u, 'wheat')
             
-            # Add today's performance for manager view
-            tm = MillingBatch.objects.filter(production_officer=u, date=today).aggregate(
-                b=Sum('bags_milled_new') + Sum('outstanding_bags_milled')
+            # Performance for filtered period
+            m_qs = MillingBatch.objects.filter(production_officer=u)
+            if f_from: m_qs = m_qs.filter(date__gte=f_from)
+            if f_to:   m_qs = m_qs.filter(date__lte=f_to)
+            
+            tm = m_qs.aggregate(
+                b=Coalesce(Sum('bags_milled_new'), 0) + Coalesce(Sum('outstanding_bags_milled'), 0)
             )['b'] or 0
-            tp = PackagingBatch.objects.filter(production_officer=u, date=today).aggregate(s=Sum('qty_10kg'))['s'] or 0
+            
+            p_qs = PackagingBatch.objects.filter(production_officer=u)
+            if f_from: p_qs = p_qs.filter(date__gte=f_from)
+            if f_to:   p_qs = p_qs.filter(date__lte=f_to)
+            tp = p_qs.aggregate(s=Sum('qty_10kg'))['s'] or 0
             
             # Sack Handshake balances for manager oversight
             shm = get_sacks_in_hand(u, 'maize')
@@ -124,13 +138,13 @@ def dashboard(request):
                     'user': u, 
                     'bags_maize': bm, 'bags_wheat': bw, 
                     'powder_maize': pm, 'powder_wheat': pw,
-                    'today_milled': tm, 'today_packaged': tp,
+                    'period_milled': tm, 'period_packaged': tp,
                     'sacks_hand_maize': shm, 'sacks_hand_wheat': shw,
                     'sacks_transit_maize': stm, 'sacks_transit_wheat': stw
                 })
         
     return render(request, 'production/dashboard.html', {
-        'current_user': user, 'milling_batches': milling_batches, 'packaging_batches': packaging_batches, 
+        'current_user': user, 'milling_batches': milling_batches, 'packaging_batches': packaging_batches if not user.is_production_officer else [], 
         'outstanding_total': outstanding_total, 'pending_transfers': pending_transfers,
         'balance_maize': balance_maize, 'balance_wheat': balance_wheat,
         'powder_maize': powder_maize, 'powder_wheat': powder_wheat,
@@ -138,11 +152,13 @@ def dashboard(request):
         'sacks_hand_wheat': sacks_hand_wheat if user.is_production_officer else 0,
         'sacks_transit_maize': sacks_transit_maize if user.is_production_officer else 0,
         'sacks_transit_wheat': sacks_transit_wheat if user.is_production_officer else 0,
-        'today_milled_bags': today_milled_bags,
-        'today_packaged_sacks': today_packaged_sacks,
+        'period_milled_bags': period_milled_bags,
+        'period_packaged_sacks': period_packaged_sacks,
         'all_user_stats': all_user_stats if not user.is_production_officer else None,
         'today_activities': today_activities,
         'unissued_count': unissued_count,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': today.isoformat(),
     })
 
 
@@ -245,6 +261,37 @@ def record_packaging(request):
                         is_locked=True,
                     )
                     batch.save()
+
+                    # Automated Operational Expenses
+                    try:
+                        from pricing.models import PackagingCostConfig, OperationalExpense
+                        cost_config = PackagingCostConfig.get_active_config(date_val)
+                        if cost_config:
+                            # 1. Sack Expense (1 sack per 10kg produced)
+                            if cost_config.cost_per_sack > 0:
+                                sack_amt = float(cost_config.cost_per_sack) * qty_10kg
+                                OperationalExpense.objects.create(
+                                    date=date_val,
+                                    description=f"Automated: {qty_10kg} Empty Sacks used for {material_type.title()}",
+                                    amount=sack_amt,
+                                    notes=f"Generated from Packaging Batch #{batch.pk}",
+                                    recorded_by=user if user.role == 'md' else User.objects.filter(role='md').first()
+                                )
+
+                            # 2. Nylon Expense (User-defined: assuming 10 nylon units per 10kg sack or similar)
+                            # Actually usually 1 nylon per bag, but let's assume the price is per piece.
+                            if cost_config.nylon_cost_per_piece > 0:
+                                nylon_amt = float(cost_config.nylon_cost_per_piece) * qty_10kg
+                                OperationalExpense.objects.create(
+                                    date=date_val,
+                                    description=f"Automated: {qty_10kg} Nylon liners used for {material_type.title()}",
+                                    amount=nylon_amt,
+                                    notes=f"Generated from Packaging Batch #{batch.pk}",
+                                    recorded_by=user if user.role == 'md' else User.objects.filter(role='md').first()
+                                )
+                    except Exception as exp_err:
+                        # Log but don't crash the main flow
+                        print(f"Failed to record auto-expense: {str(exp_err)}")
 
                     log_action(request, user, 'production', 'RECORD_PACKAGING',
                                f'Packaging: Used {powder_used_kg}kg | {qty_10kg} sacks | Pending manual issuance',
@@ -362,6 +409,7 @@ def list_batches(request):
         'milling_batches': milling_batches,
         'packaging_batches': packaging_batches,
         'f_from': f_from, 'f_to': f_to, 'f_material': f_material, 'f_flag': f_flag,
+        'today_str': datetime.date.today().isoformat(),
     })
 
 

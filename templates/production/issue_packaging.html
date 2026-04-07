@@ -9,13 +9,18 @@
     </div>
 
     <div style="background: white; padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);">
+        <style>
+            .mat-maize-box { padding: 1rem; background: #fffbeb; border-radius: 12px; border: 1px solid #fef3c7; text-align: center; }
+            .mat-wheat-box { padding: 1rem; background: #f5f3ff; border-radius: 12px; border: 1px solid #ddd6fe; text-align: center; }
+            .mat-neutral-box { padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
+        </style>
         {# Balance Header #}
         <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div style="padding: 1rem; background: {% if material_type == 'maize' %}#fffbeb{% else %}#f8fafc{% endif %}; border-radius: 12px; border: 1px solid {% if material_type == 'maize' %}#fef3c7{% else %}#e2e8f0{% endif %}; text-align: center;">
+            <div class="{% if material_type == 'maize' %}mat-maize-box{% else %}mat-neutral-box{% endif %}">
                 <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Maize In Hand</div>
                 <div style="font-size: 1.25rem; font-weight: 800; color: #f59e0b;">{{ hand_maize }} sacks</div>
             </div>
-            <div style="padding: 1rem; background: {% if material_type == 'wheat' %}#f5f3ff{% else %}#f8fafc{% endif %}; border-radius: 12px; border: 1px solid {% if material_type == 'wheat' %}#ddd6fe{% else %}#e2e8f0{% endif %}; text-align: center;">
+            <div class="{% if material_type == 'wheat' %}mat-wheat-box{% else %}mat-neutral-box{% endif %}">
                 <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Wheat In Hand</div>
                 <div style="font-size: 1.25rem; font-weight: 800; color: #8b5cf6;">{{ hand_wheat }} sacks</div>
             </div>
@@ -65,4 +70,26 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.querySelectorAll('input[name="material_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const mat = this.value;
+            const input = document.getElementById('qty_to_issue');
+            const handMaize = Number("{{ hand_maize|default:0 }}");
+            const handWheat = Number("{{ hand_wheat|default:0 }}");
+            
+            if (mat === 'maize') {
+                input.max = handMaize;
+            } else {
+                input.max = handWheat;
+            }
+            
+            // Optional: reset value if it exceeds new max
+            if (parseInt(input.value) > parseInt(input.max)) {
+                input.value = input.max;
+            }
+        });
+    });
+</script>
 {% endblock %}

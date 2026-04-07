@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}GM Remittance Log — Noor Foods{% endblock %}
+{% block content %}
+<style>
+  .badge-status { padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; }
+  .badge-confirmed { background: #dcfce7; color: #166534; }
+  .badge-pending { background: #fef9c3; color: #854d0e; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; }
+  .premium-table { width: 100%; border-collapse: collapse; font-size: .88rem; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+  .premium-table thead th { background: #1e293b; color: #fff; padding: 1rem; text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+  .premium-table tbody td { padding: 1.25rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+</style>
+
+<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 2rem 2.5rem; border-radius: 16px; margin-bottom: 2.5rem; color: white;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span style="text-transform: uppercase; letter-spacing: 2px; font-size: .7rem; font-weight: 700; color: #38bdf8; margin-bottom: 0.5rem; display: block;">📜 Remittance History</span>
+            <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0;">GM Direct Sale Remittances</h1>
+        </div>
+        {% if current_user.role == 'manager' %}
+        <a href="{% url 'sales:record_gm_remittance' %}" class="btn-modern" style="background: #0ea5e9; color: white; padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 700; text-decoration: none;">💸 Send Money →</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if pending %}
+<div class="card" style="border: 2px solid #f59e0b; background: #fffbf2; margin-bottom: 2.5rem; border-radius: 16px; overflow: hidden;">
+    <div style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; font-weight: 800; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+        <span>⏳ Pending MD Confirmation</span>
+        <span class="badge" style="background: white; color: #b45309; padding: 2px 8px; border-radius: 4px;">{{ pending|length }} NEW</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th><th>GM/Manager</th><th class="num">Amount</th><th>Notes</th>{% if current_user.role == 'md' %}<th>Action</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in pending %}
+                <tr>
+                    <td style="font-weight: 700;">{{ r.date }}</td>
+                    <td style="font-weight: 600; color: #334155;">{{ r.recorded_by.full_name }}</td>
+                    <td class="num"><strong style="font-size: 1.1rem; color: #1e293b;">₦{{ r.total|floatformat:0 }}</strong></td>
+                    <td style="font-size: 0.85rem; color: #64748b;">{{ r.notes|default:"—" }}</td>
+                    {% if current_user.role == 'md' %}
+                    <td>
+                        <a href="{% url 'sales:confirm_gm_remittance' r.pk %}" class="btn-modern" style="background: #1e293b; color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none;">Verify & Accept</a>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="section-header" style="margin-bottom: 1.5rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 800; color: #1e293b;">📜 Complete Remittance Log</h3>
+</div>
+
+<div class="table-wrapper">
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>Date</th><th>GM/Manager</th><th class="num">Cash</th><th class="num">Transfer</th><th class="num">Total</th><th>Status</th><th>MD Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in remittances %}
+            <tr>
+                <td style="font-weight: 600;">{{ r.date }}</td>
+                <td>{{ r.recorded_by.full_name }}</td>
+                <td class="num" style="color: #64748b;">₦{{ r.amount_cash|floatformat:0 }}</td>
+                <td class="num" style="color: #64748b;">₦{{ r.amount_transfer|floatformat:0 }}</td>
+                <td class="num"><strong>₦{{ r.total|floatformat:0 }}</strong></td>
+                <td>
+                    {% if r.status == 'confirmed' %}
+                        <span class="badge-status badge-confirmed">Confirmed</span>
+                    {% elif r.status == 'rejected' %}
+                        <span class="badge-status badge-rejected">Rejected</span>
+                    {% else %}
+                        <span class="badge-status badge-pending">Pending MD</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.8rem; color: #94a3b8; font-style: italic;">{{ r.md_notes|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="padding: 4rem; text-align: center; color: #94a3b8; font-style: italic;">No remittance records found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

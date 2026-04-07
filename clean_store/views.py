@@ -22,22 +22,53 @@ def _get_clean_store_balance(material_type):
 @store_type_required('raw')
 def dashboard(request):
     user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
     
     from audit.models import AuditLog
-    import datetime
-    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=datetime.date.today()).order_by('-timestamp')
+    today = datetime.date.today()
+    today_activities = AuditLog.objects.filter(user_id=user.pk, timestamp__date=today).order_by('-timestamp')
     
+    # Calculate balances
     balance_maize = _get_clean_store_balance('maize')
     balance_wheat = _get_clean_store_balance('wheat')
+    
+    # Period activity if filtered
+    m_receipts = CleanRawReceipt.objects.filter(material_type='maize')
+    w_receipts = CleanRawReceipt.objects.filter(material_type='wheat')
+    m_issues = CleanRawIssuance.objects.filter(material_type='maize')
+    w_issues = CleanRawIssuance.objects.filter(material_type='wheat')
+    
+    if f_from:
+        m_receipts = m_receipts.filter(date__gte=f_from)
+        w_receipts = w_receipts.filter(date__gte=f_from)
+        m_issues = m_issues.filter(date__gte=f_from)
+        w_issues = w_issues.filter(date__gte=f_from)
+    if f_to:
+        m_receipts = m_receipts.filter(date__lte=f_to)
+        w_receipts = w_receipts.filter(date__lte=f_to)
+        m_issues = m_issues.filter(date__lte=f_to)
+        w_issues = w_issues.filter(date__lte=f_to)
+
+    p_rec_m = m_receipts.aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_rec_w = w_receipts.aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_iss_m = m_issues.aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_iss_w = w_issues.aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+
     recent_issuances = CleanRawIssuance.objects.order_by('-date', '-created_at')[:10]
     pending_returns = CleanRawReturn.objects.filter(status='pending').order_by('-date', '-created_at')
+    
     return render(request, 'clean_store/dashboard.html', {
         'current_user': user,
         'balance_maize': balance_maize,
         'balance_wheat': balance_wheat,
+        'p_rec_m': p_rec_m, 'p_rec_w': p_rec_w,
+        'p_iss_m': p_iss_m, 'p_iss_w': p_iss_w,
         'recent_issuances': recent_issuances,
         'pending_returns': pending_returns,
         'today_activities': today_activities,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': today.isoformat(),
     })
 
 
@@ -207,12 +238,35 @@ def acknowledge_return(request, return_id):
 @store_type_required('raw')
 def list_records(request):
     user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+    
+    issuances = CleanRawIssuance.objects.all()
+    returns = CleanRawReturn.objects.all()
+    receipts = CleanRawReceipt.objects.all()
+    
+    if f_from:
+        issuances = issuances.filter(date__gte=f_from)
+        returns = returns.filter(date__gte=f_from)
+        receipts = receipts.filter(date__gte=f_from)
+    if f_to:
+        issuances = issuances.filter(date__lte=f_to)
+        returns = returns.filter(date__lte=f_to)
+        receipts = receipts.filter(date__lte=f_to)
+        
+    p_rec_m = receipts.filter(material_type='maize').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_rec_w = receipts.filter(material_type='wheat').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_iss_m = issuances.filter(material_type='maize').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_iss_w = issuances.filter(material_type='wheat').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_ret_m = returns.filter(material_type='maize', status='accepted').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+    p_ret_w = returns.filter(material_type='wheat', status='accepted').aggregate(t=db_models.Sum('num_bags'))['t'] or 0
+
     if user.is_store_officer:
-        issuances = CleanRawIssuance.objects.filter(issued_by=user).order_by('-date', '-created_at')
-        returns = CleanRawReturn.objects.filter(received_by=user).order_by('-date', '-created_at')
-    else:
-        issuances = CleanRawIssuance.objects.all().order_by('-date', '-created_at')
-        returns = CleanRawReturn.objects.all().order_by('-date', '-created_at')
+        issuances = issuances.filter(issued_by=user)
+        returns = returns.filter(received_by=user)
+    
+    issuances = issuances.order_by('-date', '-created_at')
+    returns = returns.order_by('-date', '-created_at')
     
     pending_returns = CleanRawReturn.objects.filter(status='pending').order_by('-date', '-created_at')
     
@@ -220,5 +274,10 @@ def list_records(request):
         'current_user': user, 'issuances': issuances, 'returns': returns,
         'balance_maize': _get_clean_store_balance('maize'),
         'balance_wheat': _get_clean_store_balance('wheat'),
+        'p_rec_m': p_rec_m, 'p_rec_w': p_rec_w,
+        'p_iss_m': p_iss_m, 'p_iss_w': p_iss_w,
+        'p_ret_m': p_ret_m, 'p_ret_w': p_ret_w,
         'pending_returns': pending_returns,
+        'f_from': f_from, 'f_to': f_to,
+        'today_str': datetime.date.today().isoformat(),
     })

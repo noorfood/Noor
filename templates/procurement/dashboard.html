@@ -9,25 +9,52 @@
             <h1 class="hero-title" style="color: #fff;">Raw Material Procurement</h1>
             <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Point of entry for the production chain: Managing grain intake and supplier batches.</p>
         </div>
+        <div style="text-align:right;">
+            <div style="font-size:0.7rem; color:#60a5fa; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">{{ "now"|date:"l, d F Y" }}</div>
+            <div style="font-size:1.1rem; font-weight:800; color:#fff; margin-top:0.25rem;">{{ current_user.full_name }}</div>
+        </div>
     </div>
 </div>
 
-<div class="balance-grid" style="margin-bottom: 3rem;">
-  <div class="balance-card" style="border-left: 4px solid var(--amber);">
-    <div class="balance-label" style="color: var(--amber);">🌽 Maize Inventory</div>
-    <div class="balance-value">{{ balance_maize }} <small>Bags</small></div>
-    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">100kg Dirty Grain Stock</div>
-  </div>
-  <div class="balance-card" style="border-left: 4px solid var(--emerald);">
-    <div class="balance-label" style="color: var(--emerald);">🌾 Wheat Inventory</div>
-    <div class="balance-value">{{ balance_wheat }} <small>Bags</small></div>
-    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">100kg Dirty Grain Stock</div>
-  </div>
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Stock window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
 </div>
 
+<div class="balance-grid" style="margin-bottom: 3rem;">
+    <div class="balance-card" style="border-left: 4px solid var(--amber);">
+        <div class="balance-label" style="color: var(--amber);">🌽 Maize in Store</div>
+        <div class="balance-value">{{ balance_maize }} <small style="font-size: 1rem; color: var(--slate-400);">bags</small></div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 600;">Total Stock in hand</div>
+    </div>
+    <div class="balance-card" style="border-left: 4px solid var(--emerald);">
+        <div class="balance-label" style="color: var(--emerald);">🌾 Wheat in Store</div>
+        <div class="balance-value">{{ balance_wheat }} <small style="font-size: 1rem; color: var(--slate-400);">bags</small></div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 600;">Total Stock in hand</div>
+    </div>
+    {% if f_from or f_to %}
+    <div class="balance-card" style="border-left: 4px solid var(--blue);">
+        <div class="balance-label" style="color: var(--blue);">Period Intake (Net)</div>
+        <div class="balance-value" style="color: var(--blue);">
+            +{{ p_rec_m|add:p_rec_w }} / -{{ p_iss_m|add:p_iss_w }}
+        </div>
+        <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 600;">Rec vs Cleaned in period</div>
+    </div>
+    {% endif %}
+</div>
 
-{# QUICK ACTIONS #}
-<div class="action-bar-modern" style="margin-top: 2rem; margin-bottom: 2rem;">
+<div class="action-bar-modern">
   <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; width: 100%;">
     <span style="font-weight:800; color:var(--slate-800); font-size:1rem; margin-right: 0.5rem;">⚡ Quick Actions:</span>
     <a href="{% url 'procurement:receive' %}" class="btn-modern btn-modern-primary">+ Receive New Stock</a>
@@ -45,8 +72,7 @@
   </div>
 </div>
 
-{# RECENT RECEIPTS TABLE #}
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; margin-top: 3rem;">
   <h3 style="font-size:1.25rem; font-weight:800; color:var(--navy); margin:0;">📥 Recent Raw Material Receipts</h3>
 </div>
 <div class="table-wrapper">
@@ -57,9 +83,8 @@
         <th>Date</th>
         <th>Material</th>
         <th>Supplier</th>
-        <th style="text-align: right;">Bags Received</th>
-        <th style="text-align: right;">Approx. Weight</th>
-        <th>Received By</th>
+        <th class="num">Bags Received</th>
+        <th>Recorded By</th>
       </tr>
     </thead>
     <tbody>
@@ -69,17 +94,15 @@
         <td style="white-space:nowrap; font-weight:600; color:var(--slate-700);">{{ r.date }}</td>
         <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.get_material_type_display|upper }}</span></td>
         <td><strong style="color:var(--navy);">{{ r.supplier }}</strong></td>
-        <td style="text-align: right; font-weight:800; color:var(--emerald); font-family: monospace; font-size: 1.1rem;">+{{ r.num_bags }}</td>
-        <td style="text-align: right; color:var(--slate-500); font-family: monospace; font-size: 1.05rem;">{{ r.approx_weight_kg|default:"—" }} kg</td>
+        <td class="num"><strong style="color:var(--emerald);">+{{ r.num_bags }}</strong></td>
         <td><span style="font-size: 0.9rem; font-weight: 600; color: var(--slate-600);">{{ r.received_by.full_name }}</span></td>
       </tr>
       {% empty %}
-      <tr><td colspan="7" style="text-align:center; padding:3rem; color:var(--slate-400);">No receipts recorded yet. Click "Receive New Stock" to begin.</td></tr>
+      <tr><td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No receipts recorded yet.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
 {% include 'includes/_daily_ledger.html' %}
-
 {% endblock %}
