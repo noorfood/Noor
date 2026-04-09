@@ -26,7 +26,7 @@
 </div>
 {% endif %}
 
-<div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2.5rem;">
+<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem;">
     <div class="card" style="padding: 2rem;">
         <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
             Registry Confirmation
@@ -34,7 +34,7 @@
         
         <form method="post">
             {% csrf_token %}
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="date">Collection Date</label>
                     <input type="date" id="date" name="date" value="{{ today }}" class="form-input" required>
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="product_size">Product Size</label>
                     <select id="product_size" name="product_size" class="form-input" required>

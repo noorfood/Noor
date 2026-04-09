@@ -1400,6 +1400,38 @@ body {
     }
 }
 
+/* ══════════ GLOBAL FORM & DATATABLE RESPONSIVENESS (≤ 768px) ══════════ */
+@media (max-width: 768px) {
+    /* 1. Force multi-column form grids to stack vertically */
+    .layout-grid,
+    .form-row,
+    .form-row-3,
+    .form-row-inline,
+    .form-row-three,
+    .balance-grid,
+    div[style*="grid-template-columns: 1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 3"],
+    div[style*="grid-template-columns: 1fr 2"],
+    div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* 2. simple-datatables wrapper fix on mobile */
+    .dataTable-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+        display: block !important;
+    }
+
+    /* 3. Give inputs bit more padding for tap targets */
+    .form-input {
+        padding: 10px 12px;
+    }
+}
+
 /* ══════════ VERY SMALL PHONE (≤ 480px) ══════════ */
 @media (max-width: 480px) {
     .main-content {

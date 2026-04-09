@@ -31,7 +31,7 @@
 </div>
 {% endif %}
 
-            <div class="layout-grid" style="grid-template-columns: 1fr 320px; gap: 2.5rem;">
+            <div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem;">
     <div class="card" style="padding: 2rem;">
         <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
             Receipt Parameters
@@ -39,7 +39,7 @@
         
         <form method="post">
             {% csrf_token %}
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label class="form-label" for="date">Date Received</label>
                     <input type="date" name="date" id="date" value="{{ today }}" required class="form-input">
@@ -55,7 +55,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--slate-50); border-radius: 12px; border: 1px solid var(--slate-100);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--slate-50); border-radius: 12px; border: 1px solid var(--slate-100);">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label class="form-label" for="cash_received">Cash (₦)</label>
                     <input type="number" name="cash_received" id="cash_received" step="0.01" placeholder="0.00" class="form-input" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
@@ -68,7 +68,7 @@
 
             <div style="background: #fffbeb; padding: 1.5rem; border-radius: 16px; border: 1px solid #fef3c7; margin-bottom: 1.5rem;">
                 <h4 style="margin: 0 0 1rem 0; font-size: 0.7rem; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Reconciliation Correlation (Optional)</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label class="form-label" for="period_start">Start Date</label>
                         <input type="date" name="period_start" id="period_start" class="form-input">

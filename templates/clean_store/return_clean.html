@@ -22,7 +22,7 @@
 
     <form method="post">
         {% csrf_token %}
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
             <div>
                 <label class="form-label" for="date">Date*</label>
                 <input class="form-input" type="date" id="date" name="date" value="{{ today }}" required>
@@ -37,7 +37,7 @@
                 </select>
             </div>
         </div>
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
             <div>
                 <label class="form-label" for="num_bags">Number of Bags Returned*</label>
                 <input class="form-input" type="number" id="num_bags" name="num_bags" min="1" required>
