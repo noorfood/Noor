@@ -106,9 +106,21 @@
                 <td class="num"><strong style="color: var(--rose);">-{{ i.qty_issued }}</strong></td>
                 <td><strong>{{ i.buyer_name|default:i.get_channel_display }}</strong></td>
                 <td>
-                    <span class="badge-soft {% if i.status == 'accepted' %}badge-soft-success{% elif i.status == 'pending' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">
-                        {{ i.get_status_display }}
-                    </span>
+                    {% if i.status == 'pending' and i.channel == 'company' %}
+                        {% if i.approver_id == current_user.id or current_user.role == 'md' %}
+                            <form method="post" action="{% url 'finished_store:acknowledge_issuance' i.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="accept">
+                                <button type="submit" class="btn-modern" style="padding: 0.25rem 0.75rem; font-size: 0.85rem; background-color: var(--emerald); color: white; border: none; cursor: pointer; border-radius: 0.5rem; font-weight: 600;">Accept Handshake</button>
+                            </form>
+                        {% else %}
+                            <span class="badge-soft badge-soft-warning">Pending Handshake</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge-soft {% if i.status == 'accepted' %}badge-soft-success{% elif i.status == 'pending' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">
+                            {{ i.get_status_display }}
+                        </span>
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}

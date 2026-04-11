@@ -214,7 +214,14 @@ def dashboard(request):
 
     # Real-world handshake: Goods issued to Company channel but not yet GM-acknowledged
     from finished_store.models import FinishedGoodsIssuance
-    pending_company_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
+    p_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
+    if user.role == 'manager':
+        pending_company_issuances = p_issuances.filter(approver=user)
+    elif user.role == 'md':
+        from django.db.models import Q
+        pending_company_issuances = p_issuances.filter(Q(approver=user) | Q(approver__isnull=True))
+    else:
+        pending_company_issuances = p_issuances
 
     # Pending SM payments awaiting GM confirmation
     from sales.models import SalesManagerPayment
@@ -844,13 +851,17 @@ def md_insights(request):
     from django.db.models.functions import TruncMonth
     from django.utils import timezone
 
+    range_type = request.GET.get('range', 'month')
     f_from = request.GET.get('date_from', '')
     f_to   = request.GET.get('date_to', '')
 
     now = timezone.now()
     if not f_from and not f_to:
-        f_from = now.replace(day=1).date().isoformat()
-        f_to   = now.date().isoformat()
+        if range_type == 'month':
+            f_from = now.replace(day=1).date().isoformat()
+            f_to   = now.date().isoformat()
+        # You could add other range logic here if needed, 
+        # but defaulting to ISO month is safe for now.
 
     date_from_obj = datetime.date.fromisoformat(f_from) if f_from else None
     date_to_obj   = datetime.date.fromisoformat(f_to) if f_to else None
@@ -921,7 +932,16 @@ def md_insights(request):
     # (Since property-based Sum isn't possible in ORM aggregate)
     sales_by_month = {}
     for r in monthly_sales:
-        m_key = r.date.replace(day=1)
+        r_date = r.date
+        if isinstance(r_date, str):
+            try:
+                r_date = datetime.date.fromisoformat(r_date[:10])
+            except ValueError:
+                continue
+        if not hasattr(r_date, 'replace'):
+            continue
+            
+        m_key = r_date.replace(day=1)
         sales_by_month[m_key] = sales_by_month.get(m_key, 0) + r.equivalent_sacks_sold
 
     months_list = []
@@ -963,15 +983,27 @@ def md_insights(request):
     weekly_chart_data = {w: {'colls': 0, 'sales': 0} for w in weeks_list}
     
     for c in current_month_colls:
-        if c.date:
-            w_idx = (c.date.day - 1) // 7
+        c_date = c.date
+        if isinstance(c_date, str):
+            try:
+                c_date = datetime.date.fromisoformat(c_date[:10])
+            except ValueError:
+                continue
+        if c_date and hasattr(c_date, 'day'):
+            w_idx = (c_date.day - 1) // 7
             w_name = f'Week {w_idx + 1}'
             if w_name in weekly_chart_data:
                 weekly_chart_data[w_name]['colls'] += c.qty_sacks
             
     for s in current_month_sales:
-        if s.date:
-            w_idx = (s.date.day - 1) // 7
+        s_date = s.date
+        if isinstance(s_date, str):
+            try:
+                s_date = datetime.date.fromisoformat(s_date[:10])
+            except ValueError:
+                continue
+        if s_date and hasattr(s_date, 'day'):
+            w_idx = (s_date.day - 1) // 7
             w_name = f'Week {w_idx + 1}'
             if w_name in weekly_chart_data:
                 weekly_chart_data[w_name]['sales'] += float(s.equivalent_sacks_sold)

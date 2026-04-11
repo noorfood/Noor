@@ -61,7 +61,14 @@ def dashboard(request):
     pending_receipts = FinishedGoodsReceipt.objects.filter(status='pending').order_by('-date', '-created_at')
     
     # Real-world handshake: Goods issued to Company channel but not yet GM-acknowledged
-    pending_company_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
+    p_issuances = FinishedGoodsIssuance.objects.filter(channel='company', status='pending').order_by('-date', '-created_at')
+    if user.role == 'manager':
+        pending_company_issuances = p_issuances.filter(approver=user)
+    elif user.role == 'md':
+        from django.db.models import Q
+        pending_company_issuances = p_issuances.filter(Q(approver=user) | Q(approver__isnull=True))
+    else:
+        pending_company_issuances = p_issuances
 
     return render(request, 'finished_store/dashboard.html', {
         'current_user': user,
