@@ -149,6 +149,10 @@ class PackagingBatch(models.Model):
     powder_used_kg = models.DecimalField(max_digits=12, decimal_places=2, help_text='Kg of powder used')
     qty_10kg = models.PositiveIntegerField(default=0, help_text='Number of 10kg sacks packaged')
 
+    # Packaging Costs (auto-calculated)
+    packaging_unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_packaging_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     # Calculated loss for packaging (if powder spills during sacking)
     total_output_kg = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     loss_kg = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -212,6 +216,14 @@ class PackagingBatch(models.Model):
             self.flag_level, self.flag_reason = 'warning', f'Packaging Loss {loss:.1f}% exceeds normal threshold ({normal_max}%).'
         else:
             self.flag_level, self.flag_reason = 'critical', f'Packaging Loss {loss:.1f}% is CRITICAL (above {warning_max}%).'
+
+        # Calculate Packaging Costs
+        from pricing.models import PackagingCostConfig
+        p_config = PackagingCostConfig.get_active_config(self.date)
+        if p_config:
+            u_cost = float(p_config.cost_per_sack) + float(p_config.nylon_cost_per_piece)
+            self.packaging_unit_cost = u_cost
+            self.total_packaging_cost = u_cost * float(self.qty_10kg)
 
         super().save(*args, **kwargs)
 

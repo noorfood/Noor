@@ -64,12 +64,26 @@ class RawMaterialIssuance(models.Model):
     issued_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='raw_issued_by')
     notes = models.TextField(blank=True)
     is_fully_received = models.BooleanField(default=False, help_text='Set to True when all clean bags are back in store')
+
+    # Cleaning Costs (auto-calculated)
+    cleaning_unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_cleaning_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     is_locked = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'procurement_issuance'
         ordering = ['-date', '-created_at']
+
+    def save(self, *args, **kwargs):
+        # Calculate Cleaning Costs
+        from pricing.models import CleaningCostConfig
+        c_config = CleaningCostConfig.get_active_config(self.material_type, self.date)
+        if c_config:
+            self.cleaning_unit_cost = c_config.cleaning_cost_per_bag
+            self.total_cleaning_cost = float(self.cleaning_unit_cost) * float(self.num_bags_issued)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Issuance #{self.pk} | {self.num_bags_issued} bags → {self.issued_to} | {self.date}"

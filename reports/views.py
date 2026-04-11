@@ -1073,7 +1073,7 @@ def financial_summary(request):
     user = get_current_user(request)
     from django.db.models import Sum, Q
     from django.utils import timezone
-    from procurement.models import RawMaterialReceipt, MATERIAL_CHOICES
+    from procurement.models import RawMaterialReceipt, RawMaterialIssuance, MATERIAL_CHOICES
     from production.models import PackagingBatch
     from finished_store.views import _fg_balance
     from sales.models import SalesManagerCollection, SalesManagerPayment, DirectSalePayment, SalesResult
@@ -1263,24 +1263,39 @@ def financial_summary(request):
     if date_to_obj:   rm_qs = rm_qs.filter(date__lte=date_to_obj)
     raw_mat_cost = float(rm_qs.aggregate(t=Sum('total_cost'))['t'] or 0)
     
-    # b. Packaging Cost (Produced Sacks * Active Packaging Cost at production time)
-    # Since accurate per-batch matching is complex, we use total produced * current active packaging cost as a strong estimate
-    packaging_cost = 0
-    active_pack_config = PackagingCostConfig.get_active_config(timezone.now().date())
-    unit_pack_cost = 0
-    if active_pack_config:
-        unit_pack_cost = float(active_pack_config.cost_per_sack) + float(active_pack_config.nylon_cost_per_piece)
-        
-    for mat in materials:
-        packaging_cost += metrics[mat]['produced'] * unit_pack_cost
+    # b. Packaging Cost (Summed from production batches)
+    pb_qs = PackagingBatch.objects.all()
+    if date_from_obj: pb_qs = pb_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   pb_qs = pb_qs.filter(date__lte=date_to_obj)
+    packaging_cost = float(pb_qs.aggregate(t=Sum('total_packaging_cost'))['t'] or 0)
     
+    # b2. Cleaning Cost (Summed from raw material issuances)
+    ri_qs = RawMaterialIssuance.objects.all()
+    if date_from_obj: ri_qs = ri_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   ri_qs = ri_qs.filter(date__lte=date_to_obj)
+    cleaning_cost = float(ri_qs.aggregate(t=Sum('total_cleaning_cost'))['t'] or 0)
+
+    # d. General Labour Cost (per Sack Sold)
+    from sales.models import SalesResult, DirectSalePayment
+    sr_qs = SalesResult.objects.all()
+    if date_from_obj: sr_qs = sr_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   sr_qs = sr_qs.filter(date__lte=date_to_obj)
+    lab_sm = float(sr_qs.aggregate(t=Sum('total_labour_cost'))['t'] or 0)
+
+    ds_qs = DirectSalePayment.objects.filter(status='confirmed')
+    if date_from_obj: ds_qs = ds_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   ds_qs = ds_qs.filter(date__lte=date_to_obj)
+    lab_direct = float(ds_qs.aggregate(t=Sum('total_labour_cost'))['t'] or 0)
+    
+    labour_cost = lab_sm + lab_direct
+
     # c. Operational Expenses (Filtered)
     oe_qs = OperationalExpense.objects.all()
     if date_from_obj: oe_qs = oe_qs.filter(date__gte=date_from_obj)
     if date_to_obj:   oe_qs = oe_qs.filter(date__lte=date_to_obj)
     op_expenses = float(oe_qs.aggregate(t=Sum('amount'))['t'] or 0)
     
-    total_costs = raw_mat_cost + packaging_cost + op_expenses
+    total_costs = raw_mat_cost + packaging_cost + cleaning_cost + op_expenses + labour_cost
     net_profit = total_rev - total_costs
     
     profit_margin_pct = (net_profit / total_rev * 100) if total_rev > 0 else 0
@@ -1379,7 +1394,9 @@ def financial_summary(request):
         'total_rev': total_rev,
         'raw_mat_cost': raw_mat_cost,
         'packaging_cost': packaging_cost,
+        'cleaning_cost': cleaning_cost,
         'op_expenses': op_expenses,
+        'labour_cost': labour_cost,
         'total_costs': total_costs,
         'net_profit': net_profit,
         'profit_margin_pct': profit_margin_pct,

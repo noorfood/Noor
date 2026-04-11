@@ -63,8 +63,7 @@
         <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">🧹 Material Cleaning Fees</h4>
         <a href="{% url 'pricing:new_cleaning_cost' %}" class="btn-modern btn-modern-primary">+ Update Cleaning</a>
     </div>
-
-    <div class="table-wrapper">
+    <div class="table-wrapper" style="margin-bottom: 3rem;">
         <table class="premium-table">
             <thead>
                 <tr>
@@ -94,12 +93,49 @@
         </table>
     </div>
 
+    <!-- General Labour Fees section -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin: 3rem 0 1.5rem 0;">
+        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">👷 General Labour Fees</h4>
+        <a href="{% url 'pricing:new_labour_cost' %}" class="btn-modern btn-modern-primary">+ Update Labour Cost</a>
+    </div>
+
+    <div class="table-wrapper" style="margin-bottom: 3rem;">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th style="text-align: right;">Cost / Sack (₦)</th>
+                    <th>Effective From</th>
+                    <th>Recorded By</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in labour_costs %}
+                <tr>
+                    <td style="text-align: right; font-weight: 700; color: var(--emerald-600);">₦{{ c.labour_cost_per_sack|floatformat:2 }}</td>
+                    <td style="font-weight:700; color:var(--slate-600);">{{ c.effective_from|date:"M d, Y" }}</td>
+                    <td>
+                        <div style="font-size:0.85rem; color:var(--slate-700);">{{ c.created_by.full_name }}</div>
+                        <div style="font-size:0.7rem; color:var(--slate-500);">Added {{ c.created_at|date:"M d, Y" }}</div>
+                    </td>
+                    <td style="font-size:0.85rem; color:var(--slate-500); max-width: 250px;">{{ c.notes|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:3rem; color:var(--slate-400);">No general labour fees configured. <a href="{% url 'pricing:new_labour_cost' %}" style="color:var(--indigo); font-weight:700;">Set labour fees</a>.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
     <div style="margin-top: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
         <h5 style="margin: 0 0 0.75rem 0; color: #1e293b; font-weight: 800;">💡 How this works</h5>
         <ul style="font-size: 0.85rem; color: #475569; margin: 0; padding-left: 1.25rem; line-height: 1.6;">
             <li><strong>Empty Sack:</strong> Recorded as an expense for every 10kg sack packaged.</li>
             <li><strong>Nylon Piece:</strong> Recorded as 10 units of expense for every 10kg sack packaged (assuming 10kg sack holds 10 smaller units if applicable, or just per nylon used).</li>
             <li><strong>Cleaning Fee:</strong> Recorded as an expense for every 100kg bag of raw material issued to cleaners.</li>
+            <li><strong>General Labour:</strong> Automatically calculated as a cost for every 10kg sack sold (both SM and Direct sales).</li>
         </ul>
     </div>
 </div>

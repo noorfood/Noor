@@ -20,4 +20,5 @@ urlpatterns = [
     path('packaging/', views.list_packaging_costs, name='packaging_costs'),
     path('packaging/new-global/', views.new_packaging_cost, name='new_packaging_cost'),
     path('packaging/new-cleaning/', views.new_cleaning_cost, name='new_cleaning_cost'),
+    path('packaging/new-labour/', views.new_labour_cost, name='new_labour_cost'),
 ]

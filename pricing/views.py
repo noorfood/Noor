@@ -277,13 +277,15 @@ def new_expense(request):
 @role_required('md')
 def list_packaging_costs(request):
     user = get_current_user(request)
-    from pricing.models import PackagingCostConfig, CleaningCostConfig
+    from pricing.models import PackagingCostConfig, CleaningCostConfig, LabourCostConfig
     packaging_costs = PackagingCostConfig.objects.all().order_by('-effective_from')
     cleaning_costs = CleaningCostConfig.objects.all().order_by('-effective_from', 'material_type')
+    labour_costs = LabourCostConfig.objects.all().order_by('-effective_from')
     return render(request, 'pricing/packaging_list.html', {
         'current_user': user,
         'costs': packaging_costs,
         'cleaning_costs': cleaning_costs,
+        'labour_costs': labour_costs,
     })
 
 
@@ -313,6 +315,12 @@ def new_packaging_cost(request):
                 log_action(request, user, 'pricing', 'SET_PACKAGING_COST',
                            f'Set Packaging Costs (Global): Sack=₦{cost_per_sack}, Nylon=₦{nylon_cost_per_piece}',
                            'PackagingCostConfig', cost.pk)
+
+                # Retroactive update for produced batches
+                from production.models import PackagingBatch
+                batches = PackagingBatch.objects.filter(date__gte=effective_from)
+                for b in batches:
+                    b.save()
                 messages.success(request, f'Global packaging costs updated from {effective_from}.')
                 return redirect('pricing:packaging_costs')
         except Exception as e:
@@ -352,6 +360,12 @@ def new_cleaning_cost(request):
                 log_action(request, user, 'pricing', 'SET_CLEANING_COST',
                            f'Set Cleaning Cost for {material_type}: ₦{cleaning_cost_per_bag}',
                            'CleaningCostConfig', cost.pk)
+
+                # Retroactive update for issuances
+                from procurement.models import RawMaterialIssuance
+                issuances = RawMaterialIssuance.objects.filter(material_type=material_type, date__gte=effective_from)
+                for ri in issuances:
+                    ri.save()
                 messages.success(request, f'Cleaning fee updated for {material_type.title()} from {effective_from}.')
                 return redirect('pricing:packaging_costs')
         except Exception as e:
@@ -361,6 +375,66 @@ def new_cleaning_cost(request):
         'current_user': user,
         'error': error,
         'material_choices': MATERIAL_CHOICES,
+        'today': datetime.date.today().isoformat(),
+    })
+
+
+@role_required('md')
+def new_labour_cost(request):
+    user = get_current_user(request)
+    from pricing.models import LabourCostConfig
+    from sales.models import SalesResult, DirectSalePayment
+    error = None
+
+    if request.method == 'POST':
+        try:
+            labour_cost_per_sack = float(request.POST.get('labour_cost_per_sack', 0))
+            effective_from = request.POST.get('effective_from')
+            notes = request.POST.get('notes', '').strip()
+
+            if not effective_from:
+                error = 'Effective date is required.'
+            else:
+                cost = LabourCostConfig.objects.create(
+                    labour_cost_per_sack=labour_cost_per_sack,
+                    effective_from=effective_from,
+                    created_by=user,
+                    notes=notes,
+                )
+                
+                # Retroactive Labour Update
+                eff_date = cost.effective_from
+                updated_count = 0
+                
+                # 1. Update SM Sales Results
+                results = SalesResult.objects.filter(date__gte=eff_date)
+                for r in results:
+                    r.labour_unit_cost = labour_cost_per_sack
+                    r.save() # This auto-recalculates total_labour_cost
+                    updated_count += 1
+                
+                # 2. Update Direct Sales
+                direct_sales = DirectSalePayment.objects.filter(date__gte=eff_date)
+                for ds in direct_sales:
+                    ds.labour_unit_cost = labour_cost_per_sack
+                    ds.save()
+                    updated_count += 1
+
+                log_action(request, user, 'pricing', 'SET_LABOUR_COST',
+                           f'Set Labour Cost (Global): ₦{labour_cost_per_sack}. Auto-updated {updated_count} records.',
+                           'LabourCostConfig', cost.pk)
+                
+                msg = f'General labour cost updated from {effective_from}.'
+                if updated_count > 0:
+                    msg += f' Applied to {updated_count} existing transactions.'
+                messages.success(request, msg)
+                return redirect('pricing:packaging_costs')
+        except Exception as e:
+            error = f'Error: {str(e)}'
+
+    return render(request, 'pricing/new_labour_cost.html', {
+        'current_user': user,
+        'error': error,
         'today': datetime.date.today().isoformat(),
     })
 

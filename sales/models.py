@@ -392,6 +392,11 @@ class SalesResult(models.Model):
     amount_returned = models.DecimalField(max_digits=14, decimal_places=2, default=0,
                                           help_text='Actual money handed over by the SalesPerson to the SM')
 
+    # Labour Cost Tracking
+    labour_unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                           help_text='Labour price per sack at time of sale')
+    total_labour_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     recorded_by = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name='sales_results_recorded',
         limit_choices_to={'role': 'sales_manager'}
@@ -405,9 +410,19 @@ class SalesResult(models.Model):
         ordering = ['-date', '-created_at']
 
     def save(self, *args, **kwargs):
+        from pricing.models import LabourCostConfig
         self.gross_value = (float(self.unit_price) * self.qty_sold) + (float(self.unit_price_piece) * self.qty_pieces_sold)
         self.commission_amount = self.gross_value * float(self.commission_pct) / 100
         self.net_due_to_company = self.gross_value - self.commission_amount
+
+        # Auto-populate labour cost if not set (e.g. during initial record creation)
+        if not self.labour_unit_cost:
+            config = LabourCostConfig.get_active_config(self.date)
+            if config:
+                self.labour_unit_cost = config.labour_cost_per_sack
+        
+        self.total_labour_cost = float(self.labour_unit_cost) * self.equivalent_sacks_sold
+        
         super().save(*args, **kwargs)
 
     @property
@@ -524,6 +539,11 @@ class DirectSalePayment(models.Model):
     amount_received_transfer = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     buyer_name = models.CharField(max_length=200, blank=True, help_text='Name of the customer')
 
+    # Labour Cost Tracking
+    labour_unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                           help_text='Labour price per sack at time of sale')
+    total_labour_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     # Who recorded this sale
     recorded_by = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name='direct_sales_recorded',
@@ -549,7 +569,22 @@ class DirectSalePayment(models.Model):
         ordering = ['-date', '-created_at']
 
     def save(self, *args, **kwargs):
+        from pricing.models import LabourCostConfig
         self.total_sale_value = float(self.unit_price) * self.qty_sold
+        
+        # Auto-populate labour cost if not set
+        if not self.labour_unit_cost:
+            config = LabourCostConfig.get_active_config(self.date)
+            if config:
+                self.labour_unit_cost = config.labour_cost_per_sack
+        
+        # Calculate proportional labour for 1kg vs 10kg
+        qty_eq = float(self.qty_sold)
+        if self.product_size == '1kg':
+            qty_eq = float(self.qty_sold) / 10.0
+            
+        self.total_labour_cost = float(self.labour_unit_cost) * qty_eq
+
         super().save(*args, **kwargs)
 
     @property

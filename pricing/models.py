@@ -168,10 +168,11 @@ class PackagingCostConfig(models.Model):
 
     @classmethod
     def get_active_config(cls, date):
-        """Return the active config object on a given date."""
-        return cls.objects.filter(
-            effective_from__lte=date
-        ).order_by('-effective_from').first()
+        """Return the active config object on a given date. Falls back to earliest if none found."""
+        config = cls.objects.filter(effective_from__lte=date).order_by('-effective_from').first()
+        if config:
+            return config
+        return cls.objects.order_by('effective_from').first()
 
 class CleaningCostConfig(models.Model):
     """MD-only configuration for material-specific cleaning fees."""
@@ -191,11 +192,44 @@ class CleaningCostConfig(models.Model):
 
     @classmethod
     def get_active_config(cls, material_type, date):
-        """Return the active cleaning config for a material on a given date."""
-        return cls.objects.filter(
+        """Return the active cleaning config for a material on a given date. Falls back to earliest if none found."""
+        config = cls.objects.filter(
             material_type=material_type,
             effective_from__lte=date
         ).order_by('-effective_from').first()
+        if config:
+            return config
+        return cls.objects.filter(material_type=material_type).order_by('effective_from').first()
+
+class LabourCostConfig(models.Model):
+    """MD-only configuration for the global labour cost per sold sack."""
+    labour_cost_per_sack = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, 
+        help_text='Labour cost per 10kg sack sold (automated)'
+    )
+    effective_from = models.DateField()
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role': 'md'})
+    created_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'pricing_labour_cost'
+        ordering = ['-effective_from']
+
+    def __str__(self):
+        return f"Labour Cost | ₦{self.labour_cost_per_sack} | From {self.effective_from}"
+
+    @classmethod
+    def get_active_config(cls, date):
+        """Return the active labour config on a given date. Falls back to earliest if none found."""
+        if not date:
+            return None
+        config = cls.objects.filter(
+            effective_from__lte=date
+        ).order_by('-effective_from').first()
+        if config:
+            return config
+        return cls.objects.order_by('effective_from').first()
 
 class OperationalExpense(models.Model):
     """General operational expenses recorded by the MD for P&L tracking."""
