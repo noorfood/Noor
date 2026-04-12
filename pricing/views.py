@@ -403,30 +403,19 @@ def new_labour_cost(request):
                 )
                 
                 # Retroactive Labour Update
-                eff_date = cost.effective_from
-                updated_count = 0
-                
-                # 1. Update SM Sales Results
-                results = SalesResult.objects.filter(date__gte=eff_date)
-                for r in results:
-                    r.labour_unit_cost = labour_cost_per_sack
-                    r.save() # This auto-recalculates total_labour_cost
-                    updated_count += 1
-                
-                # 2. Update Direct Sales
-                direct_sales = DirectSalePayment.objects.filter(date__gte=eff_date)
-                for ds in direct_sales:
-                    ds.labour_unit_cost = labour_cost_per_sack
-                    ds.save()
-                    updated_count += 1
+                from production.models import MillingBatch
+                updated_batches = MillingBatch.objects.filter(date__gte=cost.effective_from)
+                for b in updated_batches:
+                    b.save()
+                updated_count = updated_batches.count()
 
                 log_action(request, user, 'pricing', 'SET_LABOUR_COST',
-                           f'Set Labour Cost (Global): ₦{labour_cost_per_sack}. Auto-updated {updated_count} records.',
+                           f'Set Labour Cost (Global): ₦{labour_cost_per_sack}. Auto-updated {updated_count} milling records.',
                            'LabourCostConfig', cost.pk)
                 
                 msg = f'General labour cost updated from {effective_from}.'
                 if updated_count > 0:
-                    msg += f' Applied to {updated_count} existing transactions.'
+                    msg += f' Applied to {updated_count} existing milling records.'
                 messages.success(request, msg)
                 return redirect('pricing:packaging_costs')
         except Exception as e:

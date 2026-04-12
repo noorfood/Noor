@@ -1269,25 +1269,18 @@ def financial_summary(request):
     if date_to_obj:   pb_qs = pb_qs.filter(date__lte=date_to_obj)
     packaging_cost = float(pb_qs.aggregate(t=Sum('total_packaging_cost'))['t'] or 0)
     
+    # d. General Labour Cost (per 100kg Raw Milled)
+    mb_qs = MillingBatch.objects.all()
+    if date_from_obj: mb_qs = mb_qs.filter(date__gte=date_from_obj)
+    if date_to_obj:   mb_qs = mb_qs.filter(date__lte=date_to_obj)
+    labour_cost = float(mb_qs.aggregate(t=Sum('total_labour_cost'))['t'] or 0)
+    
     # b2. Cleaning Cost (Summed from raw material issuances)
     ri_qs = RawMaterialIssuance.objects.all()
     if date_from_obj: ri_qs = ri_qs.filter(date__gte=date_from_obj)
     if date_to_obj:   ri_qs = ri_qs.filter(date__lte=date_to_obj)
     cleaning_cost = float(ri_qs.aggregate(t=Sum('total_cleaning_cost'))['t'] or 0)
 
-    # d. General Labour Cost (per Sack Sold)
-    from sales.models import SalesResult, DirectSalePayment
-    sr_qs = SalesResult.objects.all()
-    if date_from_obj: sr_qs = sr_qs.filter(date__gte=date_from_obj)
-    if date_to_obj:   sr_qs = sr_qs.filter(date__lte=date_to_obj)
-    lab_sm = float(sr_qs.aggregate(t=Sum('total_labour_cost'))['t'] or 0)
-
-    ds_qs = DirectSalePayment.objects.filter(status='confirmed')
-    if date_from_obj: ds_qs = ds_qs.filter(date__gte=date_from_obj)
-    if date_to_obj:   ds_qs = ds_qs.filter(date__lte=date_to_obj)
-    lab_direct = float(ds_qs.aggregate(t=Sum('total_labour_cost'))['t'] or 0)
-    
-    labour_cost = lab_sm + lab_direct
 
     # c. Operational Expenses (Filtered)
     oe_qs = OperationalExpense.objects.all()

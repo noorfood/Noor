@@ -205,7 +205,7 @@ class LabourCostConfig(models.Model):
     """MD-only configuration for the global labour cost per sold sack."""
     labour_cost_per_sack = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, 
-        help_text='Labour cost per 10kg sack sold (automated)'
+        help_text='Labour cost per 100kg raw bag milled (automated)'
     )
     effective_from = models.DateField()
     created_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role': 'md'})

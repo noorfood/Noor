@@ -61,6 +61,10 @@ class MillingBatch(models.Model):
     loss_kg = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     loss_pct = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
+    # Labour Cost Tracking
+    labour_unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_labour_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
     # Flag (set on save, not visible to production officer)
     flag_level = models.CharField(max_length=10, choices=FLAG_CHOICES, default='normal')
     flag_reason = models.TextField(blank=True)
@@ -132,6 +136,14 @@ class MillingBatch(models.Model):
             self.status = 'flagged'
         else:
             self.status = 'complete'
+
+        # Auto-populate and calculate labour cost
+        from pricing.models import LabourCostConfig
+        config = LabourCostConfig.get_active_config(self.date)
+        if config:
+            self.labour_unit_cost = config.labour_cost_per_sack
+            total_bags = self.bags_milled_new + self.outstanding_bags_milled
+            self.total_labour_cost = float(self.labour_unit_cost) * float(total_bags)
 
         super().save(*args, **kwargs)
 
