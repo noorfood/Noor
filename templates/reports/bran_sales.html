@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Bran Sales History — Noor Foods{% endblock %}
+{% block nav_md_dash %}active{% endblock %}
+{% block content %}
+
+<div class="page-hero" style="background: linear-gradient(135deg, #065f46 0%, #064e3b 100%);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+        <div>
+            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #34d399;">🌾 By-product Revenue</span>
+            <h1 class="hero-title" style="color: #fff;">Bran Sales Report</h1>
+            <p class="hero-subtitle" style="color: #a7f3d0;">Full historical record of all bran sales, filtering, and aggregated financial totals.</p>
+        </div>
+    </div>
+</div>
+
+{# Quick Date Toggles #}
+{% include 'partials/date_toggles.html' %}
+
+{# Filters #}
+<div class="action-bar-modern" style="margin-bottom: 2rem;">
+    <form method="get" style="display: flex; align-items: flex-end; gap: 1rem; width: 100%; flex-wrap: wrap;">
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date From</label>
+            <input type="date" name="date_from" value="{{ f_from }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Date To</label>
+            <input type="date" name="date_to" value="{{ f_to }}" class="input-modern">
+        </div>
+        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
+            <label class="label-modern">Material</label>
+            <select name="material" class="input-modern">
+                <option value="">All Materials</option>
+                <option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
+                <option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn-modern btn-modern-primary" style="background: #059669;">Apply Filters</button>
+            <a href="?" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200);">Reset</a>
+        </div>
+    </form>
+</div>
+
+{# Summary Cards #}
+<div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #059669;">
+        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Bran Sacks Sold</div>
+        <div style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">{{ summary.total_sacks|default:0 }} <small style="font-size: 0.8rem; color: var(--slate-400);">Sacks</small></div>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #10b981;">
+        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Value Generated</div>
+        <div style="font-size: 1.8rem; font-weight: 900; color: #059669;">₦{{ summary.total_value|floatformat:0|default:"0" }}</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #34d399;">
+        <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Cash vs Transfer</div>
+        <div style="font-size: 1.1rem; font-weight: 800; color: var(--navy);">
+            Cash: ₦{{ summary.total_cash|floatformat:0|default:"0" }}<br>
+            Transfer: ₦{{ summary.total_transfer|floatformat:0|default:"0" }}
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #dcfce7; background: #f0fdf4; display: flex; justify-content: space-between; align-items: center;">
+        <h4 style="margin:0; font-size: 0.8rem; font-weight: 900; color: #166534; text-transform: uppercase;">🌾 Bran Sales Ledger</h4>
+        <span style="font-size: 0.7rem; color: #059669; font-weight: 700;">{{ bran_sales|length }} Records Found</span>
+    </div>
+    <div class="table-container">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Partner / Buyer</th>
+                    <th class="num">Bags</th>
+                    <th class="num">Price / Bag</th>
+                    <th class="num">Total Value</th>
+                    <th>Recorded By</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bran_sales %}
+                <tr>
+                    <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ b.date|date:"M d, Y" }}</td>
+                    <td>
+                        <div style="font-weight: 800; color: #166534;">{{ b.buyer_name }}</div>
+                        <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">{{ b.material_type|upper }} FLOW</div>
+                    </td>
+                    <td class="num">
+                        <span style="font-weight: 800; color: var(--slate-600);">{{ b.qty_sacks }}</span>
+                        <span style="font-size: 0.65rem; font-weight: 800; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; color: #166534;">SACKS</span>
+                    </td>
+                    <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--slate-500);">₦{{ b.price_per_sack|floatformat:0 }}</td>
+                    <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #166534;">₦{{ b.total_amount|floatformat:0 }}</td>
+                    <td>
+                        <div style="font-size: 0.75rem; font-weight: 700; color: var(--navy);">{{ b.recorded_by.full_name }}</div>
+                    </td>
+                    <td style="font-size: 0.75rem; color: var(--slate-500); max-width: 200px;">{{ b.notes|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No bran sales records found for this period.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

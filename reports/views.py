@@ -520,6 +520,42 @@ def sales_report(request):
 
 
 @role_required('manager', 'md')
+def bran_sales_report(request):
+    """Full historical view of Brand (bran) sales with filtering and totals."""
+    user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to = request.GET.get('date_to', '')
+    f_material = request.GET.get('material', '')
+
+    from production.models import BrandSale
+    bran_sales = BrandSale.objects.all().order_by('-date', '-created_at')
+
+    if f_from:
+        bran_sales = bran_sales.filter(date__gte=f_from)
+    if f_to:
+        bran_sales = bran_sales.filter(date__lte=f_to)
+    if f_material:
+        bran_sales = bran_sales.filter(material_type=f_material)
+
+    # Calculate totals
+    summary = bran_sales.aggregate(
+        total_sacks=Sum('qty_sacks'),
+        total_value=Sum('total_amount'),
+        total_cash=Sum('amount_cash'),
+        total_transfer=Sum('amount_transfer')
+    )
+
+    return render(request, 'reports/bran_sales.html', {
+        'current_user': user,
+        'bran_sales': bran_sales,
+        'summary': summary,
+        'f_from': f_from,
+        'f_to': f_to,
+        'f_material': f_material,
+    })
+
+
+@role_required('manager', 'md')
 def outstanding_report(request):
     user = get_current_user(request)
 

@@ -389,6 +389,9 @@ class SalesResult(models.Model):
         max_digits=14, decimal_places=2, default=0,
         help_text='gross_value − commission_amount — reduces SM outstanding'
     )
+    
+    amount_returned = models.DecimalField(max_digits=14, decimal_places=2, default=0,
+                                          help_text='Actual money handed over by the SalesPerson to the SM')
 
     recorded_by = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name='sales_results_recorded',
