@@ -67,6 +67,24 @@
 </div>
 {% endif %}
 
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:2rem;">
+    <div style="background:#fef9c3; border:1.5px solid #fde68a; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#ca8a04; letter-spacing:.04em; margin-bottom:.4rem;">💰 Direct Sale Money Collected</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#854d0e; font-family:monospace;">₦{{ outstanding|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#ca8a04; font-weight:600; margin-top:.25rem;">From recorded Direct Sales</div>
+    </div>
+    <div style="background:#fefce8; border:1.5px solid #fde68a; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#ca8a04; letter-spacing:.04em; margin-bottom:.4rem;">⏳ Pending MD Confirmation</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#854d0e; font-family:monospace;">₦{{ gm_pending|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#ca8a04; font-weight:600; margin-top:.25rem;">Already submitted, awaiting MD</div>
+    </div>
+    <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border:1.5px solid #6ee7b7; border-radius:12px; padding:1.25rem;">
+        <div style="font-size:.72rem; font-weight:800; text-transform:uppercase; color:#059669; letter-spacing:.04em; margin-bottom:.4rem;">💵 Available to Send</div>
+        <div style="font-size:1.5rem; font-weight:900; color:#065f46; font-family:monospace;">₦{{ cash_available|floatformat:0 }}</div>
+        <div style="font-size:.72rem; color:#34d399; font-weight:600; margin-top:.25rem;">Maximum you can remit now</div>
+    </div>
+</div>
+
 <div class="form-layout">
   <div class="form-card">
     <form method="post">

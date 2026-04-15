@@ -136,6 +136,9 @@ def list_view(request):
     user = get_current_user(request)
 
     f_sp = request.GET.get('sp', '')
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+    
     all_persons = SalesPerson.objects.all().order_by('name')
 
     rows = []
@@ -153,14 +156,26 @@ def list_view(request):
     for sp in persons_qs:
         # 1. Finance (Include initial handovers from SalesResult)
         results_qs = SalesResult.objects.filter(sales_person=sp)
+        dist_qs = SalesDistributionRecord.objects.filter(sales_person=sp)
+        money_qs = MoneyReceipt.objects.filter(sales_person=sp)
+
+        if f_from:
+            results_qs = results_qs.filter(date__gte=f_from)
+            dist_qs = dist_qs.filter(date__gte=f_from)
+            money_qs = money_qs.filter(date__gte=f_from)
+        if f_to:
+            results_qs = results_qs.filter(date__lte=f_to)
+            dist_qs = dist_qs.filter(date__lte=f_to)
+            money_qs = money_qs.filter(date__lte=f_to)
+
         expected_finance = float(results_qs.aggregate(t=Sum('net_due_to_company'))['t'] or 0)
         
-        remitted = float(MoneyReceipt.objects.filter(sales_person=sp).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0)
+        remitted = float(money_qs.aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0)
         initial_paid = float(results_qs.aggregate(t=Sum('amount_returned'))['t'] or 0)
         actual_finance = remitted + initial_paid
         
         # 2. Stock (Use piece conversion 10:1)
-        total_given = float(SalesDistributionRecord.objects.filter(sales_person=sp).aggregate(t=Sum('qty_given'))['t'] or 0)
+        total_given = float(dist_qs.aggregate(t=Sum('qty_given'))['t'] or 0)
         
         # We iterate over results to get piece-accurate totals
         total_sold  = sum(r.equivalent_sacks_sold for r in results_qs)
@@ -193,6 +208,8 @@ def list_view(request):
         'rows': rows,
         'all_persons': all_persons,
         'f_sp': f_sp,
+        'f_from': f_from,
+        'f_to': f_to,
         'grand_expected': grand_expected,
         'grand_actual': grand_actual,
         'grand_diff': grand_expected - grand_actual,

@@ -66,6 +66,22 @@
     </div>
 </div>
 
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase;">
+            Liability Period: <span style="color: #1e3a5f;">{{ f_from|default:"Beginning" }}</span> to <span style="color: #1e3a5f;">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
+</div>
+
 <div class="balance-grid" style="margin-bottom: 2rem;">
     <!-- Maize Status -->
     <div class="balance-card" style="border-left: 4px solid var(--amber);">
@@ -85,7 +101,8 @@
     <div class="balance-card" style="border-left: 4px solid #ef4444;">
         <div class="balance-label" style="color: #ef4444;">💰 Total Outstanding Debt</div>
         <div class="balance-value" style="color: #ef4444;">₦{{ total_outstanding|floatformat:0 }}</div>
-        <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Cumulative Exposure</div>
+        <div style="font-size: 0.72rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700; line-height: 1.4;"> The total amount of your outstanding debt.
+        </div>
     </div>
 </div>
 

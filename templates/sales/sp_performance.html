@@ -17,6 +17,22 @@
     </div>
 </div>
 
+{# Quick Period Toggles #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
+    <form method="get" id="dateFilterForm" style="display: none;">
+        <input type="date" name="date_from" value="{{ f_from }}">
+        <input type="date" name="date_to" value="{{ f_to }}">
+    </form>
+    <div>
+        {% if f_from or f_to %}
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
+            Performance Period: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
+        </span>
+        {% endif %}
+    </div>
+    {% include 'partials/date_toggles.html' %}
+</div>
+
 <div style="background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem;">
     <span style="font-size: 1.5rem;">ℹ️</span>
     <div style="font-size: 0.85rem; color: var(--indigo-900); font-weight: 500;">

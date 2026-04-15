@@ -565,50 +565,80 @@ def record_sales_result(request):
             else:
                 sp = get_object_or_404(SalesPerson, pk=sales_person_id)
 
-                # Get MD-configured prices (sales_manager channel)
-                unit_price = PriceConfig.get_active_price(
-                    'sales_manager', material_type, '10kg', date_val
-                )
+                # ── ENFORCEMENT: SP must have goods distributed before sales can be recorded ──
+                total_given = SalesDistributionRecord.objects.filter(
+                    sales_person=sp, recorded_by=user, material_type=material_type
+                ).aggregate(t=Sum('qty_given'))['t'] or 0
 
-                if unit_price is None:
-                    error = (f'No price configured for sales_manager / {material_type} / 10kg '
-                             f'on {date_val}. Please ask MD to set a price.')
-                else:
-                    unit_price_piece = unit_price / 10
+                prev_sold = SalesResult.objects.filter(
+                    sales_person=sp, recorded_by=user, material_type=material_type
+                ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+                prev_returned = SalesResult.objects.filter(
+                    sales_person=sp, recorded_by=user, material_type=material_type
+                ).aggregate(r=Sum('qty_returned'), rp=Sum('qty_pieces_returned'))
 
-                    # Get commission %
-                    # We use the 10kg % as the primary commission for the record.
-                    comm_pct = CommissionConfig.get_active_pct(
-                        sp.channel, material_type, '10kg', date_val
+                sp_holding = (float(total_given)
+                              - float(prev_sold['s'] or 0) - (float(prev_sold['p'] or 0) / 10)
+                              - float(prev_returned['r'] or 0) - (float(prev_returned['rp'] or 0) / 10))
+
+                equiv_selling = float(qty_sold) + (float(qty_pieces_sold) / 10)
+                equiv_returning = float(qty_returned) + (float(qty_pieces_returned) / 10)
+                equiv_total = equiv_selling + equiv_returning
+
+                if total_given == 0:
+                    error = (f'{sp.name} has no goods distributed for {material_type.upper()}. '
+                             f'You must distribute goods to this person first.')
+                elif equiv_total > sp_holding + 0.01:
+                    error = (f'{sp.name} only has {sp_holding:.1f} {material_type.upper()} sacks in hand. '
+                             f'You are trying to account for {equiv_total:.1f} sacks. '
+                             f'Distribute more goods first.')
+                # ── END ENFORCEMENT ──
+
+                if not error:
+                    # Get MD-configured prices (sales_manager channel)
+                    unit_price = PriceConfig.get_active_price(
+                        'sales_manager', material_type, '10kg', date_val
                     )
 
-                    result = SalesResult.objects.create(
-                        date=date_val,
-                        sales_person=sp,
-                        material_type=material_type,
-                        qty_sold=qty_sold,
-                        qty_pieces_sold=qty_pieces_sold,
-                        qty_returned=qty_returned,
-                        qty_pieces_returned=qty_pieces_returned,
-                        amount_returned=amount_returned,
-                        unit_price=unit_price,
-                        unit_price_piece=unit_price_piece or 0,
-                        commission_pct=comm_pct,
-                        recorded_by=user,
-                        notes=notes,
-                        is_locked=True,
-                    )
-                    log_action(request, user, 'sales', 'RECORD_SALES_RESULT',
-                               f'{sp.name} sold {qty_sold} sacks & {qty_pieces_sold} pieces | '
-                               f'Net ₦{result.net_due_to_company:,.0f}',
-                               'SalesResult', result.pk)
-                    messages.success(
-                        request,
-                        f'Recorded: {sp.name} sold {qty_sold} sacks and {qty_pieces_sold} pieces. '
-                        f'Commission: ₦{result.commission_amount:,.0f} | '
-                        f'Net due to company: ₦{result.net_due_to_company:,.0f}'
-                    )
-                    return redirect('sales:sp_performance')
+                    if unit_price is None:
+                        error = (f'No price configured for sales_manager / {material_type} / 10kg '
+                                 f'on {date_val}. Please ask MD to set a price.')
+                    else:
+                        unit_price_piece = unit_price / 10
+
+                        # Get commission %
+                        # We use the 10kg % as the primary commission for the record.
+                        comm_pct = CommissionConfig.get_active_pct(
+                            sp.channel, material_type, '10kg', date_val
+                        )
+
+                        result = SalesResult.objects.create(
+                            date=date_val,
+                            sales_person=sp,
+                            material_type=material_type,
+                            qty_sold=qty_sold,
+                            qty_pieces_sold=qty_pieces_sold,
+                            qty_returned=qty_returned,
+                            qty_pieces_returned=qty_pieces_returned,
+                            amount_returned=amount_returned,
+                            unit_price=unit_price,
+                            unit_price_piece=unit_price_piece or 0,
+                            commission_pct=comm_pct,
+                            recorded_by=user,
+                            notes=notes,
+                            is_locked=True,
+                        )
+                        log_action(request, user, 'sales', 'RECORD_SALES_RESULT',
+                                   f'{sp.name} sold {qty_sold} sacks & {qty_pieces_sold} pieces | '
+                                   f'Net ₦{result.net_due_to_company:,.0f}',
+                                   'SalesResult', result.pk)
+                        messages.success(
+                            request,
+                            f'Recorded: {sp.name} sold {qty_sold} sacks and {qty_pieces_sold} pieces. '
+                            f'Commission: ₦{result.commission_amount:,.0f} | '
+                            f'Net due to company: ₦{result.net_due_to_company:,.0f}'
+                        )
+                        return redirect('sales:sp_performance')
 
         except Exception as e:
             error = f'Error: {str(e)}'
@@ -643,16 +673,23 @@ def sp_performance(request):
         salespersons = SalesPerson.objects.filter(status='active').order_by('channel', 'name')
         manager_filter = {}
 
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
     sp_rows = []
     for sp in salespersons:
         def _dist(mat=None):
             qs = SalesDistributionRecord.objects.filter(sales_person=sp, **manager_filter)
             if mat: qs = qs.filter(material_type=mat)
+            if f_from: qs = qs.filter(date__gte=f_from)
+            if f_to:   qs = qs.filter(date__lte=f_to)
             return qs.aggregate(t=Sum('qty_given'))['t'] or 0
 
         def _res(field, mat=None):
             qs = SalesResult.objects.filter(sales_person=sp, **manager_filter)
             if mat: qs = qs.filter(material_type=mat)
+            if f_from: qs = qs.filter(date__gte=f_from)
+            if f_to:   qs = qs.filter(date__lte=f_to)
             return qs.aggregate(t=Sum(field))['t'] or 0
 
         maize_given = _dist('maize')
@@ -668,6 +705,8 @@ def sp_performance(request):
         
         # All results for this SP to use for property-based sums
         res_all = SalesResult.objects.filter(sales_person=sp, **manager_filter)
+        if f_from: res_all = res_all.filter(date__gte=f_from)
+        if f_to:   res_all = res_all.filter(date__lte=f_to)
         
         # Equivalent Sack Totals (Sacks + Pieces/10)
         maize_sold_eq = float(sum(r.equivalent_sacks_sold for r in res_all if r.material_type == 'maize'))
@@ -680,7 +719,11 @@ def sp_performance(request):
         total_amount_returned = _res('amount_returned')
         
         # Add MoneyReceipts (Remittances) to the total returned
-        total_remitted = MoneyReceipt.objects.filter(sales_person=sp).aggregate(
+        money_qs = MoneyReceipt.objects.filter(sales_person=sp)
+        if f_from: money_qs = money_qs.filter(date__gte=f_from)
+        if f_to:   money_qs = money_qs.filter(date__lte=f_to)
+        
+        total_remitted = money_qs.aggregate(
             t=Sum('cash_received') + Sum('transfer_received')
         )['t'] or 0
 
@@ -715,6 +758,8 @@ def sp_performance(request):
         'current_user': user,
         'sp_rows': sp_rows,
         'show_money': (user.role in ('md',)),
+        'f_from': f_from,
+        'f_to': f_to,
     })
 
 
@@ -731,26 +776,42 @@ def sp_detail(request, sp_id):
     user = get_current_user(request)
     sp = get_object_or_404(SalesPerson, pk=sp_id)
 
+    f_from = request.GET.get('date_from', '')
+    f_to   = request.GET.get('date_to', '')
+
     if user.role == 'sales_manager':
         # SM can only see their own team's records
         results = SalesResult.objects.filter(
             sales_person=sp, recorded_by=user
-        ).select_related('recorded_by').order_by('date', 'created_at') # ASC for FIFO
+        ).select_related('recorded_by')
         distributions = SalesDistributionRecord.objects.filter(
             sales_person=sp, recorded_by=user
-        ).order_by('-date', '-created_at')
+        )
     else:
         # MD/GM can see all
         results = SalesResult.objects.filter(
             sales_person=sp
-        ).select_related('recorded_by').order_by('date', 'created_at') # ASC for FIFO
+        ).select_related('recorded_by')
         distributions = SalesDistributionRecord.objects.filter(
             sales_person=sp
-        ).order_by('-date', '-created_at')
+        )
+
+    if f_from:
+        results = results.filter(date__gte=f_from)
+        distributions = distributions.filter(date__gte=f_from)
+    if f_to:
+        results = results.filter(date__lte=f_to)
+        distributions = distributions.filter(date__lte=f_to)
+
+    results = results.order_by('date', 'created_at') # ASC for FIFO
+    distributions = distributions.order_by('-date', '-created_at')
 
     # Aggregated Payment History (Handovers + Remittances)
     handovers = results.exclude(amount_returned=0)
-    remittances = MoneyReceipt.objects.filter(sales_person=sp).order_by('-date', '-created_at')
+    remittances = MoneyReceipt.objects.filter(sales_person=sp)
+    if f_from: remittances = remittances.filter(date__gte=f_from)
+    if f_to:   remittances = remittances.filter(date__lte=f_to)
+    remittances = remittances.order_by('-date', '-created_at')
     
     payment_history = []
     for h in handovers:
@@ -815,20 +876,57 @@ def sp_detail(request, sp_id):
     total_wheat_returned   = results.filter(material_type='wheat').aggregate(t=Sum('qty_returned'))['t'] or 0
     total_wheat_pieces_returned = results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_returned'))['t'] or 0
 
+    # ── CUMULATIVE DEBT CALCULATION (Ignoring Date Filters) ──────────────────
+    # This ensures the "Total Outstanding" card reflects true staff exposure.
+    all_results = SalesResult.objects.filter(sales_person=sp)
+    all_dists   = SalesDistributionRecord.objects.filter(sales_person=sp)
+    all_receipts = MoneyReceipt.objects.filter(sales_person=sp)
+
+    if user.role == 'sales_manager':
+        all_results = all_results.filter(recorded_by=user)
+        all_dists   = all_dists.filter(recorded_by=user)
+
+    total_net_all = float(all_results.aggregate(t=Sum('net_due_to_company'))['t'] or 0)
+    total_returned_all = float(all_results.aggregate(t=Sum('amount_returned'))['t'] or 0)
+    total_remitted_all = float(all_receipts.aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0)
+
+    # All movements to find current in-hand quantity
+    given_maize_all = float(all_dists.filter(material_type='maize').aggregate(t=Sum('qty_given'))['t'] or 0)
+    given_wheat_all = float(all_dists.filter(material_type='wheat').aggregate(t=Sum('qty_given'))['t'] or 0)
+    
+    sold_maize_all = float(all_results.filter(material_type='maize').aggregate(t=Sum('qty_sold'))['t'] or 0) + (float(all_results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0) / 10.0)
+    sold_wheat_all = float(all_results.filter(material_type='wheat').aggregate(t=Sum('qty_sold'))['t'] or 0) + (float(all_results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_sold'))['t'] or 0) / 10.0)
+    ret_maize_all = float(all_results.filter(material_type='maize').aggregate(t=Sum('qty_returned'))['t'] or 0) + (float(all_results.filter(material_type='maize').aggregate(t=Sum('qty_pieces_returned'))['t'] or 0) / 10.0)
+    ret_wheat_all = float(all_results.filter(material_type='wheat').aggregate(t=Sum('qty_returned'))['t'] or 0) + (float(all_results.filter(material_type='wheat').aggregate(t=Sum('qty_pieces_returned'))['t'] or 0) / 10.0)
+
+    in_hand_maize = max(0.0, given_maize_all - sold_maize_all - ret_maize_all)
+    in_hand_wheat = max(0.0, given_wheat_all - sold_wheat_all - ret_wheat_all)
+
+    # Value in-hand at CURRENT price
+    today_dt = timezone.now().date()
+    curr_maize_price = float(PriceConfig.get_active_price('sales_manager', 'maize', '10kg', today_dt) or 0)
+    curr_wheat_price = float(PriceConfig.get_active_price('sales_manager', 'wheat', '10kg', today_dt) or 0)
+    in_hand_value = (in_hand_maize * curr_maize_price) + (in_hand_wheat * curr_wheat_price)
+
+    # Grand Total Debt
+    total_outstanding = total_net_all + in_hand_value - total_returned_all - total_remitted_all
+
+    # ── PERIOD-FILTERED TOTALS (For tables & charts) ────────────────────────
     total_net = results.aggregate(t=Sum('net_due_to_company'))['t'] or 0
     total_amount_returned = results.aggregate(t=Sum('amount_returned'))['t'] or 0
     
     # Add MoneyReceipts (Remittances) 
-    total_remitted = MoneyReceipt.objects.filter(sales_person=sp).aggregate(
+    money_receipts_qs = MoneyReceipt.objects.filter(sales_person=sp)
+    if f_from: money_receipts_qs = money_receipts_qs.filter(date__gte=f_from)
+    if f_to:   money_receipts_qs = money_receipts_qs.filter(date__lte=f_to)
+    
+    total_remitted = money_receipts_qs.aggregate(
         t=Sum('cash_received') + Sum('transfer_received')
     )['t'] or 0
 
-    total_outstanding = max(0.0, float(total_net) - float(total_amount_returned) - float(total_remitted))
-
-    # Unsold calculation (Accurate to pieces)
-    # Given (Sacks) - [Sold (Sacks) + SoldPieces/10] - [Returned (Sacks) + RetPieces/10]
-    unsold_maize = float(total_maize_given) - float(sum(r.equivalent_sacks_sold + r.equivalent_sacks_returned for r in results_list if r.material_type == 'maize'))
-    unsold_wheat = float(total_wheat_given) - float(sum(r.equivalent_sacks_sold + r.equivalent_sacks_returned for r in results_list if r.material_type == 'wheat'))
+    # Unsold calculation (Use cumulative for "Current Holding" cards as implied by label)
+    unsold_maize = in_hand_maize
+    unsold_wheat = in_hand_wheat
 
     return render(request, 'sales/sp_detail.html', {
         'current_user': user,
@@ -849,6 +947,8 @@ def sp_detail(request, sp_id):
         'unsold_wheat': max(0.0, unsold_wheat),
         'total_outstanding': total_outstanding,
         'payment_history': payment_history,
+        'f_from': f_from,
+        'f_to': f_to,
     })
 
 
@@ -901,6 +1001,9 @@ def record_sm_payment(request):
             total = amount_cash + amount_transfer
             if total <= 0:
                 error = 'Payment amount must be greater than zero.'
+            elif total > cash_in_hand + 0.01:
+                error = (f'You only have \u20a6{cash_in_hand:,.0f} cash in hand from recorded sales. '
+                         f'You must record sales results before you can send money to company.')
             elif total > outstanding + 0.01:
                 error = (f'Payment amount \u20a6{total:,.0f} exceeds your outstanding balance '
                          f'\u20a6{outstanding:,.0f}.')
@@ -1430,8 +1533,22 @@ def record_gm_remittance(request):
             notes = request.POST.get('notes', '').strip()
             
             total = cash + transfer
+
+            # Calculate cash available: outstanding minus any pending (unconfirmed) remittances
+            gm_pending = float(GMRemittance.objects.filter(
+                recorded_by=user, status='pending_md'
+            ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+            cash_available = max(0.0, outstanding - gm_pending)
+
             if total <= 0:
                 error = "Total remittance amount must be greater than zero."
+            elif outstanding <= 0:
+                error = ('You have no outstanding money from Direct Sales. '
+                         'You must record a Direct Sale and receive payment before remitting money.')
+            elif total > cash_available + 0.01:
+                error = (f'You only have \u20a6{cash_available:,.0f} available to remit '
+                         f'(Outstanding: \u20a6{outstanding:,.0f} minus \u20a6{gm_pending:,.0f} pending confirmation). '
+                         f'Record more Direct Sales first.')
             else:
                 remittance = GMRemittance.objects.create(
                     date=date,
@@ -1453,10 +1570,18 @@ def record_gm_remittance(request):
 
     history = GMRemittance.objects.filter(recorded_by=user).order_by('-date', '-created_at')[:20]
 
+    # Calculate pending and available for display
+    gm_pending_display = float(GMRemittance.objects.filter(
+        recorded_by=user, status='pending_md'
+    ).aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+    cash_available_display = max(0.0, outstanding - gm_pending_display)
+
     return render(request, 'sales/record_gm_remittance.html', {
         'current_user': user,
         'today': today,
         'outstanding': outstanding,
+        'gm_pending': gm_pending_display,
+        'cash_available': cash_available_display,
         'history': history,
         'error': error,
     })
