@@ -514,7 +514,9 @@ class DirectSalePayment(models.Model):
     date = models.DateField()
     material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES)
     product_size = models.CharField(
-        max_length=5, choices=[('10kg', '10 KG Sacks')], default='10kg'
+        max_length=10, 
+        choices=[('10kg', '10 KG Sacks'), ('1kg', '1 KG Pieces')], 
+        default='10kg'
     )
     qty_sold = models.PositiveIntegerField(help_text='Number of sacks sold')
     unit_price = models.DecimalField(max_digits=12, decimal_places=2, help_text='Price per sack')

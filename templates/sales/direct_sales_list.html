@@ -48,7 +48,10 @@
         </td>
         <td>
           <span class="badge-soft badge-soft-info">{{ s.get_material_type_display|upper }}</span>
-          <strong style="margin-left:4px; color:var(--slate-800);">{{ s.qty_sold }}</strong> <span style="font-size: 0.85rem; color: var(--slate-500);">sacks</span>
+          <strong style="margin-left:4px; color:var(--slate-800);">{{ s.qty_sold }}</strong> 
+          <span style="font-size: 0.85rem; color: var(--slate-500);">
+            {% if s.product_size == '1kg' %}pieces{% else %}sacks{% endif %}
+          </span>
         </td>
         <td style="text-align: right; font-family: monospace; font-size:1.15rem; font-weight: 800; color:var(--slate-800);">{{ s.total_sale_value|floatformat:0 }}</td>
         <td style="text-align: right; font-family: monospace; font-size:1.15rem; font-weight: 800; color:var(--emerald);">{{ s.total_received|floatformat:0 }}</td>

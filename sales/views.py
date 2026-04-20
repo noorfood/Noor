@@ -455,16 +455,16 @@ def record_distribution(request):
                     sales_manager=user, status='accepted', material_type=material_type
                 ).order_by('-date', '-created_at').first()
 
-                # Fetch current Pricing and Commission for Sales Manager channel
-                price_cfg = PriceConfig.objects.filter(
-                    material_type=material_type, channel='sales_manager'
-                ).first()
-                comm_cfg = CommissionConfig.objects.filter(
-                    material_type=material_type, channel='sales_manager'
-                ).first()
+                # ── STANDARDIZED PRICE & COMMISSION LOOKUP ──
+                # Use helper methods to ensure date-correctness and correct channel mappings
+                # Price is for SM channel; Commission is standard for sales_team
+                u_price = float(PriceConfig.get_active_price(
+                    'sales_manager', material_type, '10kg', date_val
+                ) or 0)
                 
-                u_price = float(price_cfg.price_per_unit) if price_cfg else 0
-                c_pct = float(comm_cfg.commission_pct) if comm_cfg else 0
+                c_pct = float(CommissionConfig.get_active_pct(
+                    'sales_team', material_type, '10kg', date_val
+                ))
 
                 dist = SalesDistributionRecord.objects.create(
                     date=date_val,

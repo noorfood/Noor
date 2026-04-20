@@ -15,11 +15,14 @@ from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance, F
 from sales.models import (
     SalesRecord, SalesPerson, SalesPayment, CompanyRetailLedger,
     SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment,
-    DirectSalePayment
+    DirectSalePayment, GMRemittance
 )
 from reconciliation.models import MoneyReceipt, ReconciliationFlag
 from audit.models import AuditLog
-from pricing.models import PriceConfig, CommissionConfig, SalesTarget, PackagingCostConfig, OperationalExpense
+from pricing.models import (
+    PriceConfig, CommissionConfig, SalesTarget, PackagingCostConfig, 
+    OperationalExpense, CleaningCostConfig, LabourCostConfig
+)
 
 
 # ─── Central model registry ──────────────────────────────────────────────────
@@ -61,11 +64,14 @@ MODEL_MAP = {
     'commission-configs': (CommissionConfig,      ['created_at', 'channel', 'material_type', 'product_size', 'commission_pct', 'effective_from']),
     'sales-targets':      (SalesTarget,          ['created_at', 'sales_manager', 'material_type', 'target_type', 'month', 'year', 'target_qty']),
     'packaging-costs':    (PackagingCostConfig,  ['created_at', 'material_type', 'cost_per_sack', 'effective_from']),
+    'cleaning-costs':     (CleaningCostConfig,   ['created_at', 'material_type', 'cleaning_cost_per_bag', 'effective_from']),
+    'labour-costs':       (LabourCostConfig,     ['created_at', 'labour_cost_per_sack', 'effective_from']),
     'expenses':           (OperationalExpense,   ['created_at', 'date', 'description', 'amount']),
     'prod-thresholds':    (ProductionThreshold,  ['created_at', 'material_type', 'normal_max_loss_pct', 'warning_max_loss_pct', 'effective_from']),
     
     # Audit
     'audit-log':          (AuditLog,             ['timestamp', 'user_name', 'user_role', 'module', 'action', 'description']),
+    'gm-remittances':     (GMRemittance,         ['created_at', 'date', 'recorded_by', 'amount_cash', 'amount_transfer', 'status']),
 
     # Legacy (kept for data integrity access)
     'sales-records':      (SalesRecord,          ['created_at', 'date', 'channel', 'sales_person', 'product_size', 'qty_sold', 'unit_price', 'total_value', 'status']),
@@ -79,8 +85,9 @@ CATEGORIZED_MODELS = [
     ('Sales Management', ['sales-persons', 'sm-collections', 'sp-distributions', 'sp-results', 'sm-payments', 'retail-ledger', 'direct-sales']),
     ('Production Sales', ['brand-sales']),
     ('Reconciliation', ['money-receipts', 'recon-flags']),
-    ('Pricing & Config', ['price-configs', 'commission-configs', 'sales-targets', 'packaging-costs', 'expenses', 'prod-thresholds']),
+    ('Pricing & Config', ['price-configs', 'commission-configs', 'sales-targets', 'packaging-costs', 'cleaning-costs', 'labour-costs', 'expenses', 'prod-thresholds']),
     ('System & Audit', ['audit-log']),
+    ('GM Remittances', ['gm-remittances']),
     ('Legacy Records', ['sales-records', 'sales-payments']),
 ]
 
@@ -204,10 +211,14 @@ def explore_delete(request, model_name, pk):
     if request.method == 'POST':
         try:
             # MD wants global deletion including history/audit trail
-            AuditLog.objects.filter(object_type=model_name, object_id=str(pk)).delete()
+            if model_name != 'audit-log':
+                AuditLog.objects.filter(object_type=model_name, object_id=str(pk)).delete()
+            
             instance.delete()
-            log_action(request, user, 'data_explorer', 'GOD_MODE_DELETE',
-                       f'PERMANENTLY DELETED {model_name} #{pk} (and its audit history)', model_name, pk)
+            
+            if model_name != 'audit-log':
+                log_action(request, user, 'data_explorer', 'GOD_MODE_DELETE',
+                           f'PERMANENTLY DELETED {model_name} #{pk} (and its audit history)', model_name, pk)
             messages.success(request, f'Record #{pk} permanently deleted from {model_name}.')
         except (ProtectedError, IntegrityError) as e:
             messages.error(request, f"Cannot delete record #{pk} because it is referenced by other data. "
