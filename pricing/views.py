@@ -220,7 +220,7 @@ def new_target(request):
 # OPERATIONAL EXPENSES
 # ─────────────────────────────────────────────────────────────────────────────
 
-@role_required('md')
+@role_required('md', 'manager')
 def list_expenses(request):
     user = get_current_user(request)
     expenses = OperationalExpense.objects.all().order_by('-date', '-created_at')
@@ -233,7 +233,7 @@ def list_expenses(request):
     })
 
 
-@role_required('md')
+@role_required('md', 'manager')
 def new_expense(request):
     user = get_current_user(request)
     error = None

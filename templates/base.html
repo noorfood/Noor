@@ -210,6 +210,11 @@
                 <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Collections & Payments</div>
                 <a href="{% url 'sales:list_sm_payments' %}" class="nav-link {% block nav_gm_pay_confirm %}{% endblock %}" style="color:#f59e0b;font-weight:600;">✅ Confirm SM Payments</a>
                 <a href="{% url 'sales:outstanding' %}" class="nav-link {% block nav_gm_out %}{% endblock %}">📊 SM Outstanding Balances</a>
+                
+                {% if role == 'manager' %}
+                <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin:14px 0 4px 12px; letter-spacing:0.5px;">Factory Finance</div>
+                <a href="{% url 'pricing:expenses' %}" class="nav-link {% block nav_gm_expenses %}{% endblock %}" style="color:#f43f5e;font-weight:600;">💸 Record Factory Expenses</a>
+                {% endif %}
                 {% endif %}
             </div>
             {% endif %}

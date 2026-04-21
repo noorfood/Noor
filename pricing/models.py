@@ -237,7 +237,7 @@ class OperationalExpense(models.Model):
     description = models.CharField(max_length=255, help_text='E.g., Fuel, Salaries, Maintenance')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     notes = models.TextField(blank=True)
-    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role': 'md'})
+    recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, limit_choices_to={'role__in': ['md', 'manager']})
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
