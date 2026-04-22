@@ -58,7 +58,7 @@
     <!-- EXECUTIVE FINANCIAL PULSE -->
     <div class="card" style="background: var(--navy); color: white; border: none; padding: 2.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden;">
         <div style="position: absolute; top:0; right:0; opacity: 0.05; font-size: 10rem; transform: translate(20%, -20%);">₦</div>
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 3rem; position: relative; z-index: 1;">
+        <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; position: relative; z-index: 1;">
             <div>
                 <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL VALUE OF ALL SALES</div>
                 <div style="font-size: 2.4rem; font-weight: 900; letter-spacing: -1px;">₦{{ company_total_revenue|floatformat:0 }}</div>
@@ -73,6 +73,11 @@
                 <div style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL UNPAID (DEBT)</div>
                 <div style="font-size: 2.4rem; font-weight: 900; color: var(--amber); letter-spacing: -1px;">₦{{ company_outstanding_money|floatformat:0 }}</div>
                 <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Money still outside with managers/customers</p>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">FACTORY ASSET VALUE</div>
+                <div style="font-size: 2.4rem; font-weight: 900; color: #facc15; letter-spacing: -1px;">₦{{ total_inventory_value|floatformat:0 }}</div>
+                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Current value of all stock stored inside</p>
             </div>
         </div>
     </div>

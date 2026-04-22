@@ -138,6 +138,22 @@
     <!-- P&L Table -->
     <div class="card" style="padding: 2rem;">
         <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+            📊 Factory Asset Value (Current Stock)
+        </h4>
+        <div style="font-size: 2.2rem; font-weight: 900; color: var(--emerald); margin-bottom: 1.5rem;">₦{{ total_inventory_value|floatformat:0 }}</div>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px dashed var(--slate-100);">
+                <span style="color: var(--slate-500);">🌽 Maize Store Value</span>
+                <span style="font-weight: 700; color: var(--navy);">₦{{ inv_maize.total_value|floatformat:0 }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px dashed var(--slate-100);">
+                <span style="color: var(--slate-500);">🌾 Wheat Store Value</span>
+                <span style="font-weight: 700; color: var(--navy);">₦{{ inv_wheat.total_value|floatformat:0 }}</span>
+            </div>
+        </div>
+
+        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; padding-top: 2rem; border-top: 2px solid var(--slate-50);">
             📉 Profit and Loss Calculator
         </h4>
         <div style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -147,7 +163,7 @@
             </div>
             <div style="padding: 1rem 0 0.5rem; font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px;">Cost of Production</div>
             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0 0.5rem 1rem; border-bottom: 1px solid var(--slate-100);">
-                <span style="font-size: 0.85rem; color: var(--slate-500);">Raw Material Inventory</span>
+                <span style="font-size: 0.85rem; color: var(--slate-500);">Raw Material Cost (Milled Basis)</span>
                 <span style="font-weight: 700; color: var(--rose);">- ₦{{ raw_mat_cost|floatformat:2 }}</span>
             </div>
             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0 0.5rem 1rem; border-bottom: 1px solid var(--slate-100);">

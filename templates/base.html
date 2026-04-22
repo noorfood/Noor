@@ -383,6 +383,12 @@
             // Priority 1: Check for a form with a 'range' input (New Standard)
             const rangeInput = document.querySelector('[name="range"]');
             if (rangeInput) {
+                // Clear manual dates so the server-side range logic takes precedence
+                const fromInput = document.querySelector('[name="date_from"]');
+                const toInput = document.querySelector('[name="date_to"]');
+                if (fromInput) fromInput.value = "";
+                if (toInput) toInput.value = "";
+
                 rangeInput.value = range;
                 rangeInput.closest('form').submit();
                 return;

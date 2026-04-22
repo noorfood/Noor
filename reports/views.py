@@ -10,7 +10,8 @@ from sales.models import SalesRecord
 from reconciliation.models import MoneyReceipt, ReconciliationFlag
 from accounts.models import User
 from audit.models import AuditLog
-from procurement.models import RawMaterialReceipt
+from procurement.models import RawMaterialReceipt, RawMaterialIssuance
+from .utils import get_material_consumption_metrics, get_inventory_valuation
 import datetime
 from django.db import transaction
 from django.contrib import messages
@@ -831,6 +832,12 @@ def company_flow(request):
     company_received_money = float(total_money_received) + float(brand_received) + gm_received
     company_outstanding_money = float(total_money_outstanding) + float(brand_outstanding) + gm_outstanding
 
+    # Inventory Valuation (New)
+    from .utils import get_inventory_valuation
+    inv_maize = get_inventory_valuation('maize')
+    inv_wheat = get_inventory_valuation('wheat')
+    total_inventory_value = inv_maize['total_value'] + inv_wheat['total_value']
+
     return render(request, 'reports/company_flow.html', {
         'current_user': user, 'show_money': show_money,
         'raw_maize_in': raw_maize_in, 'raw_wheat_in': raw_wheat_in,
@@ -866,6 +873,9 @@ def company_flow(request):
         'company_total_revenue': company_total_revenue,
         'company_received_money': company_received_money,
         'company_outstanding_money': company_outstanding_money,
+        'total_inventory_value': total_inventory_value,
+        'inv_maize': inv_maize,
+        'inv_wheat': inv_wheat,
         'active_range': range_type,
     })
 
@@ -880,6 +890,7 @@ def md_insights(request):
     from procurement.models import RawMaterialReceipt, RawMaterialIssuance
     from clean_store.views import _get_clean_store_balance
     from finished_store.views import _fg_balance
+    from .utils import get_inventory_valuation
     from sales.models import SalesManagerCollection, SalesManagerPayment, SalesPerson, SalesDistributionRecord, SalesResult
     from accounts.models import User
     from production.models import BrandSale
@@ -915,7 +926,10 @@ def md_insights(request):
     clean_wheat = _get_clean_store_balance('wheat')
     fg_wheat    = _fg_balance('wheat', '10kg')
 
-    # 2. Who is holding what
+    # 1b. Inventory Valuation (New)
+    inv_maize = get_inventory_valuation('maize')
+    inv_wheat = get_inventory_valuation('wheat')
+    total_inventory_value = inv_maize['total_value'] + inv_wheat['total_value']
     sales_managers = User.objects.filter(role='sales_manager', status='active')
     sm_holdings = []
     for sm in sales_managers:
@@ -1095,6 +1109,9 @@ def md_insights(request):
         'this_month_name': today.strftime('%B'),
         'f_from': f_from, 'f_to': f_to,
         'active_range': range_type,
+        'total_inventory_value': total_inventory_value,
+        'inv_maize': inv_maize,
+        'inv_wheat': inv_wheat,
     }
 
     return render(request, 'reports/md_insights.html', context)
@@ -1293,11 +1310,24 @@ def financial_summary(request):
     total_rev = sum(m['revenue'] for m in metrics.values())
     
     # Costs
-    # a. Raw Material Cost (MD-approved costs for all RECEIPTS in the period)
-    rm_qs = RawMaterialReceipt.objects.filter(cost_status='approved')
-    if date_from_obj: rm_qs = rm_qs.filter(date__gte=date_from_obj)
-    if date_to_obj:   rm_qs = rm_qs.filter(date__lte=date_to_obj)
-    raw_mat_cost = float(rm_qs.aggregate(t=Sum('total_cost'))['t'] or 0)
+    # a. Raw Material Cost (Consumption/Milling Basis)
+    raw_mat_cost = 0.0
+    for mat in materials:
+        c_metrics = get_material_consumption_metrics(mat, date_to_obj)
+        unit_cost = c_metrics['clean_unit_cost']
+        
+        mb_qs_mat = MillingBatch.objects.filter(material_type=mat)
+        if date_from_obj: mb_qs_mat = mb_qs_mat.filter(date__gte=date_from_obj)
+        if date_to_obj:   mb_qs_mat = mb_qs_mat.filter(date__lte=date_to_obj)
+        
+        m_data = mb_qs_mat.aggregate(a=Sum('bags_milled_new'), b=Sum('outstanding_bags_milled'))
+        total_milled = (m_data['a'] or 0) + (m_data['b'] or 0)
+        raw_mat_cost += float(total_milled) * unit_cost
+
+    # Calculate Inventory Assets (What we currently have in stock at cost price)
+    inv_maize = get_inventory_valuation('maize')
+    inv_wheat = get_inventory_valuation('wheat')
+    total_inventory_value = inv_maize['total_value'] + inv_wheat['total_value']
     
     # b. Packaging Cost (Summed from production batches)
     pb_qs = PackagingBatch.objects.all()
@@ -1430,6 +1460,9 @@ def financial_summary(request):
         'net_profit': net_profit,
         'profit_margin_pct': profit_margin_pct,
         'profit_ratio_pct': profit_ratio * 100,
+        'inv_maize': inv_maize,
+        'inv_wheat': inv_wheat,
+        'total_inventory_value': total_inventory_value,
         'chart_data_json': json.dumps(chart_data),
         'expenses_list': recent_expenses.order_by('-date')[:10],
         'pending_raw_costs': pending_raw.order_by('-date'),
