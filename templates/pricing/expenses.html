@@ -4,14 +4,41 @@
 {% block nav_gm_expenses %}active{% endblock %}
 {% block content %}
 
+<style>
+    /* ── Expenses Page Mobile Responsive Styles ── */
+    .expenses-hero-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        gap: 1rem;
+    }
+    @media (max-width: 768px) {
+        .expenses-hero-inner {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .expenses-hero-inner .btn-modern {
+            align-self: flex-start;
+        }
+    }
+    @media (max-width: 480px) {
+        .expenses-hero-inner .btn-modern {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+    }
+</style>
+
 <div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
+    <div class="expenses-hero-inner">
         <div>
             <span class="hero-badge" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">💸 P&L Tracking</span>
             <h1 class="hero-title">Operational Expenses</h1>
             <p class="hero-subtitle">Track all non-production costs — salaries, fuel, maintenance, transport, and more.</p>
         </div>
-        <a href="{% url 'pricing:new_expense' %}" class="btn-modern btn-modern-primary" style="padding: 0.65rem 1.5rem; font-size: 0.9rem;">+ Record Expense</a>
+        <a href="{% url 'pricing:new_expense' %}" class="btn-modern btn-modern-primary" style="padding: 0.65rem 1.5rem; font-size: 0.9rem; white-space: nowrap;">+ Record Expense</a>
     </div>
 </div>
 
@@ -27,7 +54,7 @@
 </div>
 
 {% if expenses %}
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
+<div class="table-wrapper">
     <table class="premium-table">
         <thead>
             <tr>
@@ -54,7 +81,7 @@
     </table>
 </div>
 {% else %}
-<div style="background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: 16px; padding: 4rem; text-align: center;">
+<div style="background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: 16px; padding: 4rem 2rem; text-align: center;">
     <div style="font-size: 3rem; margin-bottom: 1rem;">💸</div>
     <h3 style="color:var(--slate-700);margin-bottom:.5rem;font-weight:800;">No Expenses Recorded Yet</h3>
     <p style="color:var(--slate-500);margin-bottom:2rem;">Start recording operational costs to track your P&L accurately.</p>
