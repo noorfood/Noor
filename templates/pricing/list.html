@@ -1,86 +1,12 @@
-{% extends 'base.html' %}
-{% block title %}Price Configuration — Noor Foods{% endblock %}
-{% block nav_pr_pricing %}active{% endblock %}
-
-{% block content %}
-<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
-    <div>
-        <span class="hero-badge">💼 Market Strategy</span>
-        <h1 class="hero-title">Pricing Setup</h1>
-        <p class="hero-subtitle">MD-controlled pricing rules for Sales Manager and Company Direct channels. Prices are versioned by effective date.</p>
-    </div>
-</div>
-
-<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
-        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
-        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
-        <a href="{% url 'pricing:expenses' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Daily Expenses</a>
-        <a href="{% url 'pricing:packaging_costs' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Constant Material Costs</a>
-    </div>
-</div>
-
-<div style="margin-top: 2.5rem;">
-    {% if pending_costs %}
-    <div style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem;">
-        <h4 style="margin: 0 0 1rem 0; font-weight: 800; color: #92400e; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>⚠️</span> Pending Raw Material Costs ({{ pending_costs|length }})
-        </h4>
-        <p style="font-size: 0.85rem; color: #b45309; margin-bottom: 1rem;">The store has received these batches, but their purchase cost per bag hasn't been set. You must set the cost to accurately calculate manufacturing loss.</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            {% for r in pending_costs %}
-            <div style="background: #fff; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %} mb-1">{{ r.get_material_type_display|upper }}</span>
-                    <strong style="color: var(--navy); display: block; margin-top: 4px;">{{ r.num_bags }} Bags from {{ r.supplier }}</strong>
-                    <span style="font-size: 0.8rem; color: var(--slate-500);">Received {{ r.date }} by {{ r.received_by.full_name }}</span>
-                </div>
-                <a href="{% url 'procurement:set_cost' r.pk %}" class="btn-modern btn-modern-warning" style="font-size: 0.8rem; padding: 0.5rem 1rem;">Set Cost →</a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">🎯 Active Pricing Rules</h4>
-        <a href="{% url 'pricing:new' %}" class="btn-modern btn-modern-primary">+ Set New Price</a>
-    </div>
-    
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Channel</th>
-                    <th>Material</th>
-                    <th>Size</th>
-                    <th style="text-align: right;">Price / Unit</th>
-                    <th>Effective Date</th>
-                    <th>Notes / Set By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in prices %}
-                <tr>
-                    <td><span class="badge-soft {% if p.channel == 'promoter' %}badge-soft-info{% else %}badge-soft-warning{% endif %}">{{ p.get_channel_display }}</span></td>
-                    <td><strong style="color:var(--slate-800);">{{ p.get_material_type_display|upper }}</strong></td>
-                    <td style="font-weight:700; color:var(--slate-900);">{{ p.product_size }}</td>
-                    <td style="text-align: right; font-family: monospace; font-size: 1.2rem; font-weight: 800; color: var(--emerald);">₦{{ p.price_per_unit|floatformat:0 }}</td>
-                    <td style="font-size:0.9rem; color:var(--slate-600); font-weight:700;">{{ p.effective_from|date:"M d, Y" }}</td>
-                    <td>
-                        <div style="font-size:0.85rem; color:var(--slate-700); font-weight:600;">{{ p.notes|default:"No notes provided." }}</div>
-                        <div style="font-size:0.75rem; color:var(--slate-500); margin-top:4px;">By {{ p.created_by.full_name }}</div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No prices configured yet. <a href="{% url 'pricing:new' %}" style="color:var(--indigo); font-weight:700;">Set the first price rule</a>.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% extends 'rebuild/base.html' %}{% block title %}Pricing Setup{% endblock %}{% block nav_pricing %}active{% endblock %}{% block breadcrumb %}Pricing{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">PRICES &amp; COSTS</div><h1>Pricing</h1></div></div>
+<div class="operation-actions"><a class="button button-secondary" href="{% url 'pricing:list' %}">Pricing</a><a class="button button-secondary" href="{% url 'pricing:commissions' %}">Commissions</a><a class="button button-secondary" href="{% url 'pricing:targets' %}">Targets</a><a class="button button-secondary" href="{% url 'pricing:expenses' %}">Expenses</a><a class="button button-secondary" href="{% url 'pricing:packaging_costs' %}">Costs</a></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PRICES</span><h2>Price configs</h2></div><a class="button button-primary" href="{% url 'pricing:new' %}">Set price</a></div>
+<div class="table-scroll"><table><thead><tr><th>Channel</th><th>Material</th><th>Package size</th><th class="number">Price per unit (₦)</th><th>Effective from</th><th>Notes</th><th>Set by</th></tr></thead><tbody>
+{% for p in prices %}<tr><td><span class="status-pill">{{ p.get_channel_display }}</span></td><td><strong>{{ p.get_material_type_display|upper }}</strong></td><td>{{ p.product_size }}</td><td class="number">{{ p.price_per_unit|floatformat:0 }}</td><td>{{ p.effective_from|date:"M d, Y" }}</td><td>{{ p.notes|default:"—" }}</td><td>{{ p.created_by.full_name }}</td></tr>
+{% empty %}<tr><td colspan="7" class="empty-state">No prices configured.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% if pending_costs %}<section class="panel" style="margin-top:20px"><div class="panel-header"><h2>Pending raw material costs ({{ pending_costs|length }})</h2></div><div class="record-list">
+{% for r in pending_costs %}<div class="record-row"><div><strong>{{ r.num_bags }} bags from {{ r.supplier }}</strong><span>{{ r.get_material_type_display|upper }} · Received {{ r.date }} by {{ r.received_by.full_name }}</span></div><a class="button button-secondary" href="{% url 'procurement:set_cost' r.pk %}">Set cost</a></div>{% endfor %}
+</div></section>{% endif %}
 {% endblock %}

@@ -1,0 +1,149 @@
+{
+  "period_start": "2026-01-01",
+  "period_end": "2026-01-31",
+  "currency": "NGN",
+  "policy": {
+    "revenue_recognition": "Example only",
+    "costing_method": "Example only",
+    "returns_discounts": "Example only",
+    "tax_treatment": "Example only",
+    "expenses_and_other_items": "Example only"
+  },
+  "signoffs": {
+    "management": "Example",
+    "accountant": "Example"
+  },
+  "lines": [
+    {
+      "reference": "line-gross_sales",
+      "category": "gross_sales",
+      "amount": "10000.00"
+    },
+    {
+      "reference": "line-sales_returns_discounts",
+      "category": "sales_returns_discounts",
+      "amount": "500.00"
+    },
+    {
+      "reference": "line-cost_of_sales",
+      "category": "cost_of_sales",
+      "amount": "6000.00"
+    },
+    {
+      "reference": "line-operating_expenses",
+      "category": "operating_expenses",
+      "amount": "1200.00"
+    },
+    {
+      "reference": "line-other_income",
+      "category": "other_income",
+      "amount": "200.00"
+    },
+    {
+      "reference": "line-other_expenses",
+      "category": "other_expenses",
+      "amount": "100.00"
+    },
+    {
+      "reference": "line-tax",
+      "category": "tax",
+      "amount": "300.00"
+    }
+  ],
+  "controls": {
+    "gross_sales": {
+      "reference": "control-gross_sales",
+      "amount": "10000.00"
+    },
+    "sales_returns_discounts": {
+      "reference": "control-sales_returns_discounts",
+      "amount": "500.00"
+    },
+    "cost_of_sales": {
+      "reference": "control-cost_of_sales",
+      "amount": "6000.00"
+    },
+    "operating_expenses": {
+      "reference": "control-operating_expenses",
+      "amount": "1200.00"
+    },
+    "other_income": {
+      "reference": "control-other_income",
+      "amount": "200.00"
+    },
+    "other_expenses": {
+      "reference": "control-other_expenses",
+      "amount": "100.00"
+    },
+    "tax": {
+      "reference": "control-tax",
+      "amount": "300.00"
+    }
+  },
+  "balances": {
+    "opening": {
+      "cash": {
+        "ledger_reference": "opening-cash-ledger",
+        "evidence_reference": "opening-cash-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "bank": {
+        "ledger_reference": "opening-bank-ledger",
+        "evidence_reference": "opening-bank-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "inventory": {
+        "ledger_reference": "opening-inventory-ledger",
+        "evidence_reference": "opening-inventory-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "receivables": {
+        "ledger_reference": "opening-receivables-ledger",
+        "evidence_reference": "opening-receivables-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "payables": {
+        "ledger_reference": "opening-payables-ledger",
+        "evidence_reference": "opening-payables-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      }
+    },
+    "closing": {
+      "cash": {
+        "ledger_reference": "closing-cash-ledger",
+        "evidence_reference": "closing-cash-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "bank": {
+        "ledger_reference": "closing-bank-ledger",
+        "evidence_reference": "closing-bank-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "inventory": {
+        "ledger_reference": "closing-inventory-ledger",
+        "evidence_reference": "closing-inventory-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "receivables": {
+        "ledger_reference": "closing-receivables-ledger",
+        "evidence_reference": "closing-receivables-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      },
+      "payables": {
+        "ledger_reference": "closing-payables-ledger",
+        "evidence_reference": "closing-payables-evidence",
+        "ledger_amount": "100.00",
+        "evidence_amount": "100.00"
+      }
+    }
+  }
+}

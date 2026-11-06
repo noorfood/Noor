@@ -1,178 +1,33 @@
-{% extends 'base.html' %}
-{% block title %}Money & Bags Still Owed — Noor Foods{% endblock %}
-{% block nav_rp_out_md %}active{% endblock %}
-{% block nav_rp_out %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Money & Bags Still Owed — Noor Foods{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Money & Bags Still Owed{% endblock %}
 {% block content %}
-{# Standardized Styles Inherited from base.html #}
-<style>
-    .status-badge-ok {
-        background: var(--emerald-50);
-        color: var(--emerald-700);
-        border: 1px solid var(--emerald-100);
-        padding: 1.5rem;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        font-weight: 600;
-    }
-</style>
-
-<div class="page-hero" style="background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%); margin-bottom: 3rem;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(254, 242, 242, 0.1); color: #fecaca;">⚖️ Checking Owed Balances</span>
-            <h1 class="hero-title" style="color: #fff;">Master List: Who is Owed What</h1>
-            <p class="hero-subtitle" style="color: #fecaca;">A full list of all bags and money that haven't been returned or paid yet.</p>
-        </div>
-    </div>
-</div>
-
-{# ══ PRODUCTION OUTSTANDING ══════════════════════════════════════ #}
-<!-- PRODUCTION EXPOSURE -->
-<div class="card" style="margin-bottom: 3rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1rem;">⚙️</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Production: Bags Still on Factory Floor</h3>
-    </div>
-
-    {% if prod_outstanding %}
-    <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Production Officer</th>
-                    <th class="num">Maize Bags</th>
-                    <th class="num">Wheat Bags</th>
-                    <th class="num">Total Owed</th>
-                    <th style="text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in prod_outstanding %}
-                <tr>
-                    <td><strong style="color: var(--navy);">{{ row.user.full_name }}</strong></td>
-                    <td class="num" style="font-weight: 700; color: var(--amber);">{{ row.maize_balance }}</td>
-                    <td class="num" style="font-weight: 700; color: var(--indigo);">{{ row.wheat_balance }}</td>
-                    <td class="num"><span style="font-weight: 800; color: var(--rose);">{{ row.balance }}</span></td>
-                    <td style="text-align: right;">
-                        <a href="/production/outstanding/" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--slate-100); color: var(--slate-700);">
-                            Audit Batches
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="status-badge-ok">
-        <span style="font-size: 1.5rem;">✅</span>
-        <div>
-            <div style="color: var(--emerald-900); font-weight: 800;">All Factory Bags Accounted For</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">Everything on the factory floor has been signed for or finished.</div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-{# ══ SALES MANAGER OUTSTANDING ════════════════════════════════════ #}
-<!-- SALES TEAM EXPOSURE -->
-<div class="card" style="margin-bottom: 3rem; border-left: 4px solid var(--rose);">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef2f2; color: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 1rem;">💼</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Sales Team: Bags & Money Still Owed</h3>
-    </div>
-
-    {% if sales_balances %}
-    <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Sales Manager</th>
-                    <th class="num">Maize Bags</th>
-                    <th class="num">Wheat Bags</th>
-                    <th class="num">Total Bags Owed</th>
-                    <th class="num">Batches</th>
-                    <th class="num">Money Owed (₦)</th>
-                    <th style="text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in sales_balances %}
-                <tr>
-                    <td><strong style="color: var(--navy);">{{ row.sm.full_name }}</strong></td>
-                    <td class="num" style="font-weight: 700; color: var(--amber);">{{ row.maize_holding }}</td>
-                    <td class="num" style="font-weight: 700; color: var(--indigo);">{{ row.wheat_holding }}</td>
-                    <td class="num"><span class="font-bold {% if row.goods_holding > 0 %}text-rose{% else %}text-emerald{% endif %}">{{ row.goods_holding }}</span></td>
-                    <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.record_count }}</td>
-                    <td class="num"><strong style="color: var(--rose); font-size: 1.1rem;">₦{{ row.outstanding|floatformat:0 }}</strong></td>
-                    <td style="text-align: right;">
-                        <a href="/sales/outstanding/" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--navy); color: #fff;">
-                            Settle Balance
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="status-badge-ok">
-        <span style="font-size: 1.5rem;">✅</span>
-        <div>
-            <div style="color: var(--emerald-900); font-weight: 800;">All Sales Accounts Settled</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">All managers have returned their bags and paid all money due.</div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-{# ══ OPEN RECONCILIATION FLAGS ════════════════════════════════════ #}
-<!-- DISCREPANCIES -->
-<div class="card">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-        <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff1f2; color: var(--rose); display: flex; align-items: center; justify-content: center; font-size: 1rem;">🚨</div>
-        <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Problem List: Missing Money or Bags</h3>
-    </div>
-
-    {% if recon_flags %}
-    <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Flag #</th>
-                    <th>Date</th>
-                    <th>Person</th>
-                    <th class="num">Expected (₦)</th>
-                    <th class="num">Actual (₦)</th>
-                    <th class="num">Money Missing (₦)</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for f in recon_flags %}
-                <tr style="background: rgba(251, 191, 36, 0.03);">
-                    <td><strong style="color: var(--navy);">#{{ f.pk }}</strong></td>
-                    <td><span style="font-weight: 700; color: var(--slate-600);">{{ f.date|date:"d M Y" }}</span></td>
-                    <td><strong>{{ f.sales_person.name }}</strong></td>
-                    <td class="num">{{ f.expected_amount|floatformat:0 }}</td>
-                    <td class="num">{{ f.actual_amount|floatformat:0 }}</td>
-                    <td class="num"><strong style="color: var(--rose);">₦{{ f.difference|floatformat:0 }}</strong></td>
-                    <td style="font-size: .8rem; color: var(--slate-500);">{{ f.notes|truncatechars:60 }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="status-badge-ok">
-        <span style="font-size: 1.5rem;">✅</span>
-        <div>
-            <div style="color: var(--emerald-900); font-weight: 800;">Log is Clear</div>
-            <div style="font-size: 0.8rem; color: var(--emerald-600); font-weight: 500;">Everything matches. No missing money found in the records.</div>
-        </div>
-    </div>
-    {% endif %}
-</div>
+<div class="page-heading"><div><div class="eyebrow">OUTSTANDING</div><h1>Money and bags still owed</h1></div></div>
+<div class="notice">Production balances are bags issued and not yet milled or returned. Sales balances are goods held and money outstanding per sales manager.</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PRODUCTION</span><h2>Bags on the factory floor</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Production officer</th><th class="number">Maize bags</th><th class="number">Wheat bags</th><th class="number">Total bags</th></tr></thead>
+<tbody>
+{% for row in prod_outstanding %}
+<tr><td><strong>{{ row.user.full_name }}</strong></td><td class="number">{{ row.maize_balance }}</td><td class="number">{{ row.wheat_balance }}</td><td class="number"><strong>{{ row.balance }}</strong></td></tr>
+{% empty %}
+<tr><td colspan="4" class="empty-state">No production balances outstanding.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES TEAM</span><h2>Bags and money owed</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Sales manager</th><th class="number">Maize held</th><th class="number">Wheat held</th><th class="number">Goods held</th><th class="number">Money outstanding (₦)</th><th class="number">Collections</th></tr></thead>
+<tbody>
+{% for row in sales_balances %}
+<tr><td><strong>{{ row.sm.full_name }}</strong></td><td class="number">{{ row.maize_holding }}</td><td class="number">{{ row.wheat_holding }}</td><td class="number">{{ row.goods_holding }}</td><td class="number">{{ row.outstanding|floatformat:0 }}</td><td class="number">{{ row.record_count }}</td></tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No sales balances outstanding.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">RECONCILIATION</span><h2>Unresolved flags</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Sales person</th><th class="number">Expected (₦)</th><th class="number">Actual (₦)</th><th class="number">Difference (₦)</th><th>Notes</th></tr></thead>
+<tbody>
+{% for f in recon_flags %}
+<tr><td>{{ f.date|date:"d M Y" }}</td><td>{{ f.sales_person.name }}</td><td class="number">{{ f.expected_amount|floatformat:0 }}</td><td class="number">{{ f.actual_amount|floatformat:0 }}</td><td class="number">{{ f.difference|floatformat:0 }}</td><td>{{ f.notes|truncatechars:60 }}</td></tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No unresolved reconciliation flags.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

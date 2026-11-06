@@ -1,336 +1,80 @@
-{% extends 'base.html' %}
-{% block title %}Direct Insights — Noor Foods{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Direct Insights — Noor Foods{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Direct Insights{% endblock %}
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">🧠 MD Overview</span>
-            <h1 class="hero-title" style="color: #fff;">Direct Insights</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">Summary of how much grain we have, who owes money, and who is selling best.</p>
-        </div>
-    </div>
+<div class="page-heading"><div><div class="eyebrow">MD INSIGHTS</div><h1>Direct insights</h1></div></div>
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><input type="hidden" name="range" value="{{ active_range }}">
+{% include 'partials/date_toggles.html' with active_range=active_range %}
+<div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button type="submit" class="button button-primary">Apply filters</button><a href="?" class="button button-secondary">Reset</a></div></form></section>
+{% if f_from or f_to %}<div class="notice">Date range: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}</div>{% endif %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Raw maize</span></div><span class="metric-value">{{ dirty_maize }}</span><span class="metric-label">Bags on hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Clean maize</span></div><span class="metric-value">{{ clean_maize }}</span><span class="metric-label">Bags</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Finished maize</span></div><span class="metric-value">{{ fg_maize }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Raw wheat</span></div><span class="metric-value">{{ dirty_wheat }}</span><span class="metric-label">Bags on hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Clean wheat</span></div><span class="metric-value">{{ clean_wheat }}</span><span class="metric-label">Bags</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Finished wheat</span></div><span class="metric-value">{{ fg_wheat }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Inventory value, maize</span></div><span class="metric-value">₦{{ inv_maize.total_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Inventory value, wheat</span></div><span class="metric-value">₦{{ inv_wheat.total_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Total inventory value</span></div><span class="metric-value">₦{{ total_inventory_value|floatformat:0 }}</span></div>
 </div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Intelligence Window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES MANAGERS</span><h2>Holdings</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Name</th><th class="number">Goods held</th><th class="number">Money outstanding (₦)</th></tr></thead>
+<tbody>
+{% for sm in sm_holdings %}
+<tr><td><strong>{{ sm.name }}</strong></td><td class="number">{{ sm.goods }}</td><td class="number">{{ sm.money|floatformat:0 }}</td></tr>
+{% empty %}
+<tr><td colspan="3" class="empty-state">No sales manager holdings recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES PERSONS</span><h2>Top sales persons</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Name</th><th>Channel</th><th class="number">Issued</th><th class="number">Sold</th><th class="number">Sold %</th></tr></thead>
+<tbody>
+{% for sp in top_sps %}
+<tr><td><strong>{{ sp.name }}</strong></td><td>{{ sp.channel }}</td><td class="number">{{ sp.issued }}</td><td class="number">{{ sp.sold }}</td><td class="number">{{ sp.pct }}</td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No sales person records.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Brand revenue</span></div><span class="metric-value">₦{{ brand_revenue|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Brand received</span></div><span class="metric-value">₦{{ brand_received|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Brand outstanding</span></div><span class="metric-value">₦{{ brand_outstanding|floatformat:0 }}</span></div>
 </div>
-
-<!-- NEW: High Level Asset Valuation -->
-<div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, #065f46 0%, #064e3b 100%); margin-bottom: 2rem; border: none; box-shadow: 0 10px 25px rgba(5, 150, 105, 0.2);">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <div style="font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">🏢 Total Factory Asset Value (Stock)</div>
-            <div style="font-size: 2.2rem; font-weight: 900; color: #fff;">₦{{ total_inventory_value|floatformat:0 }}</div>
-        </div>
-        <div style="display: flex; gap: 2rem; text-align: right;">
-            <div>
-                <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5); font-weight: 700; text-transform: uppercase;">🌽 Maize Value</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #fff;">₦{{ inv_maize.total_value|floatformat:0 }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5); font-weight: 700; text-transform: uppercase;">🌾 Wheat Value</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #fff;">₦{{ inv_wheat.total_value|floatformat:0 }}</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 1. Store Summary Layer (No Money) -->
-<div style="margin-bottom: 3rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-        <span style="font-size: 1.25rem;">🏬</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Every Store Status</h3>
-    </div>
-    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
-        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--slate-400);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Main Grain Store (Raw)</div>
-            <div style="display: flex; gap: 1.5rem;">
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">{{ dirty_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags</div>
-                </div>
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">{{ dirty_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags</div>
-                </div>
-            </div>
-        </div>
-        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Clean Grain Store</div>
-            <div style="display: flex; gap: 1.5rem;">
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">{{ clean_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags</div>
-                </div>
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">{{ clean_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags</div>
-                </div>
-            </div>
-        </div>
-        <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-            <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Finished Bag Store</div>
-            <div style="display: flex; gap: 1.5rem;">
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">{{ fg_maize }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Maize Bags (10kg)</div>
-                </div>
-                <div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">{{ fg_wheat }}</div>
-                    <div style="font-size: 0.65rem; font-weight: 700; color: var(--slate-400);">Wheat Bags (10kg)</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 2. Money Owed & Bags in Hand -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-bottom:2rem;">
-    
-    <!-- Who is holding what -->
-<div class="card" style="padding: 0; overflow: hidden;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
-        <h4 style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Bags with Managers</h4>
-    </div>
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>Manager</th>
-                <th class="num">Bags they have</th>
-                <th class="num">Money they owe</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for sm in sm_holdings %}
-            <tr>
-                <td><strong style="color: var(--navy);">{{ sm.name }}</strong></td>
-                <td class="num" style="font-weight: 700; color: var(--amber);">{{ sm.goods }} <small>Bags</small></td>
-                <td class="num" style="font-weight: 900; color: var(--rose);">₦{{ sm.money|floatformat:0 }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3" style="padding: 3rem; text-align: center; color: var(--slate-400); font-style: italic;">All Sales Managers fully reconciled.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-    <!-- Brand Sales Recovery -->
-<div class="card" style="padding: 1.5rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
-    <h4 style="margin:0 0 1.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Byproduct Sales Check</h4>
-    <div style="display:flex; flex-direction:column; gap:1.25rem;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Total Byproduct Sold (Gross)</span>
-            <strong style="font-size: 1.2rem; color: var(--navy);">₦{{ brand_revenue|floatformat:0 }}</strong>
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase;">Money Received</span>
-            <strong style="font-size: 1.2rem; color: var(--emerald);">₦{{ brand_received|floatformat:0 }}</strong>
-        </div>
-        <div style="padding-top: 1.25rem; border-top: 2px dashed var(--slate-200); display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size: 0.8rem; font-weight: 800; color: var(--rose); text-transform: uppercase;">Money Still Owed</span>
-            <strong style="font-size: 1.5rem; color: var(--rose);">₦{{ brand_outstanding|floatformat:0 }}</strong>
-        </div>
-    </div>
-</div>
-
-</div>
-
-<!-- 3. Performance & Trends -->
-<div style="display:grid; grid-template-columns: 1fr 1.5fr 1fr; gap:1.5rem;">
-    
-    <!-- Top Performers Card -->
-    <div class="card" style="padding: 1.5rem;">
-        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Top Sellers</h4>
-        <p style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Ranked by Conversion Efficiency</p>
-        
-        <div style="display:flex; flex-direction:column; gap:1.5rem;">
-            {% for sp in top_sps %}
-            <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.5rem;">
-                    <div>
-                        <div style="font-weight: 800; color: var(--navy); font-size: 0.85rem;">{{ sp.name }}</div>
-                        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700;">{{ sp.sold }} / {{ sp.issued }} Bags Sold</div>
-                    </div>
-                    <span style="font-size: 0.8rem; font-weight: 900; color: var(--emerald);">{{ sp.pct|floatformat:0 }}%</span>
-                </div>
-                <!-- Progress bar -->
-                <div class="progress-bar-container" style="height:6px; width:100%; background: var(--slate-100); border-radius:100px; overflow:hidden;">
-                    <div class="progress-bar-fill bg-emerald-gradient" style="height:100%; width:{{ sp.pct }}%; border-radius:100px;"></div>
-                </div>
-            </div>
-            {% empty %}
-            <div style="color: var(--slate-400); text-align: center; padding: 2rem 0; font-style: italic;">No active sales campaigns recorded.</div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Collections Chart Card -->
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1.5rem;">
-            <h4 id="chartTitle" style="margin:0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Check: Bags Taken vs Bags Sold ({{ this_year }})</h4>
-            <button type="button" class="btn-modern" onclick="toggleChartMode()" id="chartToggleBtn" style="padding: 4px 12px; font-size: 0.7rem;">Show: {{ this_month_name }}</button>
-        </div>
-        <div style="position: relative; height: 300px; width: 100%; flex-grow: 1;">
-            <canvas id="salesTrendChart"></canvas>
-        </div>
-    </div>
-
-    <!-- Product Mix Chart Card -->
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column;">
-        <h4 style="margin:0 0 0.5rem 0; font-size: 0.9rem; font-weight: 800; color: var(--navy);">Popular Bag Sizes</h4>
-        <p style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Bags Sold by Size</p>
-        <div style="position: relative; height: 300px; width: 100%; flex-grow: 1;">
-            <canvas id="productMixChart"></canvas>
-        </div>
-    </div>
-
-</div>
-
-<!-- Chart.js Setup -->
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TREND</span><h2>Collections and sales, {{ this_year }}</h2></div><button type="button" class="button button-secondary" onclick="toggleChartMode()" id="chartToggleBtn">Show: {{ this_month_name }}</button></div><canvas id="salesTrendChart"></canvas></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PRODUCT MIX</span><h2>Sales by material</h2></div></div><canvas id="productMixChart"></canvas></section>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const ctx = document.getElementById('salesTrendChart').getContext('2d');
-    
-    // Parse JSON data from Django
-    const monthlyLabels = JSON.parse('{{ months_json|safe }}');
-    const monthlyColls = JSON.parse('{{ colls_json|safe }}');
-    const monthlySales = JSON.parse('{{ sales_json|safe }}');
-    
-    const weeklyLabels = JSON.parse('{{ weeks_json|safe }}');
-    const weeklyColls = JSON.parse('{{ w_colls_json|safe }}');
-    const weeklySales = JSON.parse('{{ w_sales_json|safe }}');
-    
-    let isWeeklyMode = false;
-
-    window.salesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: monthlyLabels,
-            datasets: [
-                {
-                    label: 'Bags Collected by SM',
-                    data: monthlyColls,
-                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                    borderColor: 'rgb(59, 130, 246)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Bags Sold by Promoters',
-                    data: monthlySales,
-                    type: 'line',
-                    fill: false,
-                    borderColor: 'rgb(16, 185, 129)',
-                    tension: 0.3,
-                    borderWidth: 3,
-                    pointBackgroundColor: 'rgb(16, 185, 129)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Bags'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                }
-            }
-        }
-    });
-
-    window.toggleChartMode = function() {
-        isWeeklyMode = !isWeeklyMode;
-        const btn = document.getElementById('chartToggleBtn');
-        const title = document.getElementById('chartTitle');
-        
-        if (isWeeklyMode) {
-            window.salesChart.data.labels = weeklyLabels;
-            window.salesChart.data.datasets[0].data = weeklyColls;
-            window.salesChart.data.datasets[1].data = weeklySales;
-            btn.innerText = "View {{ this_year }} (Monthly)";
-            title.innerText = "Collections vs Sales ({{ this_month_name }})";
-        } else {
-            window.salesChart.data.labels = monthlyLabels;
-            window.salesChart.data.datasets[0].data = monthlyColls;
-            window.salesChart.data.datasets[1].data = monthlySales;
-            btn.innerText = "View {{ this_month_name }} (Weekly)";
-            title.innerText = "Collections vs Sales ({{ this_year }})";
-        }
-        window.salesChart.update();
-    };
-
-    // Product Mix Chart
-    const productLabels = JSON.parse('{{ product_labels_json|safe }}');
-    const productData = JSON.parse('{{ product_data_json|safe }}');
-    
-    const pmCtx = document.getElementById('productMixChart').getContext('2d');
-    new Chart(pmCtx, {
-        type: 'doughnut',
-        data: {
-            labels: productLabels,
-            datasets: [{
-                data: productData,
-                backgroundColor: [
-                    'rgba(245, 158, 11, 0.8)', // Amber
-                    'rgba(139, 92, 246, 0.8)', // Violet
-                    'rgba(59, 130, 246, 0.8)', // Blue
-                    'rgba(16, 185, 129, 0.8)', // Emerald
-                ],
-                borderWidth: 0,
-                hoverOffset: 15
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true,
-                        font: { size: 12 }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const val = context.raw;
-                            const pct = ((val / total) * 100).toFixed(1);
-                            return ` ${context.label}: ${val} bags (${pct}%)`;
-                        }
-                    }
-                }
-            },
-            cutout: '70%',
-        }
-    });
-});
+const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const monthlyLabels = JSON.parse('{{ months_json|safe }}');
+const monthlyColls = JSON.parse('{{ colls_json|safe }}');
+const monthlySales = JSON.parse('{{ sales_json|safe }}');
+const weeklyLabels = JSON.parse('{{ weeks_json|safe }}');
+const weeklyColls = JSON.parse('{{ w_colls_json|safe }}');
+const weeklySales = JSON.parse('{{ w_sales_json|safe }}');
+const productLabels = JSON.parse('{{ product_labels_json|safe }}');
+const productData = JSON.parse('{{ product_data_json|safe }}');
+const blue = cssVar('--blue');
+const yellow = cssVar('--yellow');
+window.salesChart = new Chart(document.getElementById('salesTrendChart'), {type: 'bar', data: {labels: monthlyLabels, datasets: [{label: 'Collections', data: monthlyColls, backgroundColor: blue}, {label: 'Sales', data: monthlySales, backgroundColor: yellow}]}, options: {responsive: true}});
+window.toggleChartMode = function() {
+  const btn = document.getElementById('chartToggleBtn');
+  if (window.salesChart.data.labels[0] === monthlyLabels[0] && window.salesChart.data.labels.length === monthlyLabels.length) {
+    window.salesChart.data.labels = weeklyLabels;
+    window.salesChart.data.datasets[0].data = weeklyColls;
+    window.salesChart.data.datasets[1].data = weeklySales;
+    btn.textContent = 'Show: {{ this_year }}';
+  } else {
+    window.salesChart.data.labels = monthlyLabels;
+    window.salesChart.data.datasets[0].data = monthlyColls;
+    window.salesChart.data.datasets[1].data = monthlySales;
+    btn.textContent = 'Show: {{ this_month_name }}';
+  }
+  window.salesChart.update();
+};
+new Chart(document.getElementById('productMixChart'), {type: 'bar', data: {labels: productLabels, datasets: [{label: 'Sold', data: productData, backgroundColor: blue}]}, options: {responsive: true}});
 </script>
 {% endblock %}

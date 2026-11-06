@@ -1,0 +1,9 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Access denied — Noor Foods{% endblock %}{% block breadcrumb %}Access denied{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">NOOR FOODS</div><h1>Access denied</h1></div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PERMISSION</span><h2>This page is not for your role</h2></div></div>
+<p class="panel-intro">{{ message|default:"You do not have permission to open this page. It belongs to another role." }} Use the menu on the left to go back to your own work, or ask the MD if you think you should have access.</p>
+<div class="form-actions" style="border-top:0;margin-top:0;padding:0 24px 24px;"><a class="button button-primary" href="{% url 'dashboard' %}">Go to home</a></div>
+</section>
+{% endblock %}

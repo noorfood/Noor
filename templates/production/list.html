@@ -1,180 +1,50 @@
-{% extends 'base.html' %}
-{% block title %}Production Records — Noor Foods{% endblock %}
-{% block nav_pr_list %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Production Records — Noor Foods{% endblock %}{% block nav_production %}active{% endblock %}{% block breadcrumb %}Production Records{% endblock %}
 {% block content %}
-<style>
-  .hero-card {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    color: white;
-    padding: 2.5rem;
-    border-radius: 20px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #94a3b8; margin-bottom: 0.5rem; display: block; }
-  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
-  .hero-sub { color: #cbd5e1; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 600px; }
-
-  .filter-bar { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
-  .filter-grid { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end; }
-  .filter-group { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 150px; }
-  .filter-group label { font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.03em; }
-  .filter-group select, .filter-group input { padding: 0.75rem 1rem; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; background: #f8fafc; transition: all 0.2s; }
-  .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
-
-  .section-header { font-size: 1.1rem; font-weight: 800; color: #1e293b; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
-  .section-desc { font-size: 0.85rem; color: #64748b; font-weight: 500; }
-
-  .flag-critical td { background: #fef2f2 !important; }
-  .flag-warning td { background: #fef9c3 !important; }
-  .loss-red { color: #dc2626 !important; font-weight: 800 !important; }
-  .loss-amber { color: #d97706 !important; font-weight: 800 !important; }
-  .loss-ok { color: #16a34a !important; font-weight: 600 !important; }
-
-  .btn-primary {
-    background: #4f46e5; color: white; border: none; padding: 0.85rem 1.75rem; border-radius: 8px;
-    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
-    text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-  }
-  .btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
-  
-  .btn-secondary {
-    background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 0.85rem 1.75rem; border-radius: 8px;
-    font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none;
-  }
-  .btn-secondary:hover { background: #e2e8f0; color: #1e293b; }
-</style>
-
-<div class="hero-card">
-  <div class="hero-header">
-    <div>
-      <span class="hero-label">⚙️ Factory Operations</span>
-      <h1 class="hero-title">Production Records</h1>
-      
-      {# Quick Period Toggles #}
-      <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-          <form method="get" id="dateFilterForm" style="display: none;">
-              <input type="date" name="date_from" value="{{ f_from }}">
-              <input type="date" name="date_to" value="{{ f_to }}">
-          </form>
-          <div>
-              {% if f_from or f_to %}
-              <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-                  Production Log: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-              </span>
-              {% endif %}
-          </div>
-          {% include 'partials/date_toggles.html' %}
-      </div>
-      
-      <p class="hero-sub">History of all grinding (milling) and bagging (packaging) work. Red or Yellow rows mean there was too much waste.</p>
-    </div>
-    {% if current_user.is_production_officer %}
-    <div style="display:flex; gap:1rem;">
-      <a href="/production/milling/new/" class="btn-primary" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">+ Record Grinding</a>
-      <a href="/production/packaging/new/" class="btn-primary" style="background: #4f46e5;">+ Record Bagging</a>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
-{% if not current_user.is_production_officer %}
-<div class="filter-bar">
-  <form method="get">
-    <div class="filter-grid">
-      <div class="filter-group">
-        <label>From Date</label>
-        <input type="date" name="date_from" value="{{ f_from }}">
-      </div>
-      <div class="filter-group">
-        <label>To Date</label>
-        <input type="date" name="date_to" value="{{ f_to }}">
-      </div>
-      <div class="filter-group">
-        <label>Material</label>
-        <select name="material">
-          <option value="">All Materials</option>
-          <option value="maize" {% if f_material == "maize" %}selected{% endif %}>🌽 Maize</option>
-          <option value="wheat" {% if f_material == "wheat" %}selected{% endif %}>🌾 Wheat</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label>Loss Flag (Milling)</label>
-        <select name="flag">
-          <option value="">All Flags</option>
-          <option value="normal" {% if f_flag == "normal" %}selected{% endif %}>🟢 Normal</option>
-          <option value="warning" {% if f_flag == "warning" %}selected{% endif %}>🟠 Warning</option>
-          <option value="critical" {% if f_flag == "critical" %}selected{% endif %}>🔴 Critical</option>
-        </select>
-      </div>
-      <div style="display:flex; gap:0.75rem; padding-top:1.5rem;">
-        <button type="submit" class="btn-primary">Filter</button>
-        <a href="?" class="btn-secondary">Reset</a>
-      </div>
-    </div>
-  </form>
-</div>
+<div class="page-heading"><div><div class="eyebrow">PRODUCTION</div><h1>Production records</h1></div><div>
+{% if current_user.is_production_officer %}
+<a class="button button-primary" href="{% url 'production:record_milling' %}">Record milling</a>
+<a class="button button-primary" href="{% url 'production:record_packaging' %}">Record packaging</a>
 {% endif %}
-
-<div class="section-header">
-  <div>⚗️ Grinding Work (Milling) <span style="color:#94a3b8; margin: 0 0.5rem;">|</span> <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">Big Bags → Powder</span></div>
-  <div class="section-desc">Red/Yellow rows show where waste was high</div>
-</div>
-
-<div class="table-wrapper" style="margin-bottom: 3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border-radius: 12px; border: 1px solid #e2e8f0;">
-  <table>
-    <thead style="background: #f8fafc;">
-      <tr>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">S/N</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Date</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Shift</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Material</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Bags Milled</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Powder Out (kg)</th>
-        <th class="num" style="border-bottom: 2px solid #e2e8f0; color: #475569;">Waste %</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Flag</th>
-        <th style="border-bottom: 2px solid #e2e8f0; color: #475569;">Production Officer</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in milling_batches %}
-      <tr class="{% if m.flag_level == 'critical' %}flag-critical{% elif m.flag_level == 'warning' %}flag-warning{% endif %}">
-        <td style="font-family:monospace;font-weight:600; color: #64748b;">{{ forloop.counter }}</td>
-        <td style="white-space:nowrap; font-weight: 500;">{{ m.date }}</td>
-        <td><span class="badge badge-draft">{{ m.shift|title }}</span></td>
-        <td><span class="badge badge-{{ m.material_type }}">{{ m.get_material_type_display|upper }}</span></td>
-        <td class="num">{{ m.bags_milled_new }}</td>
-        <td class="num font-bold">{{ m.bulk_powder_kg|floatformat:1 }}</td>
-        <td class="num {% if m.flag_level == 'critical' %}loss-red{% elif m.flag_level == 'warning' %}loss-amber{% else %}loss-ok{% endif %}">
-          {{ m.loss_pct|floatformat:1 }}%
-        </td>
-        <td>
-          {% if m.flag_level == 'critical' %}
-            <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;">🔴 CRITICAL</span>
-          {% elif m.flag_level == 'warning' %}
-            <span class="badge" style="background:#fef9c3;color:#d97706;border:1px solid #fde68a;">🟠 WARNING</span>
-          {% else %}
-            <span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">🟢 NORMAL</span>
-          {% endif %}
-        </td>
-        <td style="color:#64748b;font-size:.85rem;">{{ m.production_officer.full_name }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:2.5rem;">No milling batches match your criteria.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div style="margin-top: 2rem; padding: 2rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; text-align: center;">
-    <h3 style="color: var(--navy); margin-bottom: 0.5rem;">📦 Sacks recorded in Hand</h3>
-    <p style="color: #64748b; margin-bottom: 1.5rem;">Manage your total sack balances directly from the dashboard.</p>
-    <a href="{% url 'production:dashboard' %}" class="btn-modern" style="background: var(--navy); color: white; padding: 0.6rem 1.5rem;">Go to Dashboard →</a>
-</div>
-
-<div style="margin-top:1.25rem;">
-  <a href="/production/dashboard/" class="btn-secondary">← Back to Dashboard</a>
-</div>
+<a class="button button-secondary" href="{% url 'production:dashboard' %}">Back to dashboard</a>
+</div></div>
+{% if not current_user.is_production_officer %}
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material">
+<option value="">All materials</option>
+<option value="maize" {% if f_material == "maize" %}selected{% endif %}>Maize</option>
+<option value="wheat" {% if f_material == "wheat" %}selected{% endif %}>Wheat</option>
+</select></div>
+<div class="field"><label for="id_flag">Loss flag</label><select id="id_flag" name="flag">
+<option value="">All flags</option>
+<option value="normal" {% if f_flag == "normal" %}selected{% endif %}>Normal</option>
+<option value="warning" {% if f_flag == "warning" %}selected{% endif %}>Warning</option>
+<option value="critical" {% if f_flag == "critical" %}selected{% endif %}>Critical</option>
+</select></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Filter</button><a class="button button-secondary" href="?">Reset</a></div></form></section>
+{% endif %}
+{% include 'partials/date_toggles.html' %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MILLING</span><h2>Milling records</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Shift</th><th>Material</th><th class="number">Bags milled</th><th class="number">Powder out kg</th><th class="number">Waste %</th><th>Flag</th><th>Production officer</th></tr></thead>
+<tbody>
+{% for m in milling_batches %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ m.date }}</td>
+<td><span class="status-pill">{{ m.shift|title }}</span></td>
+<td><span class="status-pill">{{ m.get_material_type_display|upper }}</span></td>
+<td class="number">{{ m.bags_milled_new }}</td>
+<td class="number">{{ m.bulk_powder_kg|floatformat:1 }}</td>
+<td class="number">{{ m.loss_pct|floatformat:1 }}%</td>
+<td><span class="status-pill">{{ m.flag_level|upper }}</span></td>
+<td>{{ m.production_officer.full_name }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="9" class="empty-state">No milling records found.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

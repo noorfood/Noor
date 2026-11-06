@@ -1,406 +1,81 @@
-{% extends 'base.html' %}
-{% block title %}Company Flow — NOOR FOODS{% endblock %}
-{% block nav_md_flow %}active{% endblock %}
-
+{% extends 'rebuild/base.html' %}
+{% block title %}Company Flow — Noor Foods{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Company Flow{% endblock %}
 {% block content %}
-{# Standardized Styles Inherited from base.html #}
-<style>
-    .flow-connector {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin: -0.5rem 0 1.5rem;
-        position: relative;
-        z-index: 1;
-    }
-
-    .flow-arrow {
-        width: 32px;
-        height: 32px;
-        background: var(--white);
-        border: 1px solid var(--slate-200);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--slate-400);
-        font-size: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    }
-
-    .flow-line {
-        width: 2px;
-        height: 24px;
-        background: linear-gradient(180deg, var(--slate-200) 0%, transparent 100%);
-    }
-</style>
-
-<div class="flow-container">
-<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); margin-bottom: 3rem;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🌊 Operational Liquidity</span>
-            <h1 class="hero-title" style="color: #fff;">Company Transaction Flow</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">The ultimate lifecycle pulse: from raw material sourcing to realized cash in bank.</p>
-        </div>
-    </div>
+<div class="page-heading"><div><div class="eyebrow">COMPANY FLOW</div><h1>Company flow</h1></div></div>
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get" id="dateFilterForm"><input type="hidden" name="range" value="{{ active_range }}">
+{% include 'partials/date_toggles.html' with active_range=active_range %}
+<div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value=""></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value=""></div>
+</div><div class="form-actions"><button type="submit" class="button button-primary">Apply filters</button><a href="?" class="button button-secondary">Reset</a></div></form></section>
+{% if show_money %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Total sales value</span></div><span class="metric-value">₦{{ company_total_revenue|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money received</span></div><span class="metric-value">₦{{ company_received_money|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money outstanding</span></div><span class="metric-value">₦{{ company_outstanding_money|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Inventory value</span></div><span class="metric-value">₦{{ total_inventory_value|floatformat:0 }}</span></div>
 </div>
-
-<div style="margin-bottom: 2.5rem;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="hidden" name="range" value="{{ active_range }}">
-    </form>
-    {% include 'partials/date_toggles.html' with active_range=active_range %}
-</div>
-
-
-    {% if show_money %}
-    <!-- EXECUTIVE FINANCIAL PULSE -->
-    <div class="card" style="background: var(--navy); color: white; border: none; padding: 2.5rem; margin-bottom: 3.5rem; position: relative; overflow: hidden;">
-        <div style="position: absolute; top:0; right:0; opacity: 0.05; font-size: 10rem; transform: translate(20%, -20%);">₦</div>
-        <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; position: relative; z-index: 1;">
-            <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL VALUE OF ALL SALES</div>
-                <div style="font-size: 2.4rem; font-weight: 900; letter-spacing: -1px;">₦{{ company_total_revenue|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Total money we expect from all products sold</p>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--emerald); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL CASH IN BANK</div>
-                <div style="font-size: 2.4rem; font-weight: 900; color: var(--emerald); letter-spacing: -1px;">₦{{ company_received_money|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Actual money verified and received</p>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: var(--amber); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">TOTAL UNPAID (DEBT)</div>
-                <div style="font-size: 2.4rem; font-weight: 900; color: var(--amber); letter-spacing: -1px;">₦{{ company_outstanding_money|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Money still outside with managers/customers</p>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem;">FACTORY ASSET VALUE</div>
-                <div style="font-size: 2.4rem; font-weight: 900; color: #facc15; letter-spacing: -1px;">₦{{ total_inventory_value|floatformat:0 }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-500); margin-top: 0.5rem;">Current value of all stock stored inside</p>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- STAGE 1: RAW STORE -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1rem;">📦</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 1: Raw Material Sourcing</h3>
-        </div>
-        <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize (Raw Intake)</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ raw_maize_in }}</div>
-                <div style="font-size: 0.7rem; color: var(--amber); font-weight: 700;">{{ raw_maize_bal }} Bags in Store</div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat (Raw Intake)</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ raw_wheat_in }}</div>
-                <div style="font-size: 0.7rem; color: var(--amber); font-weight: 700;">{{ raw_wheat_bal }} Bags in Store</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="flow-connector">
-        <div class="flow-line"></div>
-        <div class="flow-arrow">▼</div>
-    </div>
-
-    <!-- STAGE 2: CLEAN STORE -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #f0fdf4; color: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🧹</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 2: Processing & Purification</h3>
-        </div>
-        <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Cleaned Maize</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">{{ clean_maize_in }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ clean_maize_bal }} Bags Ready</div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Cleaned Wheat</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">{{ clean_wheat_in }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ clean_wheat_bal }} Bags Ready</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="flow-connector">
-        <div class="flow-line"></div>
-        <div class="flow-arrow">▼</div>
-    </div>
-
-    <!-- STAGE 3: CORE PRODUCTION -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #eef2ff; color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1rem;">⚙️</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 3: Manufacturing & Transformation</h3>
-        </div>
-        <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
-            <!-- Milled -->
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Milled</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Milled</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_bags_milled }} <small style="font-size: 0.7rem;">Bags</small></div>
-            </div>
-            
-            <!-- Packaged -->
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Maize Packaged</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--navy);">{{ maize_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Wheat Packaged</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--indigo);">{{ wheat_sacks_produced }} <small style="font-size: 0.7rem;">10kg</small></div>
-            </div>
-            
-            <!-- Powder Balance -->
-            <div style="padding: 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: #0369a1; text-transform: uppercase;">Maize Powder Bal</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: #0c4a6e;">{{ maize_powder_bal|floatformat:1 }} <small style="font-size: 0.7rem;">kg</small></div>
-                <div style="font-size: 0.6rem; color: #0284c7; font-weight: 700;">Produced: {{ maize_powder_produced|floatformat:0 }}kg</div>
-            </div>
-            <div style="padding: 1rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: #6d28d9; text-transform: uppercase;">Wheat Powder Bal</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: #4c1d95;">{{ wheat_powder_bal|floatformat:1 }} <small style="font-size: 0.7rem;">kg</small></div>
-                <div style="font-size: 0.6rem; color: #7c3aed; font-weight: 700;">Produced: {{ wheat_powder_produced|floatformat:0 }}kg</div>
-            </div>
-        </div>
-
-        {% if prod_officer_rows %}
-        <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Officer</th>
-                        <th class="num">Accepted</th>
-                        <th class="num">Milled</th>
-                        <th class="num">Returned</th>
-                        <th class="num">Floor Bal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in prod_officer_rows %}
-                    <tr>
-                        <td><strong style="color: var(--navy);">{{ row.user.full_name }}</strong></td>
-                        <td class="num">{{ row.accepted }}</td>
-                        <td class="num" style="font-weight: 700;">{{ row.milled }}</td>
-                        <td class="num">{{ row.returned }}</td>
-                        <td class="num">
-                            <span class="font-bold {% if row.balance > 0 %}text-rose{% else %}text-emerald{% endif %}">
-                                {{ row.balance }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
-    </div>
-
-    <div class="flow-connector">
-        <div class="flow-line"></div>
-        <div class="flow-arrow">▼</div>
-    </div>
-
-    <!-- STAGE 4: FINISHED STORE -->
-    <div class="card" style="margin-bottom: 0;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; color: #0ea5e9; display: flex; align-items: center; justify-content: center; font-size: 1rem;">🏬</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 4: Inventory Repo (Finished Goods)</h3>
-        </div>
-        <div class="balance-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--emerald);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Inducted (In)</div>
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_in }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_in }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
-                </div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--rose);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Issued (Out)</div>
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_out }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_out }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
-                </div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--blue);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Warehouse Bal.</div>
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--navy);">{{ fg_maize_bal }}</div><small style="font-size: 0.6rem; font-weight: 700;">Maize</small></div>
-                    <div><div style="font-size: 1.25rem; font-weight: 900; color: var(--indigo);">{{ fg_wheat_bal }}</div><small style="font-size: 0.6rem; font-weight: 700;">Wheat</small></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="flow-connector">
-        <div class="flow-line"></div>
-        <div class="flow-arrow">▼</div>
-    </div>
-
-    <!-- STAGE 5: REVENUE CHANNELS (SM & GM) -->
-    <div class="card" style="border: 2px solid var(--indigo); margin-bottom: 0;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #eef2ff; color: var(--indigo); display: flex; align-items: center; justify-content: center; font-size: 1rem;">💰</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 5: Distribution & Monetization</h3>
-        </div>
-
-        <!-- COMPANY DIRECT CHANNEL -->
-        <div style="background:rgba(79, 70, 229, 0.03); padding: 1.5rem; border-radius: 16px; margin-bottom: 2rem; border: 1px dashed var(--indigo);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-                <div>
-                    <div style="font-weight:900; color:var(--indigo); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">🏢 Company Direct Channel</div>
-                    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700;">Factory-Gate Sales (GM + MD Pools)</div>
-                </div>
-                {% if show_money %}
-                <div style="text-align: right;">
-                    <div style="font-weight:900; color:var(--indigo); font-size:1.4rem;">₦{{ gm_revenue|floatformat:0 }}</div>
-                    <div style="font-size: 0.6rem; color: var(--emerald); font-weight: 800;">REALIZED VALUE</div>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- GM Pool -->
-            <div style="margin-bottom: 1rem;">
-                <div style="font-size: 0.7rem; font-weight: 800; color: #0f766e; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">👔 General Manager Pool</div>
-                <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ccfbf1; border-left: 3px solid #0d9488;">
-                        <div style="font-size: 0.6rem; font-weight: 800; color: #0f766e; text-transform: uppercase;">Maize</div>
-                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ gm_user_maize }} <small style="font-size: 0.65rem;">Bags</small></div>
-                    </div>
-                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ccfbf1; border-left: 3px solid #0d9488;">
-                        <div style="font-size: 0.6rem; font-weight: 800; color: #0f766e; text-transform: uppercase;">Wheat</div>
-                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ gm_user_wheat }} <small style="font-size: 0.65rem;">Bags</small></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MD Pool -->
-            <div style="margin-bottom: 1rem;">
-                <div style="font-size: 0.7rem; font-weight: 800; color: #7c3aed; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">👑 Managing Director Pool</div>
-                <div class="balance-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ede9fe; border-left: 3px solid #7c3aed;">
-                        <div style="font-size: 0.6rem; font-weight: 800; color: #7c3aed; text-transform: uppercase;">Maize</div>
-                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ md_user_maize }} <small style="font-size: 0.65rem;">Bags</small></div>
-                    </div>
-                    <div style="background: white; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #ede9fe; border-left: 3px solid #7c3aed;">
-                        <div style="font-size: 0.6rem; font-weight: 800; color: #7c3aed; text-transform: uppercase;">Wheat</div>
-                        <div style="font-size: 1.2rem; font-weight: 900; color: var(--navy);">{{ md_user_wheat }} <small style="font-size: 0.65rem;">Bags</small></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Retail Pieces (Combined) -->
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div style="background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #fef3c7;">
-                    <div style="font-size: 0.6rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Maize Pieces</div>
-                    <div style="font-size: 1rem; font-weight: 900; color: #92400e;">{{ gm_maize_pieces }}</div>
-                </div>
-                <div style="background: #fffbeb; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #fef3c7;">
-                    <div style="font-size: 0.6rem; font-weight: 800; color: #92400e; text-transform: uppercase;">Wheat Pieces</div>
-                    <div style="font-size: 1rem; font-weight: 900; color: #92400e;">{{ gm_wheat_pieces }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SM CHANNEL Breakdown -->
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
-            <span style="font-weight:900; color:var(--navy); font-size:0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">💼 SM Wholesale Channel</span>
-        </div>
-        
-        <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Field Inventory</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_goods_outstanding }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Bags with Managers</div>
-            </div>
-            {% if show_money %}
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Target Value</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">₦{{ total_sales_value|floatformat:0 }}</div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--emerald);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--emerald); text-transform: uppercase;">Remittance</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--emerald);">₦{{ total_money_received|floatformat:0 }}</div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Per SM Breakdown -->
-        <div style="border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Manager</th>
-                        <th class="num">Mz (In)</th>
-                        <th class="num">Wt (In)</th>
-                        <th class="num">Liquidated</th>
-                        <th class="num">Mz Bal</th>
-                        <th class="num">Wt Bal</th>
-                        {% if show_money %}
-                        <th class="num">Expected (₦)</th>
-                        <th class="num">Paid (₦)</th>
-                        <th class="num">Debt (₦)</th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in sm_rows %}
-                    <tr>
-                        <td><strong style="color: var(--navy);">{{ row.sm.full_name }}</strong></td>
-                        <td class="num">{{ row.maize_collected }}</td>
-                        <td class="num" style="color: var(--indigo); font-weight: 700;">{{ row.wheat_collected }}</td>
-                        <td class="num" style="font-weight: 800; color: var(--emerald);">{{ row.sold_eq|floatformat:1 }}</td>
-                        <td class="num">{{ row.maize_balance }}</td>
-                        <td class="num">{{ row.wheat_balance }}</td>
-                        {% if show_money %}
-                        <td class="num" style="font-weight: 700;">₦{{ row.total_sales_value|floatformat:0 }}</td>
-                        <td class="num" style="color: var(--emerald); font-weight: 900;">₦{{ row.money_received|floatformat:0 }}</td>
-                        <td class="num">
-                            <span class="font-bold {% if row.money_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}">
-                                ₦{{ row.money_outstanding|floatformat:0 }}
-                            </span>
-                        </td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- STAGE 6: AUXILIARY -->
-    <div class="card">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--slate-100);">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: #fae8ff; color: #c026d3; display: flex; align-items: center; justify-content: center; font-size: 1rem;">♻️</div>
-            <h3 style="margin:0; font-size: 1rem; font-weight: 800; color: var(--navy);">Stage 6: Secondary Revenue (Byproducts)</h3>
-        </div>
-        <div class="balance-grid" style="grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Byproducts Sold</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">{{ total_brand_sacks }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">Total Bags Sold</div>
-            </div>
-            {% if show_money %}
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px;">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">Revenue Accrued</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--navy);">₦{{ brand_sales_value|floatformat:0 }}</div>
-            </div>
-            <div style="padding: 1rem; background: var(--slate-50); border-radius: 12px; border-left: 3px solid var(--amber);">
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--amber); text-transform: uppercase;">Outstanding Debt</div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--amber);">₦{{ brand_outstanding|floatformat:0 }}</div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-</div>
+{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 1</span><h2>Raw store</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Received (bags)</th><th class="number">Issued (bags)</th><th class="number">Balance (bags)</th></tr></thead>
+<tbody>
+<tr><td><strong>Maize</strong></td><td class="number">{{ raw_maize_in }}</td><td class="number">{{ raw_maize_out }}</td><td class="number"><strong>{{ raw_maize_bal }}</strong></td></tr>
+<tr><td><strong>Wheat</strong></td><td class="number">{{ raw_wheat_in }}</td><td class="number">{{ raw_wheat_out }}</td><td class="number"><strong>{{ raw_wheat_bal }}</strong></td></tr>
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 2</span><h2>Clean store</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Received (bags)</th><th class="number">Issued (bags)</th><th class="number">Balance (bags)</th></tr></thead>
+<tbody>
+<tr><td><strong>Maize</strong></td><td class="number">{{ clean_maize_in }}</td><td class="number">{{ clean_maize_out }}</td><td class="number"><strong>{{ clean_maize_bal }}</strong></td></tr>
+<tr><td><strong>Wheat</strong></td><td class="number">{{ clean_wheat_in }}</td><td class="number">{{ clean_wheat_out }}</td><td class="number"><strong>{{ clean_wheat_bal }}</strong></td></tr>
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 3</span><h2>Production</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Bags milled</th><th class="number">Powder produced (kg)</th><th class="number">Powder used (kg)</th><th class="number">Powder balance (kg)</th><th class="number">Sacks produced (10 kg)</th></tr></thead>
+<tbody>
+<tr><td><strong>Maize</strong></td><td class="number">{{ maize_bags_milled }}</td><td class="number">{{ maize_powder_produced|floatformat:0 }}</td><td class="number">{{ maize_powder_used|floatformat:0 }}</td><td class="number">{{ maize_powder_bal|floatformat:1 }}</td><td class="number">{{ maize_sacks_produced }}</td></tr>
+<tr><td><strong>Wheat</strong></td><td class="number">{{ wheat_bags_milled }}</td><td class="number">{{ wheat_powder_produced|floatformat:0 }}</td><td class="number">{{ wheat_powder_used|floatformat:0 }}</td><td class="number">{{ wheat_powder_bal|floatformat:1 }}</td><td class="number">{{ wheat_sacks_produced }}</td></tr>
+<tr><td><strong>Total</strong></td><td class="number">—</td><td class="number">—</td><td class="number">—</td><td class="number">—</td><td class="number"><strong>{{ total_sacks_produced }}</strong></td></tr>
+</tbody></table></div>
+<div class="panel-header"><div><span class="panel-kicker">PRODUCTION OFFICERS</span><h2>Officer balances</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Officer</th><th class="number">Accepted (bags)</th><th class="number">Milled (bags)</th><th class="number">Returned (bags)</th><th class="number">Balance (bags)</th></tr></thead>
+<tbody>
+{% for row in prod_officer_rows %}
+<tr><td><strong>{{ row.user.full_name }}</strong></td><td class="number">{{ row.accepted }}</td><td class="number">{{ row.milled }}</td><td class="number">{{ row.returned }}</td><td class="number"><strong>{{ row.balance }}</strong></td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No production officer records in this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 4</span><h2>Finished goods store</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Received (sacks)</th><th class="number">Issued (sacks)</th><th class="number">Balance (sacks)</th></tr></thead>
+<tbody>
+<tr><td><strong>Maize</strong></td><td class="number">{{ fg_maize_in }}</td><td class="number">{{ fg_maize_out }}</td><td class="number"><strong>{{ fg_maize_bal }}</strong></td></tr>
+<tr><td><strong>Wheat</strong></td><td class="number">{{ fg_wheat_in }}</td><td class="number">{{ fg_wheat_out }}</td><td class="number"><strong>{{ fg_wheat_bal }}</strong></td></tr>
+<tr><td><strong>Total</strong></td><td class="number">{{ fg_in }}</td><td class="number">{{ fg_out }}</td><td class="number"><strong>{{ fg_bal }}</strong></td></tr>
+</tbody></table></div></section>
+{% if show_money %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 5</span><h2>Brand sales</h2></div></div><div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sacks sold</span></div><span class="metric-value">{{ total_brand_sacks }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sales value</span></div><span class="metric-value">₦{{ brand_sales_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Received</span></div><span class="metric-value">₦{{ brand_received|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Outstanding</span></div><span class="metric-value">₦{{ brand_outstanding|floatformat:0 }}</span></div>
+</div></section>
+{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAGE 6</span><h2>Sales managers</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Sales manager</th><th class="number">Maize collected</th><th class="number">Wheat collected</th><th class="number">Sold (equivalent sacks)</th><th class="number">Maize balance</th><th class="number">Wheat balance</th><th class="number">Goods balance</th>{% if show_money %}<th class="number">Sales value (₦)</th><th class="number">Money received (₦)</th><th class="number">Money outstanding (₦)</th>{% endif %}</tr></thead>
+<tbody>
+{% for row in sm_rows %}
+<tr><td><strong>{{ row.sm.full_name }}</strong></td><td class="number">{{ row.maize_collected }}</td><td class="number">{{ row.wheat_collected }}</td><td class="number">{{ row.sold_eq|floatformat:1 }}</td><td class="number">{{ row.maize_balance }}</td><td class="number">{{ row.wheat_balance }}</td><td class="number"><strong>{{ row.goods_balance }}</strong></td>{% if show_money %}<td class="number">{{ row.total_sales_value|floatformat:0 }}</td><td class="number">{{ row.money_received|floatformat:0 }}</td><td class="number">{{ row.money_outstanding|floatformat:0 }}</td>{% endif %}</tr>
+{% empty %}
+<tr><td colspan="{% if show_money %}10{% else %}7{% endif %}" class="empty-state">No sales manager records in this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">DIRECT SALES</span><h2>Company goods on hand</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Holder</th><th class="number">Maize</th><th class="number">Wheat</th></tr></thead>
+<tbody>
+<tr><td>General manager hand</td><td class="number">{{ gm_maize_hand }}</td><td class="number">{{ gm_wheat_hand }}</td></tr>
+<tr><td>General manager users</td><td class="number">{{ gm_user_maize }}</td><td class="number">{{ gm_user_wheat }}</td></tr>
+<tr><td>Managing director users</td><td class="number">{{ md_user_maize }}</td><td class="number">{{ md_user_wheat }}</td></tr>
+<tr><td>Retail pieces, maize</td><td class="number">{{ gm_maize_pieces }}</td><td class="number">—</td></tr>
+<tr><td>Retail pieces, wheat</td><td class="number">—</td><td class="number">{{ gm_wheat_pieces }}</td></tr>
+</tbody></table></div>{% if show_money %}<div class="record-list"><div class="record-row"><div><strong>Direct sales revenue</strong></div><div class="record-value"><strong>₦{{ gm_revenue|floatformat:0 }}</strong></div></div></div>{% endif %}</section>
 {% endblock %}

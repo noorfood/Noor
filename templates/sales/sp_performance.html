@@ -1,105 +1,18 @@
-{% extends 'base.html' %}
-{% block title %}Sales Team Performance — Noor Foods{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Sales Team Performance — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Sales Team Performance{% endblock %}
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); margin-bottom: 3rem;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(99, 102, 241, 0.1); color: #818cf8;">📊 Performance Intelligence</span>
-            <h1 class="hero-title" style="color: #fff;">Sales Team Performance</h1>
-            <p class="hero-subtitle" style="color: var(--slate-300);">Competitive visibility into secondary-market distribution and sales velocity.</p>
-        </div>
-        {% if current_user.role == 'sales_manager' %}
-        <div style="display:flex; gap:0.75rem; align-items:center;">
-            <a href="{% url 'sales:record_distribution' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1.25rem;">📦 Issue Goods</a>
-            <a href="{% url 'sales:record_sales_result' %}" class="btn-modern" style="background: var(--emerald); color: #fff; padding: 0.5rem 1.25rem;">✓ Results</a>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Performance Period: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
-<div style="background: var(--indigo-50); border: 1px solid var(--indigo-100); border-radius: 12px; padding: 1.25rem; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 1rem;">
-    <span style="font-size: 1.5rem;">ℹ️</span>
-    <div style="font-size: 0.85rem; color: var(--indigo-900); font-weight: 500;">
-        <strong>Strategic Note:</strong> Material liabilities reside with the Sales Manager. Sales People are internal field assets; this view tracks efficiency and output, not financial debt.
-    </div>
-</div>
-
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 2rem;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th style="width: 60px;">Rank</th>
-                <th>Channel Representative</th>
-                <th>Channel</th>
-                <th class="num">M. Issued</th>
-                <th class="num">W. Issued</th>
-                <th class="num">M. Sold</th>
-                <th class="num">W. Sold</th>
-                <th class="num">Pieces</th>
-                <th class="num">Floor Bal</th>
-                {% if show_money %}
-                <th class="num">Commission</th>
-                <th class="num">Expected</th>
-                <th class="num">Gap</th>
-                {% endif %}
-                <th>Velocity</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in sp_rows %}
-            <tr>
-                <td style="text-align: center;"><span style="font-weight: 800; color: var(--slate-400);">#{{ forloop.counter }}</span></td>
-                <td><strong style="color: var(--navy); font-size: 1.05rem;">{{ row.sp.name }}</strong></td>
-                <td><span style="font-size: 0.7rem; background: var(--slate-100); color: var(--slate-700); border-radius: 6px; padding: 0.2rem 0.6rem; font-weight: 800; text-transform: uppercase;">{{ row.sp.get_channel_display }}</span></td>
-                <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.maize_given }}</td>
-                <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.wheat_given }}</td>
-                <td class="num" style="color: var(--amber); font-weight: 800;">{{ row.maize_sold|floatformat:1 }}</td>
-                <td class="num" style="color: #8b5cf6; font-weight: 800;">{{ row.wheat_sold|floatformat:1 }}</td>
-                <td class="num" style="font-weight: 600;">{{ row.total_pieces_sold }}</td>
-                <td class="num">
-                    <span class="font-bold {% if row.unsold > 0 %}text-rose{% else %}text-emerald{% endif %}">
-                        {{ row.unsold|floatformat:1 }}
-                    </span>
-                </td>
-                {% if show_money %}
-                <td class="num" style="color: var(--emerald); font-weight: 700;">₦{{ row.total_commission|floatformat:0 }}</td>
-                <td class="num" style="color: var(--navy); font-weight: 800;">₦{{ row.total_net|floatformat:0 }}</td>
-                <td class="num" style="color: var(--rose); font-weight: 800;">₦{{ row.total_outstanding|floatformat:0 }}</td>
-                {% endif %}
-                <td>
-                    {% if row.total_given > 0 %}
-                    {% widthratio row.total_sold row.total_given 100 as pct %}
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
-                        <div style="height: 6px; background: var(--slate-100); border-radius: 3px; overflow: hidden; width: 60px;">
-                            <div style="height: 100%; width: {{ pct }}%;" class="{% if pct|add:0 >= 80 %}bg-emerald{% elif pct|add:0 >= 50 %}bg-amber{% else %}bg-rose{% endif %}"></div>
-                        </div>
-                        <span style="font-size: 0.8rem; font-weight: 800; min-width: 35px;">{{ pct }}%</span>
-                    </div>
-                    {% else %}
-                    <span style="font-size: 0.75rem; color: var(--slate-400); font-weight: 500;">Inactive</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="13" style="text-align:center; padding:3rem; color:var(--slate-400);">No performance metrics recorded for this period.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<div class="page-heading"><div><div class="eyebrow">SALES TEAM</div><h1>Sales team performance</h1></div>{% if current_user.role == 'sales_manager' %}<div><a class="button button-secondary" href="{% url 'sales:record_distribution' %}">Issue goods</a> <a class="button button-primary" href="{% url 'sales:record_sales_result' %}">Results</a></div>{% endif %}</div>
+<section class="panel form-panel"><div class="form-heading"><h2>Period</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button>{% include 'partials/date_toggles.html' %}</div></form></section>
+{% if f_from or f_to %}<div class="notice">Performance period: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}.</div>{% endif %}
+<section class="panel"><div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Team member</th><th class="number">Maize given</th><th class="number">Maize sold</th><th class="number">Wheat given</th><th class="number">Wheat sold</th><th class="number">Pieces sold</th><th class="number">Unsold</th><th class="number">Commission</th><th class="number">Net</th><th class="number">Outstanding</th></tr></thead>
+<tbody>
+{% for row in sp_rows %}
+<tr><td>{{ forloop.counter }}</td><td><strong>{{ row.sp.name }}</strong><span>{{ row.sp.get_channel_display }}</span></td><td class="number">{{ row.maize_given }}</td><td class="number">{{ row.maize_sold|floatformat:1 }}</td><td class="number">{{ row.wheat_given }}</td><td class="number">{{ row.wheat_sold|floatformat:1 }}</td><td class="number">{{ row.total_pieces_sold }}</td><td class="number">{{ row.unsold|floatformat:1 }}</td><td class="number">₦{{ row.total_commission|floatformat:0 }}</td><td class="number">₦{{ row.total_net|floatformat:0 }}</td><td class="number">₦{{ row.total_outstanding|floatformat:0 }}</td></tr>
+{% empty %}<tr><td colspan="12" class="empty-state">No performance records for this period.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

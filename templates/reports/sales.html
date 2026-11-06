@@ -1,270 +1,60 @@
-{% extends 'base.html' %}
-{% block title %}Global Sales Record — Noor Foods{% endblock %}
-{% block nav_rp_sales %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Global Sales Record — Noor Foods{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Global Sales Record{% endblock %}
 {% block content %}
-{# Standardized Sales Ledger Styles #}
-
-<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">📈 Money Check</span>
-            <h1 class="hero-title" style="color: #fff;">Sales Records Summary</h1>
-            <p class="hero-subtitle" style="color: #94a3b8;">Full list of all sales, payments to staff, and money received by the company.</p>
-        </div>
-    </div>
+<div class="page-heading"><div><div class="eyebrow">SALES REPORT</div><h1>Sales record</h1></div></div>
+{% if f_from or f_to %}<div class="notice">Date range: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+<div class="field"><label for="id_person">Sales person</label><select id="id_person" name="sales_person">
+<option value="">All sales persons</option>
+{% for sp in all_persons %}<option value="{{ sp.name }}" {% if f_person == sp.name %}selected{% endif %}>{{ sp.name }}</option>{% endfor %}
+</select></div>
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material">
+<option value="">All materials</option>
+<option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
+<option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
+</select></div>
+</div><div class="form-actions"><button type="submit" class="button button-primary">Apply filters</button><a href="?" class="button button-secondary">Reset</a></div></form></section>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Total value</span></div><span class="metric-value">₦{{ total_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Commission</span></div><span class="metric-value">₦{{ total_commission|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Net due</span></div><span class="metric-value">₦{{ total_net|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Received</span></div><span class="metric-value">₦{{ total_received|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Outstanding</span></div><span class="metric-value">₦{{ total_outstanding|floatformat:0 }}</span></div>
 </div>
-
-{# Quick Date Toggles at Absolute Top #}
-{% include 'partials/date_toggles.html' %}
-
-{# Summary Cards #}
-<div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--slate-400);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Total Sale Value</div>
-        <div style="font-size: 1.6rem; font-weight: 900; color: var(--navy);">₦{{ total_value|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Full price before staff commissions</div>
-    </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--indigo);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Staff Payments</div>
-        <div style="font-size: 1.6rem; font-weight: 900; color: var(--indigo);">₦{{ total_commission|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Total money given to staff</div>
-    </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Company Share</div>
-        <div style="font-size: 1.6rem; font-weight: 900; color: var(--blue);">₦{{ total_net|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Money that belongs to the factory</div>
-    </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Actual Money Received</div>
-        <div style="font-size: 1.6rem; font-weight: 900; color: var(--emerald);">₦{{ total_received|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Verified and banked</div>
-    </div>
-    <div class="card {% if total_outstanding > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem;">Money Owed</div>
-        <div class="{% if total_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.6rem; font-weight: 900;">₦{{ total_outstanding|floatformat:0 }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); font-weight: 700; margin-top: 5px;">Money still in the market</div>
-    </div>
-</div>
-
-{# Per-Material Breakdown #}
-<div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 3rem;">
-    <div class="card" style="border-top: 5px solid var(--amber); background: #fffbeb;">
-        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #92400e; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🌽</span> MAIZE SALES SUMMARY
-        </div>
-        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-            <div>
-                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Gross Value</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: #78350f;">₦{{ maize_value|floatformat:0 }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Money Received</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ maize_received|floatformat:0 }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.65rem; color: #92400e; font-weight: 700; text-transform: uppercase;">Money Owed</div>
-                <div class="{% if maize_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ maize_outstanding|floatformat:0 }}</div>
-            </div>
-        </div>
-    </div>
-    <div class="card" style="border-top: 5px solid var(--indigo); background: #f5f3ff;">
-        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4c1d95; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>🌾</span> WHEAT SALES SUMMARY
-        </div>
-        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-            <div>
-                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Gross Value</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: #3730a3;">₦{{ wheat_value|floatformat:0 }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Money Received</div>
-                <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald);">₦{{ wheat_received|floatformat:0 }}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.65rem; color: #4c1d95; font-weight: 700; text-transform: uppercase;">Money Owed</div>
-                <div class="{% if wheat_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.4rem; font-weight: 900;">₦{{ wheat_outstanding|floatformat:0 }}</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{# Filters #}
-<div class="action-bar-modern" style="margin-bottom: 3rem;">
-    <form method="get" style="display: flex; align-items: flex-end; gap: 1rem; width: 100%; flex-wrap: wrap;">
-        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
-            <label class="label-modern">Date From</label>
-            <input type="date" name="date_from" value="{{ f_from }}" class="input-modern">
-        </div>
-        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
-            <label class="label-modern">Date To</label>
-            <input type="date" name="date_to" value="{{ f_to }}" class="input-modern">
-        </div>
-        <div class="form-group-modern" style="flex: 1.5; min-width: 200px;">
-            <label class="label-modern">Sales Personnel</label>
-            <select name="sales_person" class="input-modern">
-                <option value="">— All Active Personnel —</option>
-                {% for sp in all_persons %}
-                <option value="{{ sp.name }}" {% if f_person == sp.name %}selected{% endif %}>{{ sp.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group-modern" style="flex: 1; min-width: 150px;">
-            <label class="label-modern">Material</label>
-            <select name="material" class="input-modern">
-                <option value="" {% if not f_material %}selected{% endif %}>All Types</option>
-                <option value="maize" {% if f_material == 'maize' %}selected{% endif %}>Maize</option>
-                <option value="wheat" {% if f_material == 'wheat' %}selected{% endif %}>Wheat</option>
-            </select>
-        </div>
-        <div style="display: flex; gap: 0.5rem;">
-            <button type="submit" class="btn-modern btn-modern-primary">Apply Filter</button>
-            <a href="?" class="btn-modern" style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200);">Reset</a>
-        </div>
-    </form>
-</div>
-
-<div style="margin-bottom: 3.5rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-        <span style="font-size: 1.25rem;">📋</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Team Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Current sales made by staff</small></h3>
-    </div>
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <table class="premium-table">
-          <thead>
-            <tr>
-              <th>Staff Name / Date</th>
-              <th>Material</th>
-              <th class="num">Bags Sold</th>
-              <th class="num">Net Due</th>
-              <th class="num">Money Paid In</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in promoter_sales %}
-            <tr>
-              <td>
-                <div style="font-weight: 800; color: var(--navy);">{{ r.sales_person.name }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ r.date }} • By {{ r.recorded_by.full_name }}</div>
-              </td>
-              <td>
-                <span class="{% if r.material_type == 'maize' %}bg-warning-soft text-warning-heavy{% else %}bg-indigo-soft text-indigo-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
-                    {{ r.material_type|upper }}
-                </span>
-              </td>
-              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ r.equivalent_sacks_sold|floatformat:1 }} <small>Bags</small></td>
-              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ r.net_due_to_company|floatformat:0 }}</td>
-              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ r.amount_returned|floatformat:0 }}</td>
-              <td>
-                <span style="font-size: 0.65rem; font-weight: 900; background: #f0fdf4; color: #166534; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">CONFIRMED</span>
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No promoter sales identified in this audit window.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-    </div>
-</div>
-
-<div style="margin-bottom: 3.5rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-        <span style="font-size: 1.25rem;">🏢</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Customer Direct Sales <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Sales made directly from the factory</small></h3>
-    </div>
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <table class="premium-table">
-          <thead>
-            <tr>
-              <th>Customer Name</th>
-              <th>Material</th>
-              <th class="num">Amount Sold</th>
-              <th class="num">Total Price</th>
-              <th class="num">Paid</th>
-              <th class="num">Money Owed</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for d in direct_sales %}
-            <tr>
-              <td>
-                <div style="font-weight: 800; color: var(--navy);">{{ d.customer_name }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ d.date }}</div>
-              </td>
-              <td>
-                <span class="{% if d.material_type == 'maize' %}bg-warning-soft text-warning-heavy{% else %}bg-indigo-soft text-indigo-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
-                    {{ d.material_type|upper }}
-                </span>
-              </td>
-              <td class="num" style="font-weight: 700; color: var(--slate-600); font-family: 'JetBrains Mono', monospace;">{{ d.qty_sold }} <small>Bags</small></td>
-              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_sale_value|floatformat:0 }}</td>
-              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ d.total_received|floatformat:0 }}</td>
-              <td class="num">
-                {% if d.outstanding > 0 %}
-                <div style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">₦{{ d.outstanding|floatformat:0 }}</div>
-                <div style="font-size: 0.65rem; font-weight: 800; color: var(--rose);">OUTSTANDING</div>
-                {% else %}
-                <span style="font-size: 0.65rem; font-weight: 900; background: #f0fdf4; color: #166534; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">SETTLED</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No GM direct sales found in this period.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-    </div>
-</div>
-
-<div>
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
-        <span style="font-size: 1.25rem;">📜</span>
-        <h3 style="margin:0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">Past Sales Records <small style="font-weight: 600; color: var(--slate-400); font-size: 0.8rem; margin-left: 0.5rem;">Old sales and archive records</small></h3>
-    </div>
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <table class="premium-table">
-          <thead>
-            <tr>
-              <th>Staff Name</th>
-              <th>Type / Size</th>
-              <th class="num">Qty</th>
-              <th class="num">Total Price</th>
-              <th class="num">Paid</th>
-              <th class="num">Owed</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in sales %}
-            <tr>
-              <td>
-                <div style="font-weight: 800; color: var(--navy);">{{ r.display_person }}</div>
-                <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700;">{{ r.date }}</div>
-              </td>
-              <td>
-                <div style="font-weight: 700; color: var(--slate-600); font-size: 0.8rem;">{{ r.material_type|upper }} — {{ r.product_size }}</div>
-              </td>
-              <td class="num" style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{{ r.qty_sold }}</td>
-              <td class="num" style="font-weight: 900; color: var(--navy); font-family: 'JetBrains Mono', monospace;">₦{{ r.net_payable|floatformat:0 }}</td>
-              <td class="num" style="font-weight: 900; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">₦{{ r.total_paid|floatformat:0 }}</td>
-              <td class="num">
-                {% if r.amount_outstanding > 0 %}
-                <span style="font-weight: 800; color: var(--rose); font-family: 'JetBrains Mono', monospace;">₦{{ r.amount_outstanding|floatformat:0 }}</span>
-                {% else %}
-                <span style="color: var(--emerald); font-weight: 900;">—</span>
-                {% endif %}
-              </td>
-              <td>
-                <span class="{% if r.status == 'debt' %}bg-danger-soft text-danger-heavy{% elif r.status == 'partial' %}bg-warning-soft text-warning-heavy{% else %}bg-success-soft text-success-heavy{% endif %}" style="font-size: 0.65rem; font-weight: 900; padding: 4px 10px; border-radius: 6px; text-transform: uppercase;">
-                    {{ r.status|upper }}
-                </span>
-              </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="7" style="padding: 4rem; text-align: center; color: var(--slate-400); font-style: italic;">No legacy sales match your query parameters.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-    </div>
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">BY MATERIAL</span><h2>Maize and wheat</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Value (₦)</th><th class="number">Received (₦)</th><th class="number">Outstanding (₦)</th></tr></thead>
+<tbody>
+<tr><td><strong>Maize</strong></td><td class="number">{{ maize_value|floatformat:0 }}</td><td class="number">{{ maize_received|floatformat:0 }}</td><td class="number">{{ maize_outstanding|floatformat:0 }}</td></tr>
+<tr><td><strong>Wheat</strong></td><td class="number">{{ wheat_value|floatformat:0 }}</td><td class="number">{{ wheat_received|floatformat:0 }}</td><td class="number">{{ wheat_outstanding|floatformat:0 }}</td></tr>
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TEAM SALES</span><h2>Sales results</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Sales person / Date</th><th>Material</th><th class="number">Bags sold</th><th class="number">Net due (₦)</th><th class="number">Money returned (₦)</th></tr></thead>
+<tbody>
+{% for r in promoter_sales %}
+<tr><td class="cell-main"><strong>{{ r.sales_person.name }}</strong><span>{{ r.date }} · By {{ r.recorded_by.full_name }}</span></td><td><span class="status-pill">{{ r.material_type|upper }}</span></td><td class="number">{{ r.equivalent_sacks_sold|floatformat:1 }}</td><td class="number">{{ r.net_due_to_company|floatformat:0 }}</td><td class="number">{{ r.amount_returned|floatformat:0 }}</td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No team sales match the current filter.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">DIRECT SALES</span><h2>Factory-gate sales</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Customer / Date</th><th>Material</th><th class="number">Bags sold</th><th class="number">Total value (₦)</th><th class="number">Received (₦)</th><th class="number">Outstanding (₦)</th></tr></thead>
+<tbody>
+{% for d in direct_sales %}
+<tr><td class="cell-main"><strong>{{ d.buyer_name }}</strong><span>{{ d.date }}</span></td><td><span class="status-pill">{{ d.material_type|upper }}</span></td><td class="number">{{ d.qty_sold }}</td><td class="number">{{ d.total_sale_value|floatformat:0 }}</td><td class="number">{{ d.total_received|floatformat:0 }}</td><td class="number">{{ d.outstanding|floatformat:0 }}</td></tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No direct sales match the current filter.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ARCHIVE SALES</span><h2>Sales records</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Person / Date</th><th>Material / Size</th><th class="number">Quantity</th><th class="number">Net payable (₦)</th><th class="number">Paid (₦)</th><th class="number">Outstanding (₦)</th><th>Status</th></tr></thead>
+<tbody>
+{% for r in sales %}
+<tr><td class="cell-main"><strong>{{ r.display_person }}</strong><span>{{ r.date }}</span></td><td><span class="status-pill">{{ r.material_type|upper }}</span> {{ r.product_size }}</td><td class="number">{{ r.qty_sold }}</td><td class="number">{{ r.net_payable|floatformat:0 }}</td><td class="number">{{ r.total_paid|floatformat:0 }}</td><td class="number">{{ r.amount_outstanding|floatformat:0 }}</td><td><span class="status-pill">{{ r.status|upper }}</span></td></tr>
+{% empty %}
+<tr><td colspan="7" class="empty-state">No sales records match the current filter.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

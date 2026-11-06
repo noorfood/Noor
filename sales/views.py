@@ -1,14 +1,15 @@
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Sum, Count
-from accounts.mixins import get_current_user, role_required
+from accounts.mixins import get_current_user, role_required, store_type_required
 from accounts.models import User
 from audit.utils import log_action
 from sales.models import (
     SalesRecord, SalesPerson, SalesPayment, CompanyRetailLedger,
     SalesManagerCollection, SalesDistributionRecord, SalesResult, SalesManagerPayment,
-    DirectSalePayment, GMRemittance,
+    DirectSalePayment, DirectSaleFollowUpPayment, GMRemittance, SalesCorrectionRequest,
 )
 from pricing.models import PriceConfig, CommissionConfig
 from finished_store.models import FinishedGoodsIssuance, FinishedGoodsReturn
@@ -20,27 +21,53 @@ import datetime
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 
+def valid_phone(phone):
+    """Nigerian phone number: 08031234567, 8031234567 or +2348031234567."""
+    import re
+    digits = re.sub(r'[\s\-()]', '', (phone or '').strip())
+    if digits.startswith('+'):
+        digits = digits[1:]
+    if not digits.isdigit():
+        return False
+    if len(digits) == 11 and digits.startswith('0'):
+        return True
+    if len(digits) == 13 and digits.startswith('234'):
+        return True
+    if len(digits) == 10 and digits[0] in '789':
+        return True
+    return False
+
 def get_gm_direct_money_outstanding(user):
     """
     Amount of money the GM has collected from Direct Sales but hasn't yet remitted to the company.
     = Sum(DirectSalePayment.total_received for confirmed/pending_md) - Sum(Confirmed GMRemittances)
+    All sums are database aggregates. The per-row total_received property
+    would ask the database once per sale — 152 queries for the GM's sales
+    on the live data, which made the Oversight page take ~38 seconds.
     """
-    from sales.models import DirectSalePayment, GMRemittance
-    received = DirectSalePayment.objects.filter(
-        recorded_by=user, 
-        status__in=['pending_md', 'confirmed']
+    from sales.models import DirectSalePayment, DirectSaleFollowUpPayment, GMRemittance
+    base = DirectSalePayment.objects.filter(
+        recorded_by=user,
+        status__in=['pending_md', 'confirmed'],
     ).aggregate(
-        t=Sum('amount_received_cash') + Sum('amount_received_transfer')
-    )['t'] or 0
-    
+        cash=Sum('amount_received_cash'),
+        transfer=Sum('amount_received_transfer'),
+    )
+    follow = DirectSaleFollowUpPayment.objects.filter(
+        sale__recorded_by=user,
+        sale__status__in=['pending_md', 'confirmed'],
+    ).aggregate(t=Sum('amount'))['t'] or 0
+    received = (float(base['cash'] or 0) + float(base['transfer'] or 0)
+                + float(follow))
+
     remitted = GMRemittance.objects.filter(
-        recorded_by=user, 
+        recorded_by=user,
         status='confirmed'
     ).aggregate(
         t=Sum('amount_cash') + Sum('amount_transfer')
     )['t'] or 0
-    
-    return max(0.0, float(received) - float(remitted))
+
+    return max(0.0, received - float(remitted))
 
 
 def get_sm_goods_holding(sales_manager, material_type=None):
@@ -65,7 +92,7 @@ def get_sm_goods_holding(sales_manager, material_type=None):
 
     # Add back all returned goods
     ret_qs = SalesResult.objects.filter(
-        recorded_by=sales_manager
+        recorded_by=sales_manager, is_corrected=False
     )
     if material_type:
         ret_qs = ret_qs.filter(material_type=material_type)
@@ -155,7 +182,7 @@ def get_sm_money_outstanding(sales_manager):
     )['t'] or 0
 
     total_commission = SalesResult.objects.filter(
-        recorded_by=sales_manager
+        recorded_by=sales_manager, is_corrected=False
     ).aggregate(t=Sum('commission_amount'))['t'] or 0
 
     return max(0.0, float(total_value) - float(total_paid) - float(total_commission))
@@ -224,6 +251,22 @@ def dashboard(request):
         wheat_holding = get_sm_goods_holding(user, 'wheat')
         money_outstanding = get_sm_money_outstanding(user)
 
+        # Money picture: what he collected from the team, what he sent
+        # to the company, what is still to send. No money is counted as
+        # profit — these are the handover obligation.
+        from commerce.models import ReportedSale
+        from reconciliation.models import MoneyReceipt
+        handover_total = SalesResult.objects.filter(recorded_by=user).aggregate(t=Sum('amount_returned'))['t'] or 0
+        remittance_total = MoneyReceipt.objects.filter(sales_manager=user).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
+        money_from_team = float(handover_total) + float(remittance_total)
+        money_paid = float(SalesManagerPayment.objects.filter(sales_manager=user, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+        money_pending = float(SalesManagerPayment.objects.filter(sales_manager=user, status='pending_gm').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+        cash_in_hand = max(0.0, money_from_team - money_paid - money_pending)
+
+        recent_sales = ReportedSale.objects.filter(recorded_by=user).order_by('-date', '-created_at')[:5]
+        recent_payments = SalesManagerPayment.objects.filter(sales_manager=user).order_by('-date', '-created_at')[:5]
+        recent_results = SalesResult.objects.filter(recorded_by=user, is_corrected=False).order_by('-date', '-created_at')[:5]
+
         pending_count = pending_collections.count()
 
         return render(request, 'sales/dashboard.html', {
@@ -232,7 +275,14 @@ def dashboard(request):
             'maize_holding': maize_holding,
             'wheat_holding': wheat_holding,
             'money_outstanding': money_outstanding,
+            'money_from_team': money_from_team,
+            'money_paid': money_paid,
+            'money_pending': money_pending,
+            'cash_in_hand': cash_in_hand,
             'recent_collections': recent_collections,
+            'recent_sales': recent_sales,
+            'recent_payments': recent_payments,
+            'recent_results': recent_results,
             'show_money': True,
             'today_activities': today_activities,
             'f_from': f_from, 'f_to': f_to,
@@ -278,6 +328,87 @@ def dashboard(request):
             'today_activities': today_activities,
             'f_from': f_from, 'f_to': f_to,
         })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SALES MANAGER REPORT — one manager's own record
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('sales_manager', 'manager', 'md')
+def sm_report(request):
+    """One Sales Manager's own report: his stock in hand, his sales
+    transactions, the money he collected, the money he sent to the
+    company, and what is still to send. The SM sees only his own
+    report; the GM/MD pick a manager. No money is counted as profit —
+    the money figures are the handover obligation: what he collected,
+    what he sent, what is still to send."""
+    user = get_current_user(request)
+    f_from = request.GET.get('date_from', '')
+    f_to = request.GET.get('date_to', '')
+    from commerce.models import MoneyHandover, ReportedSale
+    from reconciliation.models import MoneyReceipt
+
+    if user.role == 'sales_manager':
+        sm = user
+    else:
+        sm_id = request.GET.get('sm', '')
+        sm = None
+        if sm_id:
+            sm = get_object_or_404(User, pk=sm_id, role='sales_manager')
+        if sm is None:
+            sm = User.objects.filter(role='sales_manager', status='active').order_by('full_name').first()
+
+    all_sms = User.objects.filter(role='sales_manager', status='active').order_by('full_name')
+    if sm is None:
+        return render(request, 'sales/sm_report.html', {
+            'current_user': user, 'sm': None, 'all_sms': all_sms,
+            'f_from': f_from, 'f_to': f_to,
+        })
+
+    def _dated(qs):
+        if f_from:
+            qs = qs.filter(date__gte=f_from)
+        if f_to:
+            qs = qs.filter(date__lte=f_to)
+        return qs
+
+    maize_holding = get_sm_goods_holding(sm, 'maize')
+    wheat_holding = get_sm_goods_holding(sm, 'wheat')
+    money_outstanding = get_sm_money_outstanding(sm)
+    handover_total = SalesResult.objects.filter(recorded_by=sm).aggregate(t=Sum('amount_returned'))['t'] or 0
+    remittance_total = MoneyReceipt.objects.filter(sales_manager=sm).aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
+    money_from_team = float(handover_total) + float(remittance_total)
+    money_paid = float(SalesManagerPayment.objects.filter(sales_manager=sm, status='confirmed').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+    money_pending = float(SalesManagerPayment.objects.filter(sales_manager=sm, status='pending_gm').aggregate(t=Sum('amount_cash') + Sum('amount_transfer'))['t'] or 0)
+    cash_in_hand = max(0.0, money_from_team - money_paid - money_pending)
+
+    collections = _dated(SalesManagerCollection.objects.filter(sales_manager=sm)).order_by('-date', '-created_at')[:15]
+    reported_sales = _dated(ReportedSale.objects.filter(recorded_by=sm)).order_by('-date', '-created_at')[:15]
+    team_results = _dated(SalesResult.objects.filter(recorded_by=sm, is_corrected=False)).order_by('-date', '-created_at')[:15]
+    payments = _dated(SalesManagerPayment.objects.filter(sales_manager=sm)).order_by('-date', '-created_at')[:15]
+    handovers = _dated(MoneyHandover.objects.filter(sender=sm)).order_by('-date', '-created_at')[:15]
+
+    # Team: what each salesperson was given and sold, under this SM.
+    team = []
+    for sp in SalesPerson.objects.filter(status='active').order_by('channel', 'name'):
+        given = SalesDistributionRecord.objects.filter(sales_person=sp, recorded_by=sm).aggregate(t=Sum('qty_given'))['t'] or 0
+        sold = SalesResult.objects.filter(sales_person=sp, recorded_by=sm, is_corrected=False).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+        sold_total = float(sold['s'] or 0) + (float(sold['p'] or 0) / 10)
+        if given or sold_total:
+            team.append({'sp': sp, 'given': given, 'sold': sold_total,
+                         'in_hand': max(0.0, float(given) - sold_total)})
+
+    return render(request, 'sales/sm_report.html', {
+        'current_user': user, 'sm': sm, 'all_sms': all_sms,
+        'maize_holding': maize_holding, 'wheat_holding': wheat_holding,
+        'money_outstanding': money_outstanding, 'money_from_team': money_from_team,
+        'money_paid': money_paid, 'money_pending': money_pending,
+        'cash_in_hand': cash_in_hand,
+        'collections': collections, 'reported_sales': reported_sales,
+        'team_results': team_results, 'payments': payments,
+        'handovers': handovers, 'team': team,
+        'f_from': f_from, 'f_to': f_to,
+    })
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -368,11 +499,14 @@ def acknowledge_collection(request, collection_id):
                        f'{collection.qty_sacks} × {collection.material_type} sacks | '
                        f'₦{collection.total_value:,.0f}',
                        'SalesManagerCollection', collection.pk)
+            maize_now = get_sm_goods_holding(user, 'maize')
+            wheat_now = get_sm_goods_holding(user, 'wheat')
             messages.success(
                 request,
                 f'Collection #{collection.pk} accepted. '
                 f'{collection.qty_sacks} {collection.material_type.upper()} sacks are now in your hands. '
-                f'Total value: ₦{collection.total_value:,.0f}'
+                f'Total value: ₦{collection.total_value:,.0f} '
+                f'You now hold: maize {maize_now} sacks · wheat {wheat_now} sacks.'
             )
 
         elif action == 'reject':
@@ -480,9 +614,11 @@ def record_distribution(request):
                 log_action(request, user, 'sales', 'RECORD_DISTRIBUTION',
                            f'Gave {qty} × {material_type} sacks to {sp.name} ({sp.channel})',
                            'SalesDistributionRecord', dist.pk)
+                remaining = get_sm_goods_holding(user, material_type)
                 messages.success(
                     request,
-                    f'Recorded: {qty} {material_type.upper()} sacks given to {sp.name}.'
+                    f'Recorded: {qty} {material_type.upper()} sacks given to {sp.name}. '
+                    f'You now hold {remaining} {material_type} sacks.'
                 )
                 return redirect('sales:sp_performance')
 
@@ -525,7 +661,7 @@ def record_sales_result(request):
             sales_person=sp, recorded_by=user, material_type='maize'
         ).aggregate(t=Sum('qty_given'))['t'] or 0
         sold_m = SalesResult.objects.filter(
-            sales_person=sp, recorded_by=user, material_type='maize'
+            sales_person=sp, recorded_by=user, material_type='maize', is_corrected=False
         ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
         sp.maize_holding = float(given_m) - (float(sold_m['s'] or 0) + (float(sold_m['p'] or 0) / 10))
         sp.maize_holding = max(0.0, sp.maize_holding)
@@ -535,7 +671,7 @@ def record_sales_result(request):
             sales_person=sp, recorded_by=user, material_type='wheat'
         ).aggregate(t=Sum('qty_given'))['t'] or 0
         sold_w = SalesResult.objects.filter(
-            sales_person=sp, recorded_by=user, material_type='wheat'
+            sales_person=sp, recorded_by=user, material_type='wheat', is_corrected=False
         ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
         sp.wheat_holding = float(given_w) - (float(sold_w['s'] or 0) + (float(sold_w['p'] or 0) / 10))
         sp.wheat_holding = max(0.0, sp.wheat_holding)
@@ -571,11 +707,11 @@ def record_sales_result(request):
                 ).aggregate(t=Sum('qty_given'))['t'] or 0
 
                 prev_sold = SalesResult.objects.filter(
-                    sales_person=sp, recorded_by=user, material_type=material_type
-                ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+                sales_person=sp, recorded_by=user, material_type=material_type, is_corrected=False
+            ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
                 prev_returned = SalesResult.objects.filter(
-                    sales_person=sp, recorded_by=user, material_type=material_type
-                ).aggregate(r=Sum('qty_returned'), rp=Sum('qty_pieces_returned'))
+                sales_person=sp, recorded_by=user, material_type=material_type, is_corrected=False
+            ).aggregate(r=Sum('qty_returned'), rp=Sum('qty_pieces_returned'))
 
                 sp_holding = (float(total_given)
                               - float(prev_sold['s'] or 0) - (float(prev_sold['p'] or 0) / 10)
@@ -632,11 +768,20 @@ def record_sales_result(request):
                                    f'{sp.name} sold {qty_sold} sacks & {qty_pieces_sold} pieces | '
                                    f'Net ₦{result.net_due_to_company:,.0f}',
                                    'SalesResult', result.pk)
+                        sp_remaining = SalesDistributionRecord.objects.filter(
+                            sales_person=sp, recorded_by=user, material_type=material_type
+                        ).aggregate(t=Sum('qty_given'))['t'] or 0
+                        sp_sold = SalesResult.objects.filter(
+                            sales_person=sp, recorded_by=user, material_type=material_type, is_corrected=False
+                        ).aggregate(s=Sum('qty_sold'), p=Sum('qty_pieces_sold'))
+                        sp_holding_now = max(0.0, float(sp_remaining)
+                                             - float(sp_sold['s'] or 0) - (float(sp_sold['p'] or 0) / 10))
                         messages.success(
                             request,
                             f'Recorded: {sp.name} sold {qty_sold} sacks and {qty_pieces_sold} pieces. '
                             f'Commission: ₦{result.commission_amount:,.0f} | '
-                            f'Net due to company: ₦{result.net_due_to_company:,.0f}'
+                            f'Net due to company: ₦{result.net_due_to_company:,.0f} | '
+                            f'{sp.name} now holds {sp_holding_now:.1f} {material_type} sacks.'
                         )
                         return redirect('sales:sp_performance')
 
@@ -686,7 +831,7 @@ def sp_performance(request):
             return qs.aggregate(t=Sum('qty_given'))['t'] or 0
 
         def _res(field, mat=None):
-            qs = SalesResult.objects.filter(sales_person=sp, **manager_filter)
+            qs = SalesResult.objects.filter(sales_person=sp, is_corrected=False, **manager_filter)
             if mat: qs = qs.filter(material_type=mat)
             if f_from: qs = qs.filter(date__gte=f_from)
             if f_to:   qs = qs.filter(date__lte=f_to)
@@ -704,7 +849,7 @@ def sp_performance(request):
         total_commission  = _res('commission_amount')
         
         # All results for this SP to use for property-based sums
-        res_all = SalesResult.objects.filter(sales_person=sp, **manager_filter)
+        res_all = SalesResult.objects.filter(sales_person=sp, is_corrected=False, **manager_filter)
         if f_from: res_all = res_all.filter(date__gte=f_from)
         if f_to:   res_all = res_all.filter(date__lte=f_to)
         
@@ -1024,7 +1169,8 @@ def record_sm_payment(request):
                            'SalesManagerPayment', pmt.pk)
                 messages.success(
                     request,
-                    f'Payment recorded (\u20a6{total:,.0f}). It is now pending GM confirmation.'
+                    f'Payment recorded (\u20a6{total:,.0f}). It is now pending GM confirmation. '
+                    f'Money still to send to the company: \u20a6{get_sm_money_outstanding(user):,.0f}.'
                 )
                 return redirect('sales:list_collections')
         except Exception as e:
@@ -1220,17 +1366,33 @@ def list_salespersons_view(request):
 # COMPANY DIRECT SALE (GM Only — completely separate from SM flow)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@role_required('manager', 'md')
-
-
 
 # ─────────────────────────────────────────────────────────────────────────────
-# BRAN SALES (GM Only)
+# BRAN SALES (Raw store officer only — the MD assigned bran sales to the
+# raw store role; the GM no longer records them.)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@role_required('manager', 'md')
+def get_bran_balance(material_type=None):
+    """Bran sacks on hand = bran received from milling minus bran sold.
+    Bran produced was never recorded, so this is receipts minus sales
+    only — nothing is derived or invented. A negative figure means
+    bran was sold before receipts were recorded."""
+    from django.db.models import Sum
+    from production.models import BrandSale, BranReceipt
+    receipts = BranReceipt.objects.all()
+    sales = BrandSale.objects.all()
+    if material_type:
+        receipts = receipts.filter(material_type=material_type)
+        sales = sales.filter(material_type=material_type)
+    received = receipts.aggregate(t=Sum('qty_sacks'))['t'] or 0
+    sold = sales.aggregate(t=Sum('qty_sacks'))['t'] or 0
+    return received - sold
+
+
+@role_required('store_officer', md_read='raw store officer')
+@store_type_required('raw')
 def record_bran_sale(request):
-    """Brand (waste) sold by GM. Stored in BrandSale model."""
+    """Bran (waste) sold by the raw store officer. Stored in BrandSale model."""
     user = get_current_user(request)
     error = None
     today = datetime.date.today().isoformat()
@@ -1247,6 +1409,10 @@ def record_bran_sale(request):
 
         if not date_val or not buyer_name or qty <= 0 or amount_paid <= 0:
             error = 'All fields are required.'
+        elif qty > get_bran_balance(material_type):
+            error = (f'Not enough bran. Current {material_type} bran on hand: '
+                     f'{get_bran_balance(material_type)} sacks. Record a bran '
+                     f'receipt first when bran arrives from milling.')
         else:
             bs = BrandSale.objects.create(
                 date=date_val,
@@ -1264,14 +1430,65 @@ def record_bran_sale(request):
             log_action(request, user, 'sales', 'RECORD_BRAN_SALE',
                        f'Bran Sale: {qty} sacks {material_type} to {buyer_name}',
                        'BrandSale', bs.pk)
-            messages.success(request, f'Recorded bran sale to {buyer_name}.')
-            return redirect('reports:dashboard')
+            remaining = get_bran_balance(material_type)
+            messages.success(request, f'Recorded bran sale to {buyer_name}. '
+                             f'{material_type.title()} bran on hand now: {remaining} sacks.')
+            return redirect('reports:bran_sales')
 
     return render(request, 'sales/record_bran_sale.html', {
         'current_user': user,
         'error': error,
         'today': today,
         'material_choices': MATERIAL_CHOICES,
+        'balance_maize': get_bran_balance('maize'),
+        'balance_wheat': get_bran_balance('wheat'),
+    })
+
+
+@role_required('store_officer', md_read='raw store officer')
+@store_type_required('raw')
+def record_bran_receipt(request):
+    """Raw store officer records bran sacks received from milling.
+    This is what makes the bran balance real: bran on hand is
+    receipts minus sales. Nothing is derived from milling weights."""
+    user = get_current_user(request)
+    error = None
+    today = datetime.date.today().isoformat()
+    from production.models import BranReceipt
+    from procurement.models import MATERIAL_CHOICES
+
+    if request.method == 'POST':
+        date_val = request.POST.get('date')
+        material_type = request.POST.get('material_type', 'maize')
+        qty = int(request.POST.get('qty', 0))
+        notes = request.POST.get('notes', '').strip()
+
+        if not date_val or qty <= 0:
+            error = 'Date and a quantity above zero are required.'
+        else:
+            receipt = BranReceipt.objects.create(
+                date=date_val,
+                material_type=material_type,
+                qty_sacks=qty,
+                received_by=user,
+                notes=notes,
+                is_locked=True,
+            )
+            log_action(request, user, 'sales', 'RECORD_BRAN_RECEIPT',
+                       f'Bran received: {qty} sacks {material_type} from milling',
+                       'BranReceipt', receipt.pk)
+            remaining = get_bran_balance(material_type)
+            messages.success(request, f'Recorded {qty} sacks of {material_type} bran received. '
+                             f'{material_type.title()} bran on hand now: {remaining} sacks.')
+            return redirect('reports:bran_sales')
+
+    return render(request, 'sales/record_bran_receipt.html', {
+        'current_user': user,
+        'error': error,
+        'today': today,
+        'material_choices': MATERIAL_CHOICES,
+        'balance_maize': get_bran_balance('maize'),
+        'balance_wheat': get_bran_balance('wheat'),
     })
 
 
@@ -1355,24 +1572,46 @@ def record_direct_sale(request):
 
     if request.method == 'POST':
         try:
-            date_val = request.POST.get('date')
+            # Date of collection is automatic and locked: today.
+            date_val = timezone.localdate().isoformat()
             material_type = request.POST.get('material_type')
             product_size = request.POST.get('product_size', '10kg')
             buyer_name = request.POST.get('buyer_name', '').strip()
+            customer_phone = request.POST.get('customer_phone', '').strip()
+            customer_location = request.POST.get('customer_location', '').strip()
+            payment_type = request.POST.get('payment_type', 'full')
             qty_sold = int(request.POST.get('qty_sold', 0))
-            amount_received_cash = float(request.POST.get('amount_received_cash', 0))
-            amount_received_transfer = float(request.POST.get('amount_received_transfer', 0))
+            amount_received_cash = float(request.POST.get('amount_received_cash', 0) or 0)
+            amount_received_transfer = float(request.POST.get('amount_received_transfer', 0) or 0)
             notes = request.POST.get('notes', '').strip()
 
             unit_price = PriceConfig.get_active_price('company', material_type, product_size, date_val)
             if unit_price is None:
                 error = f"No active price configuration found for Company Channel: {material_type.title()} ({product_size}) on {date_val}."
-            elif not date_val or not material_type or qty_sold <= 0:
-                error = 'Date, material type, product size, and quantity are required.'
+            elif not material_type or qty_sold <= 0:
+                error = 'Material type, product size, and quantity are required.'
+            elif not buyer_name or not customer_location:
+                error = 'Customer name and location are required.'
+            elif not valid_phone(customer_phone):
+                error = 'Enter a valid customer phone number (e.g. 08031234567 or +2348031234567).'
+            elif payment_type not in ('full', 'partial'):
+                error = 'Choose Full payment or Partial payment.'
+            elif amount_received_cash < 0 or amount_received_transfer < 0:
+                error = 'Amounts received cannot be negative.'
             else:
+                from decimal import Decimal
                 unit_price = float(unit_price)
-
-                if product_size == '1kg':
+                total_value = Decimal(str(unit_price)) * qty_sold
+                amount_paid = Decimal(str(amount_received_cash)) + Decimal(str(amount_received_transfer))
+                if amount_paid > total_value:
+                    error = 'Amount paid cannot be more than the total amount.'
+                elif payment_type == 'full' and amount_paid != total_value:
+                    error = 'Full payment means the amount paid must equal the total amount.'
+                elif payment_type == 'partial' and (amount_paid <= 0 or amount_paid >= total_value):
+                    error = 'Partial payment means the amount paid now must be more than zero and less than the total amount.'
+                # Stock checks only run when the payment details are valid,
+                # so a failed submission never opens sacks or moves stock.
+                if not error and product_size == '1kg':
                     # Retail piece sale (1kg)
                     current_pieces = CompanyRetailLedger.objects.filter(
                         material_type=material_type, recorded_by=user
@@ -1397,7 +1636,7 @@ def record_direct_sale(request):
                         else:
                             error = f"You don't have enough {material_type} in hand to fulfill {qty_sold} pieces. Please request {math.ceil((needed_pieces - (sacks_in_hand * 10)) / 10)} more sacks from the store."
 
-                elif product_size == '10kg':
+                elif not error and product_size == '10kg':
                     current_holding = get_company_goods_holding(user, material_type, '10kg')
                     if qty_sold > current_holding:
                         error = f"You don't have enough {material_type} 10kg sacks in your hand. You have {int(current_holding)} sacks available."
@@ -1412,6 +1651,10 @@ def record_direct_sale(request):
                         amount_received_cash=amount_received_cash,
                         amount_received_transfer=amount_received_transfer,
                         buyer_name=buyer_name,
+                        customer_phone=customer_phone,
+                        customer_location=customer_location,
+                        payment_type=payment_type,
+                        balance=total_value - amount_paid,
                         recorded_by=user,
                         notes=notes,
                         status='pending_md' if user.role == 'manager' else 'confirmed'
@@ -1437,8 +1680,12 @@ def record_direct_sale(request):
                                'DirectSalePayment', sale.pk)
                     
                     success_msg = f'Direct Sale #{sale.pk} recorded successfully.'
+                    if sale.balance > 0:
+                        success_msg += f' Balance remaining: ₦{sale.balance:,.0f}. Added to Outstanding Balances.'
                     if user.role == 'manager':
                         success_msg += ' Awaiting MD confirmation.'
+                    holding_now = get_company_goods_holding(user, material_type, product_size)
+                    success_msg += f' Company {material_type} {product_size} stock in hand now: {holding_now} sacks.'
                     messages.success(request, success_msg)
                     return redirect('sales:list_direct_sales')
         except Exception as e:
@@ -1465,7 +1712,13 @@ def record_direct_sale(request):
 def list_direct_sales(request):
     """List direct sales (GM sees their own or all company sales, MD sees all)."""
     user = get_current_user(request)
-    sales = DirectSalePayment.objects.all().order_by('-date', '-created_at')
+    # Prefetch the follow-up payments: the template shows total_received
+    # per sale, and without this the property asks the database once per
+    # row (168 queries for the live list, ~50 seconds through the tunnel).
+    # select_related covers recorded_by.full_name in the same rows.
+    sales = DirectSalePayment.objects.select_related(
+        'recorded_by').prefetch_related(
+        'follow_up_payments').order_by('-date', '-created_at')
     
     pending_count = sales.filter(status='pending_md').count() if user.role == 'md' else 0
 
@@ -1515,6 +1768,105 @@ def md_confirm_direct_sale(request, pk):
 # ─────────────────────────────────────────────────────────────────────────────
 # GM DIRECT SALE REMITTANCE (GM sends money to MD/Company)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OUTSTANDING BALANCES (MD/GM request, Nov 2026)
+# Customers who still owe money on a confirmed direct sale.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('manager', 'md')
+def outstanding_balances(request):
+    """List only confirmed direct sales with a balance above zero."""
+    user = get_current_user(request)
+    owing = DirectSalePayment.objects.filter(
+        status='confirmed', balance__gt=0,
+    ).order_by('date', 'created_at')
+    total = sum(float(s.balance) for s in owing)
+    return render(request, 'sales/outstanding_balances.html', {
+        'current_user': user,
+        'owing': owing,
+        'total_outstanding': total,
+        'count': owing.count(),
+    })
+
+
+@role_required('manager', 'md')
+def outstanding_customer(request, pk):
+    """Full details of one owing sale, with its payment history.
+
+    The GM can record a new payment here. The MD sees the same page
+    read-only. A payment can never exceed the balance; clearing the
+    balance removes the sale from the Outstanding page, while the record
+    stays in sales history.
+    """
+    from decimal import Decimal
+    user = get_current_user(request)
+    sale = get_object_or_404(DirectSalePayment, pk=pk)
+    error = None
+    # Payment history: the first payment at sale time, then follow-ups.
+    history = [{
+        'date': sale.date, 'amount': float(sale.amount_received_cash) + float(sale.amount_received_transfer),
+        'method': 'cash + transfer' if sale.amount_received_cash and sale.amount_received_transfer else ('cash' if sale.amount_received_cash else 'transfer'),
+        'recorded_by': sale.recorded_by, 'notes': 'First payment at sale',
+    }] if sale.total_received else []
+    for fp in sale.follow_up_payments.select_related('recorded_by').order_by('date', 'created_at'):
+        history.append({
+            'date': fp.date, 'amount': float(fp.amount), 'method': fp.get_method_display(),
+            'recorded_by': fp.recorded_by, 'notes': fp.notes,
+        })
+    if request.method == 'POST':
+        if user.role != 'manager':
+            return redirect('sales:outstanding_balances')
+        if sale.status != 'confirmed':
+            error = 'Payments can be recorded once the MD confirms this sale.'
+            return render(request, 'sales/outstanding_customer.html', {
+                'current_user': user, 'sale': sale, 'history': history,
+                'error': error,
+            })
+        try:
+            amount = Decimal(str(request.POST.get('amount', '0') or '0'))
+            method = request.POST.get('method', 'cash')
+            notes = request.POST.get('notes', '').strip()
+            if method not in ('cash', 'transfer'):
+                error = 'Choose Cash or Transfer.'
+            elif amount <= 0:
+                error = 'Enter an amount above zero.'
+            elif amount > sale.balance:
+                error = f'Payment cannot be more than the balance of ₦{sale.balance:,.0f}.'
+            else:
+                with transaction.atomic():
+                    locked = DirectSalePayment.objects.select_for_update().get(pk=sale.pk)
+                    if amount > locked.balance:
+                        error = f'Payment cannot be more than the balance of ₦{locked.balance:,.0f}.'
+                    else:
+                        DirectSaleFollowUpPayment.objects.create(
+                            sale=locked,
+                            date=timezone.localdate(),
+                            amount=amount,
+                            method=method,
+                            recorded_by=user,
+                            notes=notes,
+                        )
+                        locked.balance = locked.balance - amount
+                        locked.save(update_fields=['balance'])
+                        log_action(request, user, 'sales', 'RECORD_DIRECT_SALE_PAYMENT',
+                                   f'Recorded ₦{amount:,.0f} ({method}) against Direct Sale #{locked.pk}; balance now ₦{locked.balance:,.0f}',
+                                   'DirectSalePayment', locked.pk)
+                        if locked.balance == 0:
+                            messages.success(request, f'Balance cleared. Direct Sale #{locked.pk} is now fully paid and removed from Outstanding Balances.')
+                        else:
+                            messages.success(request, f'Payment of ₦{amount:,.0f} recorded. Balance remaining: ₦{locked.balance:,.0f}.')
+                        return redirect('sales:outstanding_customer', pk=locked.pk)
+        except Exception as e:
+            error = f'Error saving payment: {e}'
+    return render(request, 'sales/outstanding_customer.html', {
+        'current_user': user,
+        'sale': sale,
+        'history': history,
+        'error': error,
+    })
+
+
 
 @role_required('manager', 'md')
 def record_gm_remittance(request):
@@ -1642,4 +1994,78 @@ def list_gm_remittances(request):
         'current_user': user,
         'remittances': remittances,
         'pending': pending,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SALES CORRECTIONS (SalesResult) — request by recorder, decision by MD
+# ─────────────────────────────────────────────────────────────────────────────
+@role_required('sales_manager', 'manager', 'md')
+def list_sales_corrections(request):
+    user = get_current_user(request)
+    if user.role == 'sales_manager':
+        corrections = SalesCorrectionRequest.objects.filter(requested_by=user)
+    else:
+        corrections = SalesCorrectionRequest.objects.all()
+    return render(request, 'sales/corrections.html', {
+        'current_user': user,
+        'corrections': corrections.select_related('sales_result', 'sales_result__sales_person', 'requested_by', 'decided_by').order_by('-created_at'),
+    })
+
+
+@role_required('sales_manager', 'manager')
+def request_sales_correction_view(request):
+    from sales.services import request_sales_correction
+    import uuid
+    user = get_current_user(request)
+    if user.role == 'sales_manager':
+        results = SalesResult.objects.filter(recorded_by=user, is_corrected=False).order_by('-date', '-created_at')
+    else:
+        results = SalesResult.objects.filter(is_corrected=False).order_by('-date', '-created_at')
+    error = None
+    if request.method == 'POST':
+        try:
+            correction = request_sales_correction(
+                actor=user,
+                sales_result_id=int(request.POST.get('sales_result_id')),
+                reason=request.POST.get('reason', ''),
+                key=uuid.UUID(request.POST.get('request_key')),
+            )
+            log_action(request, user, 'sales', 'REQUEST_SALES_CORRECTION',
+                       f'Requested correction of SalesResult #{correction.sales_result_id}: {correction.reason}',
+                       'SalesCorrectionRequest', correction.pk)
+            messages.success(request, f'Correction request #{correction.pk} submitted for MD decision.')
+            return redirect('sales:list_sales_corrections')
+        except Exception as e:
+            error = str(e)
+    return render(request, 'sales/correction_request.html', {
+        'current_user': user, 'error': error, 'results': results,
+        'request_key': uuid.uuid4(),
+    })
+
+
+@role_required('sales_manager', 'manager', 'md')
+def sales_correction_detail(request, pk):
+    from sales.services import decide_sales_correction
+    user = get_current_user(request)
+    correction = get_object_or_404(SalesCorrectionRequest, pk=pk)
+    if user.role == 'sales_manager' and correction.requested_by_id != user.pk:
+        return redirect('sales:list_sales_corrections')
+    error = None
+    if request.method == 'POST' and user.role == 'md' and correction.status == 'pending':
+        try:
+            decided = decide_sales_correction(
+                actor=user, correction_id=correction.pk,
+                decision=request.POST.get('decision'),
+                note=request.POST.get('decision_note', ''),
+            )
+            log_action(request, user, 'sales', 'DECIDE_SALES_CORRECTION',
+                       f'MD {decided.status} correction request #{decided.pk} for SalesResult #{decided.sales_result_id}: {decided.decision_note}',
+                       'SalesCorrectionRequest', decided.pk)
+            messages.success(request, f'Correction request #{decided.pk} {decided.status}.')
+            return redirect('sales:list_sales_corrections')
+        except Exception as e:
+            error = str(e)
+    return render(request, 'sales/correction_detail.html', {
+        'current_user': user, 'error': error, 'correction': correction,
     })

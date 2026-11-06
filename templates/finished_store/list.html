@@ -1,136 +1,71 @@
-{% extends 'base.html' %}
-{% block title %}Finished Store Registry — Noor Foods{% endblock %}
-{% block nav_fg_list %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Finished Store Registry — Noor Foods{% endblock %}{% block nav_finished %}active{% endblock %}{% block breadcrumb %}Finished Store Registry{% endblock %}
 {% block content %}
-<style>
-    .border-maize { border-left: 4px solid var(--amber) !important; }
-    .border-wheat { border-left: 4px solid var(--indigo) !important; }
-</style>
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📑 Store Registry</span>
-            <h1 class="hero-title" style="color: #fff;">Finished Goods Record</h1>
-            <p class="hero-subtitle" style="color: var(--slate-400);">Master log of all arrivals from production and departures to sales channels.</p>
-        </div>
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Registry View: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
-<div class="balance-grid" style="margin-bottom: 3rem;">
-    {% for key, bal in balances.items %}
-    <div class="balance-card {% if bal.material_val == 'maize' %}border-maize{% else %}border-wheat{% endif %}" style="padding: 1.25rem;">
-        <div class="balance-label">{{ bal.material_label }} | {{ bal.size_label }}</div>
-        <div class="balance-value" style="font-size: 1.5rem;">{{ bal.qty }} <small style="font-size: 0.75rem; color: var(--slate-400);">sacks</small></div>
-    </div>
-    {% endfor %}
-    {% if f_from or f_to %}
-    <div class="balance-card" style="border-left: 4px solid var(--emerald); padding: 1.25rem;">
-        <div class="balance-label">Period Activity</div>
-        <div class="balance-value" style="color: var(--emerald); font-size: 1.3rem;">
-            +{{ p_rec }}/-{{ p_iss }}{% if p_ret %} (+{{ p_ret }} ret){% endif %}
-        </div>
-        <div style="font-size: 0.7rem; color: var(--slate-500); font-weight: 700; margin-top: 0.25rem;">Net arrivals vs departures</div>
-    </div>
-    {% endif %}
-</div>
-
-<div class="action-bar-modern">
-    <div style="display:flex; gap:0.75rem; align-items:center;">
-        <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
-        <a href="{% url 'finished_store:collect_for_sm' %}" class="btn-modern btn-modern-primary">+ Collect for Sales Manager</a>
-        <a href="{% url 'finished_store:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Issue to Company →</a>
-    </div>
-</div>
-
-<div class="section-header" style="margin-top: 3rem;">
-    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0;">📥 Acknowledged Arrivals (from Production)</h3>
-</div>
-<div class="table-wrapper" style="margin-bottom: 3rem;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>S/N</th><th>Date</th><th>Material</th><th class="num">Qty</th><th>Batch Ref</th><th>Handled By</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in receipts %}
-            {% if r.status == 'accepted' %}
-            <tr>
-                <td style="font-family:monospace; color: var(--slate-400);">{{ forloop.counter }}</td>
-                <td>{{ r.date }}</td>
-                <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.material_type|upper }} {{ r.product_size }}</span></td>
-                <td class="num"><strong style="color: var(--emerald);">+{{ r.qty_received }}</strong></td>
-                <td style="font-size: 0.85rem; color: var(--slate-500);">#{{ r.packaging_ref }}</td>
-                <td>{{ r.received_by.full_name }}</td>
-            </tr>
-            {% endif %}
-            {% empty %}
-            <tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--slate-400);">No arrivals for this period.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="section-header" style="margin-top: 3rem;">
-    <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0;">📤 Goods Dispatched (Outwards)</h3>
-</div>
-<div class="table-wrapper">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>S/N</th><th>Date</th><th>Material</th><th class="num">Qty</th><th>Channel / Buyer</th><th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i in issuances %}
-            <tr>
-                <td style="font-family:monospace; color: var(--slate-400);">{{ forloop.counter }}</td>
-                <td>{{ i.date }}</td>
-                <td><span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.material_type|upper }} {{ i.product_size }}</span></td>
-                <td class="num"><strong style="color: var(--rose);">-{{ i.qty_issued }}</strong></td>
-                <td><strong>{{ i.buyer_name|default:i.get_channel_display }}</strong></td>
-                <td>
-                    {% if i.status == 'pending' and i.channel == 'company' %}
-                        {% if i.approver_id == current_user.id or current_user.role == 'md' %}
-                            <form method="post" action="{% url 'finished_store:acknowledge_issuance' i.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="accept">
-                                <button type="submit" class="btn-modern" style="padding: 0.25rem 0.75rem; font-size: 0.85rem; background-color: var(--emerald); color: white; border: none; cursor: pointer; border-radius: 0.5rem; font-weight: 600;">Accept Handshake</button>
-                            </form>
-                        {% else %}
-                            <span class="badge-soft badge-soft-warning">Pending Handshake</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="badge-soft {% if i.status == 'accepted' %}badge-soft-success{% elif i.status == 'pending' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">
-                            {{ i.get_status_display }}
-                        </span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" style="text-align:center; padding: 3rem; color: var(--slate-400);">No dispatches found for this period.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div style="margin-top:2rem;">
-    <a href="{% url 'finished_store:dashboard' %}" class="btn-modern" style="background:transparent; border:1px solid var(--slate-300); color:var(--slate-600);">← Back to Dashboard</a>
-</div>
+<div class="page-heading"><div><div class="eyebrow">FINISHED GOODS</div><h1>Finished store registry</h1></div><div>
+<a class="button button-primary" href="{% url 'finished_store:issue' %}">Issue to company</a>
+<a class="button button-secondary" href="{% url 'finished_store:collect_for_sm' %}">Record handover to sales manager</a>
+<a class="button button-secondary" href="{% url 'finished_store:dashboard' %}">Back to dashboard</a>
+</div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STOCK</span><h2>Stock by product</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Material</th><th>Size</th><th class="number">Bags</th></tr></thead>
+<tbody>
+{% for key, bal in balances.items %}
+<tr>
+<td><strong>{{ bal.material_label }}</strong></td>
+<td>{{ bal.size_label }}</td>
+<td class="number">{{ bal.qty }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="3" class="empty-state">No finished goods in stock.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PERIOD</span><h2>Period totals</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Received in period</span></div><span class="metric-value">{{ p_rec }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Issued in period</span></div><span class="metric-value">{{ p_iss }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Returned in period</span></div><span class="metric-value">{{ p_ret }}</span></div>
+</div></section>
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button><a class="button button-secondary" href="?">Reset</a></div></form>
+{% include 'partials/date_toggles.html' %}</section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">RECEIPTS</span><h2>Accepted arrivals from production</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Material</th><th class="number">Bags received</th><th>Reference</th><th>Received by</th></tr></thead>
+<tbody>
+{% for r in receipts %}
+{% if r.status == 'accepted' %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ r.date }}</td>
+<td><span class="status-pill">{{ r.material_type|upper }} {{ r.product_size }}</span></td>
+<td class="number">{{ r.qty_received }}</td>
+<td>{{ r.packaging_ref }}</td>
+<td>{{ r.received_by.full_name|default:"—" }}</td>
+</tr>
+{% endif %}
+{% empty %}
+<tr><td colspan="6" class="empty-state">No accepted arrivals found for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ISSUANCES</span><h2>Goods dispatched</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Material</th><th class="number">Bags issued</th><th>Buyer</th><th>Status</th></tr></thead>
+<tbody>
+{% for i in issuances %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ i.date }}</td>
+<td><span class="status-pill">{{ i.material_type|upper }} {{ i.product_size }}</span></td>
+<td class="number">{{ i.qty_issued }}</td>
+<td><strong>{{ i.buyer_name|default:i.get_channel_display }}</strong></td>
+<td>{% if i.status == 'pending' and i.channel == 'company' %}{% if i.approver_id == current_user.id or current_user.role == 'md' %}<form method="post" action="{% url 'finished_store:acknowledge_issuance' i.id %}">{% csrf_token %}<input type="hidden" name="action" value="accept"><button class="button button-primary" type="submit">Accept handshake</button></form>{% else %}<span class="status-pill">Pending handshake</span>{% endif %}{% else %}<span class="status-pill">{{ i.get_status_display }}</span>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No dispatches found for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

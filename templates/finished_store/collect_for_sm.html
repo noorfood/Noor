@@ -1,126 +1,28 @@
-{% extends 'base.html' %}
-{% block title %}Record Handover to SM — Noor Foods{% endblock %}
-{% block nav_fg_sm_coll %}active{% endblock %}
-
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Handover to SM — Noor Foods{% endblock %}{% block nav_finished %}active{% endblock %}{% block breadcrumb %}Record Handover to SM{% endblock %}
 {% block content %}
-{# Standardized Form Page Styles from global context #}
-
-<div class="page-hero" style="background: linear-gradient(135deg, var(--navy), #1e293b);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8;">🛡 Store Handover</span>
-            <h1 class="hero-title">Release Goods to SM</h1>
-            <p class="hero-subtitle">Initiate a formal release record for Sales Manager acknowledgment.</p>
-        </div>
-    </div>
-</div>
-
-{% if error %}
-<div class="action-bar-modern" style="background: #fff1f2; border-left: 5px solid var(--rose); margin-bottom: 2.5rem;">
-    <div style="color: #9f1239; font-weight: 700;">⚠ {{ error }}</div>
-</div>
-{% endif %}
-
-<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-    <div class="main-form">
-        <div class="card" style="padding: 2.5rem;">
-            <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 2rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
-                Transaction Details
-            </h3>
-            
-            <form method="post">
-                {% csrf_token %}
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="date">Collection Date</label>
-                        <input type="date" name="date" id="date" value="{{ today }}" required class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="sales_manager_id">Sales Manager</label>
-                        <select name="sales_manager_id" id="sales_manager_id" required class="form-input">
-                            <option value="">-- Choose SM --</option>
-                            {% for sm in sales_managers %}
-                            <option value="{{ sm.pk }}">{{ sm.full_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <div class="form-group">
-                        <label class="form-label" for="material_type">Material Category</label>
-                        <select name="material_type" id="material_type" required class="form-input">
-                            {% for val, label in material_choices %}
-                            <option value="{{ val }}">{{ label|upper }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="qty_sacks">Quantity (10kg Sacks)</label>
-                        <input type="number" name="qty_sacks" id="qty_sacks" min="1" required class="form-input" placeholder="0">
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-bottom: 2.5rem;">
-                    <label class="form-label" for="notes">Logistics Remarks</label>
-                    <textarea name="notes" id="notes" class="form-input" rows="4" placeholder="Specify vehicle details, driver name, or any specific logistics info..."></textarea>
-                </div>
-
-                <div style="display: flex; gap: 1.25rem; padding-top: 2rem; border-top: 1px solid var(--slate-100);">
-                    <button type="submit" class="btn-modern btn-modern-primary" style="flex: 1; padding: 1rem;">
-                        🔒 Record & Initiate Handshake
-                    </button>
-                    <a href="{% url 'finished_store:list' %}" class="btn-modern" style="padding: 1rem 1.5rem; background: var(--slate-100); color: var(--slate-600);">
-                        Cancel
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Live Inventory -->
-        <div class="card" style="padding: 1.5rem; background: var(--slate-50);">
-            <h4 style="font-size: 0.75rem; font-weight: 800; color: var(--slate-500); margin-bottom: 1.25rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                📦 Store Balance (Live)
-            </h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; background: white; border-radius: 10px; border: 1px solid var(--slate-200);">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--slate-600);">MAIZE 10kg</span>
-                    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--navy); font-size: 1.1rem;">{{ balances.maize }}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; background: white; border-radius: 10px; border: 1px solid var(--slate-200);">
-                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--slate-600);">WHEAT 10kg</span>
-                    <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--navy); font-size: 1.1rem;">{{ balances.wheat }}</span>
-                </div>
-            </div>
-            <p style="font-size: 0.75rem; color: var(--slate-400); margin-top: 1rem; line-height: 1.4;">
-                Balances represent verified stock physically present in the registry.
-            </p>
-        </div>
-
-        <!-- Handshake Protocol -->
-        <div class="card" style="padding: 1.5rem; border-left: 4px solid #38bdf8; background: #f0f9ff;">
-            <h4 style="font-size: 0.75rem; font-weight: 800; color: #0369a1; margin-bottom: 0.75rem; text-transform: uppercase;">
-                🛡 Handshake Protocol
-            </h4>
-            <p style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin: 0;">
-                Released stock is marked as <strong>Pending</strong>. SM verification is required before permanent deduction from registry.
-            </p>
-        </div>
-
-        <!-- Identity -->
-        <div class="card" style="padding: 1.25rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);">
-                    {{ current_user.full_name|slice:":1" }}
-                </div>
-                <div>
-                    <div style="font-size: 0.9rem; font-weight: 800; color: var(--navy);">{{ current_user.full_name }}</div>
-                    <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">{{ current_user.role }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="page-heading"><div><div class="eyebrow">FINISHED GOODS</div><h1>Record handover to sales manager</h1></div><div><a class="button button-secondary" href="{% url 'finished_store:list' %}">View records</a></div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STOCK</span><h2>10 kg sacks in store</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize sacks</span></div><span class="metric-value">{{ balances.maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat sacks</span></div><span class="metric-value">{{ balances.wheat }}</span></div>
+</div></section>
+<section class="panel form-panel"><div class="form-heading"><h2>Handover details</h2></div>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_sm">Sales manager</label><select id="id_sm" name="sales_manager_id" required>
+{% for sm in sales_managers %}
+<option value="{{ sm.pk }}">{{ sm.full_name }}</option>
+{% endfor %}
+</select></div>
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material_type" required>
+{% for val, label in material_choices %}
+<option value="{{ val }}">{{ label }}</option>
+{% endfor %}
+</select></div>
+<div class="field"><label for="id_qty">Number of 10 kg sacks</label><input type="number" id="id_qty" name="qty_sacks" min="1" required></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Record handover</button><a class="button button-quiet" href="{% url 'finished_store:list' %}">Cancel</a></div></form></section>
 {% endblock %}

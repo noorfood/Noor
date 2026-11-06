@@ -241,7 +241,10 @@ class PackagingBatch(models.Model):
 
 
 class BrandSale(models.Model):
-    """Waste/pill-back seeds (brand) sold per sack by General Manager."""
+    """Waste/pill-back seeds (brand) sold per sack by the raw store officer.
+    The MD moved bran-sale recording from the GM to the raw store officer
+    (2026-11-06). Bran on hand is tracked by BranReceipt below: bran
+    received from milling minus bran sold here."""
     PAYMENT_CHOICES = [
         ('cash', 'Cash'),
         ('transfer', 'Transfer'),
@@ -257,7 +260,7 @@ class BrandSale(models.Model):
     amount_cash = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     amount_transfer = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     recorded_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='brand_sales',
-                                    limit_choices_to={'role': 'manager'})
+                                    limit_choices_to={'role__in': ['manager', 'store_officer']})
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_locked = models.BooleanField(default=True)
@@ -273,3 +276,27 @@ class BrandSale(models.Model):
     def __str__(self):
         return (f"Brand Sale #{self.pk} | {self.material_type} × {self.qty_sacks} sacks"
                 f" | ₦{self.total_amount} | {self.date}")
+
+
+class BranReceipt(models.Model):
+    """Bran sacks received by the raw store officer from milling.
+    Bran produced was never recorded before, so the on-hand bran
+    balance is receipts minus sales — nothing is derived or invented.
+    Bran sales recorded before receipts existed show as a negative
+    opening balance until the first receipt is recorded."""
+    date = models.DateField()
+    material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES)
+    qty_sacks = models.PositiveIntegerField(help_text='Number of brand sacks received')
+    received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='bran_receipts',
+                                    limit_choices_to={'role': 'store_officer'})
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_locked = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'production_bran_receipt'
+        ordering = ['-date', '-created_at']
+
+    def __str__(self):
+        return (f"Bran Receipt #{self.pk} | {self.material_type} × {self.qty_sacks} sacks"
+                f" | {self.date}")

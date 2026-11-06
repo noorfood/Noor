@@ -1,370 +1,100 @@
-{% extends 'base.html' %}
-{% block title %}Record Sales Result{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Sales Result{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Record Sales Result{% endblock %}
 {% block content %}
-
-<style>
-  .hero-card {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
-    color: white;
-    padding: 2.5rem;
-    border-radius: 20px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.5rem; display: block; }
-  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
-  .hero-sub { color: #93c5fd; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 650px; }
-
-  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
-  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
-
-  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem; }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-  }
-  .form-grid .full { grid-column: 1 / -1; }
-  @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
-
-  .form-group label {
-    display: block;
-    font-size: .85rem;
-    font-weight: 700;
-    color: #475569;
-    margin-bottom: .5rem;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-  }
-  .form-control {
-    width: 100%;
-    box-sizing: border-box;
-    padding: .85rem 1.1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    font-size: 1rem;
-    color: #1e293b;
-    transition: all 0.2s;
-    background: #f8fafc;
-  }
-  .form-control:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59,130,246,.1); }
-
-  .info-box {
-    background: #f0fdf4;
-    border: 1.5px solid #86efac;
-    border-radius: 10px;
-    padding: 1.25rem;
-    font-size: .95rem;
-    color: #14532d;
-  }
-  .info-box.warn {
-    background: #fffbeb;
-    border-color: #fcd34d;
-    color: #92400e;
-  }
-  
-  .submit-btn {
-    background: #1e3a5f;
-    color: white;
-    border: none;
-    padding: 1rem 2.5rem;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    box-shadow: 0 4px 12px rgba(30,58,95,0.2);
-  }
-  .submit-btn:hover { background: #0f172a; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(30,58,95,0.3); }
-
-  .cancel-link { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; margin-left: 0.5rem; }
-  .cancel-link:hover { color: #1e293b; }
-  
-  .error-box {
-    background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px;
-    padding: 1rem 1.5rem; color: #be123c; margin-bottom: 2rem; font-weight: 600;
-    display: flex; align-items: center; gap: 0.75rem;
-  }
-</style>
-
-<div class="page-hero" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); margin-bottom: 3rem;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">📊 Sales Results</span>
-            <h1 class="hero-title" style="color: #fff;">Record Sales Result</h1>
-            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">Log daily sales conversions and money collected from team members.</p>
-        </div>
-    </div>
+<div class="page-heading"><div><div class="eyebrow">SALES RESULTS</div><h1>Record sales result</h1></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Daily result log</h2></div>
+<form method="post" id="salesResultForm">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="salespersonSelect">Team member</label><select name="sales_person_id" id="salespersonSelect" required>
+<option value="">Select team member</option>
+{% for sp in salespersons %}
+<option value="{{ sp.pk }}" data-maize="{{ sp.maize_holding }}" data-wheat="{{ sp.wheat_holding }}" data-mcomm="{{ sp.maize_comm }}" data-wcomm="{{ sp.wheat_comm }}" data-channel="{{ sp.channel }}" {% if selected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>[{{ sp.get_channel_display }}] {{ sp.name }}</option>
+{% empty %}<option disabled>No team members registered yet.</option>{% endfor %}
+</select></div>
+<div class="field"><label for="materialSelect">Material</label><select name="material_type" id="materialSelect" required>
+<option value="">Select material</option>
+<option value="maize">Maize (10kg sacks)</option>
+<option value="wheat">Wheat (10kg sacks)</option>
+</select></div>
+<div class="field"><label for="qtySold">Sacks sold (10kg)</label><input type="number" name="qty_sold" id="qtySold" min="0" value="0" required></div>
+<div class="field"><label for="qtyPiecesSold">Pieces sold (1kg)</label><input type="number" name="qty_pieces_sold" id="qtyPiecesSold" min="0" value="0" required></div>
+<div class="field"><label for="qtyReturned">Returned sacks (10kg) <span class="optional">Unsold</span></label><input type="number" name="qty_returned" id="qtyReturned" min="0" value="0"></div>
+<div class="field"><label for="qtyPiecesReturned">Returned pieces (1kg) <span class="optional">Unsold</span></label><input type="number" name="qty_pieces_returned" id="qtyPiecesReturned" min="0" value="0"></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea name="notes" id="id_notes" rows="2"></textarea></div>
+<div class="field field-wide">
+<div class="notice">Expected money calculation: Total value (MD price) <span id="calcTotalValue">₦0.00</span> · Minus commission (<span id="calcCommPct">0</span>%): <span id="calcCommVal">-₦0.00</span> · Expected money return: <span id="calcNetExpected">₦0.00</span></div>
 </div>
-
-{% if error %}
-<div class="error-box"><span>⚠️</span> {{ error }}</div>
-{% endif %}
-
-<div class="layout-grid">
-
-  {# ── Main Form ── #}
-  <div class="card">
-    <h3 class="card-title">📝 Daily Result Log</h3>
-    <form method="post" id="salesResultForm">
-      {% csrf_token %}
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>Date</label>
-          <input type="date" name="date" id="date" value="{{ today }}" required class="form-control">
-        </div>
-
-        <div class="form-group">
-          <label>Team Member</label>
-          <select name="sales_person_id" id="salespersonSelect" required class="form-control">
-            <option value="">-- Select Team Member --</option>
-            {% for sp in salespersons %}
-            <option value="{{ sp.pk }}"
-              data-maize="{{ sp.maize_holding }}"
-              data-wheat="{{ sp.wheat_holding }}"
-              data-mcomm="{{ sp.maize_comm }}"
-              data-wcomm="{{ sp.wheat_comm }}"
-              data-channel="{{ sp.channel }}"
-              {% if selected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>
-              [{{ sp.get_channel_display }}] {{ sp.name }}
-            </option>
-            {% empty %}
-            <option disabled>No team members registered yet.</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Material</label>
-          <select name="material_type" id="materialSelect" required class="form-control">
-            <option value="">-- Select Material --</option>
-            <option value="maize">Maize (10kg sacks)</option>
-            <option value="wheat">Wheat (10kg sacks)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Sacks Sold (10kg)</label>
-          <input type="number" name="qty_sold" id="qtySold" min="0" value="0" required class="form-control"
-                 placeholder="e.g. 10">
-        </div>
-
-        <div class="form-group">
-          <label>Pieces Sold (1kg)</label>
-          <input type="number" name="qty_pieces_sold" id="qtyPiecesSold" min="0" value="0" required class="form-control"
-                 placeholder="e.g. 5">
-        </div>
-
-        <div class="form-group">
-          <label>Returned Sacks (10kg) <span class="text-slate-400 font-normal">(Unsold)</span></label>
-          <input type="number" name="qty_returned" id="qtyReturned" min="0" value="0" class="form-control"
-                 placeholder="e.g. 2">
-        </div>
-
-        <div class="form-group">
-          <label>Returned Pieces (1kg) <span class="text-slate-400 font-normal">(Unsold)</span></label>
-          <input type="number" name="qty_pieces_returned" id="qtyPiecesReturned" min="0" value="0" class="form-control"
-                 placeholder="e.g. 0">
-        </div>
-
-        <div class="form-group full">
-          <label>Notes <span class="text-slate-400 font-normal" style="font-size:.8rem;">(optional)</span></label>
-          <textarea name="notes" class="form-control" rows="2"
-            placeholder="e.g. Sold 8 out of 10 sacks. Returned remaining."></textarea>
-        </div>
-
-        <div class="form-group full">
-          <div class="info-box bg-info-soft text-blue-heavy" style="font-size:.85rem; border-color: #3b82f6;">
-            <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 0.95rem;">💡 Expected Money Calculation</div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-              <span>Total Value (MD Price):</span>
-              <span id="calcTotalValue" style="font-weight:600;">₦0.00</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem; color: #dc2626;">
-              <span>Minus Commission (<span id="calcCommPct">0</span>%):</span>
-              <span id="calcCommVal" style="font-weight:600;">-₦0.00</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #bfdbfe; font-size: 1rem; font-weight: 800;">
-              <span>Expected Money Return:</span>
-              <span id="calcNetExpected">₦0.00</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group full" style="margin-top: 0.5rem;">
-          <label style="font-size: 1rem; color: #0f172a;">Money Handed Over (₦)</label>
-          <input type="number" step="0.01" name="amount_returned" id="amountReturned" min="0" value="0" required class="form-control"
-                 style="font-size: 1.2rem; font-weight: 700; background: #f8fafc; border-color: #94a3b8;"
-                 placeholder="How much cash/transfer did they actually give you?">
-          <div id="outstandingWarning" style="color: #dc2626; font-size: 0.8rem; margin-top: 0.4rem; font-weight: 600; display: none;">
-            ⚠️ This is less than the expected amount. The difference will be logged as their outstanding debt.
-          </div>
-        </div>
-
-        <div class="form-group full" style="display:flex;align-items:center;gap:1rem;margin-top:.5rem;">
-          <button type="submit" class="submit-btn">✓ Record Sales Result</button>
-          <a href="{% url 'sales:sp_performance' %}" class="cancel-link">Cancel</a>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  {# ── Sidebar: live stock info ── #}
-  <div>
-    <div class="form-card" id="stockSidebar">
-      <div style="font-size:.85rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
-        📦 Team Member's Holding
-      </div>
-      <div id="holdingDisplay" style="color:#94a3b8;font-size:.9rem;">
-        Select a team member and material to see their current stock.
-      </div>
-    </div>
-
-    <div class="form-card" style="margin-top:1rem;">
-      <div style="font-size:.85rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">
-        📋 All Team Members
-      </div>
-      <div style="font-size:.85rem;">
-        {% for sp in salespersons %}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;border-bottom:1px solid #f1f5f9;">
-          <div>
-            <span class="font-bold text-blue-heavy">{{ sp.name }}</span>
-            <span class="badge-soft-neutral ml-4" style="font-size:.75rem; padding:.1rem .5rem;">{{ sp.get_channel_display }}</span>
-          </div>
-          <div style="text-align:right;">
-            {% if sp.maize_holding > 0 %}
-            <span class="badge-soft badge-soft-info mr-2" style="font-size:.75rem; font-weight:700; padding:.1rem .5rem;">
-              🌽 {{ sp.maize_holding }}
-            </span>
-            {% endif %}
-            {% if sp.wheat_holding > 0 %}
-            <span class="badge-soft badge-soft-warning" style="font-size:.75rem; font-weight:700; padding:.1rem .5rem;">
-              🌾 {{ sp.wheat_holding }}
-            </span>
-            {% endif %}
-            {% if sp.maize_holding == 0 and sp.wheat_holding == 0 %}
-            <span style="color:#94a3b8;font-size:.75rem;">—</span>
-            {% endif %}
-          </div>
-        </div>
-        {% empty %}
-        <div style="color:#94a3b8;">No team members yet.</div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
+<div class="field field-wide"><label for="amountReturned">Money handed over (₦)</label><input type="number" step="0.01" name="amount_returned" id="amountReturned" min="0" value="0" required>
+<div id="outstandingWarning" class="field-error" hidden>This is less than the expected amount. The difference will be logged as outstanding.</div>
+<div id="submitError" class="field-error" hidden>Enter at least one sack or piece sold or returned.</div></div>
 </div>
-
+<div class="form-actions"><button class="button button-primary" type="submit">Record sales result</button><a class="button button-secondary" href="{% url 'sales:sp_performance' %}">Cancel</a></div>
+</form></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">HOLDING</span><h2>Team member holding</h2></div></div>
+<div id="holdingDisplay" class="simple-empty">Select a team member and material to see their current stock.</div>
+<div class="record-list">
+{% for sp in salespersons %}
+<div class="record-row"><div><strong>{{ sp.name }}</strong><span>{{ sp.get_channel_display }}</span></div><div>{% if sp.maize_holding > 0 %}<span class="status-pill">Maize {{ sp.maize_holding }}</span>{% endif %} {% if sp.wheat_holding > 0 %}<span class="status-pill">Wheat {{ sp.wheat_holding }}</span>{% endif %}{% if sp.maize_holding == 0 and sp.wheat_holding == 0 %}<span>—</span>{% endif %}</div></div>
+{% empty %}<div class="simple-empty">No team members yet.</div>{% endfor %}
+</div></section>
 <script>
-const spSelect = document.getElementById('salespersonSelect');
-const matSelect = document.getElementById('materialSelect');
-const holdingDisplay = document.getElementById('holdingDisplay');
-const qtySold = document.getElementById('qtySold');
-
-const qtyPiecesSold = document.getElementById('qtyPiecesSold');
-const amountReturned = document.getElementById('amountReturned');
-const outstandingWarning = document.getElementById('outstandingWarning');
-
-// Prices passed from backend context
-const maizePriceSack = parseFloat("{{ maize_price|default:'0' }}");
-const maizePricePiece = maizePriceSack / 10;
-const wheatPriceSack = parseFloat("{{ wheat_price|default:'0' }}");
-const wheatPricePiece = wheatPriceSack / 10;
-
-function calculateExpected() {
-  const opt = spSelect.options[spSelect.selectedIndex];
-  const mat = matSelect.value;
-  
-  if (!opt || !opt.value || !mat) return;
-
-  const commPct = mat === 'maize' ? parseFloat(opt.dataset.mcomm || 0) : parseFloat(opt.dataset.wcomm || 0);
-  const sackPrice = mat === 'maize' ? maizePriceSack : wheatPriceSack;
-  const piecePrice = mat === 'maize' ? maizePricePiece : wheatPricePiece;
-
-  const sacks = parseInt(qtySold.value || 0);
-  const pieces = parseInt(qtyPiecesSold.value || 0);
-
-  const gross = (sacks * sackPrice) + (pieces * piecePrice);
-  const commAmount = gross * (commPct / 100);
-  const netDue = gross - commAmount;
-
-  document.getElementById('calcCommPct').innerText = commPct;
-  document.getElementById('calcTotalValue').innerText = '₦' + gross.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  document.getElementById('calcCommVal').innerText = '-₦' + commAmount.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-  document.getElementById('calcNetExpected').innerText = '₦' + netDue.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-  const handedOver = parseFloat(amountReturned.value || 0);
-  if (handedOver < (netDue - 0.01)) {
-    outstandingWarning.style.display = 'block';
-  } else {
-    outstandingWarning.style.display = 'none';
-  }
+const spSelect=document.getElementById('salespersonSelect');
+const matSelect=document.getElementById('materialSelect');
+const holdingDisplay=document.getElementById('holdingDisplay');
+const qtySold=document.getElementById('qtySold');
+const qtyPiecesSold=document.getElementById('qtyPiecesSold');
+const amountReturned=document.getElementById('amountReturned');
+const outstandingWarning=document.getElementById('outstandingWarning');
+const maizePriceSack=parseFloat("{{ maize_price|default:'0' }}");
+const maizePricePiece=maizePriceSack/10;
+const wheatPriceSack=parseFloat("{{ wheat_price|default:'0' }}");
+const wheatPricePiece=wheatPriceSack/10;
+function money(n){return '₦'+n.toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function calculateExpected(){
+  const opt=spSelect.options[spSelect.selectedIndex];
+  const mat=matSelect.value;
+  if(!opt||!opt.value||!mat)return;
+  const commPct=mat==='maize'?parseFloat(opt.dataset.mcomm||0):parseFloat(opt.dataset.wcomm||0);
+  const sackPrice=mat==='maize'?maizePriceSack:wheatPriceSack;
+  const piecePrice=mat==='maize'?maizePricePiece:wheatPricePiece;
+  const gross=(parseInt(qtySold.value||0)*sackPrice)+(parseInt(qtyPiecesSold.value||0)*piecePrice);
+  const commAmount=gross*(commPct/100);
+  const netDue=gross-commAmount;
+  document.getElementById('calcCommPct').innerText=commPct;
+  document.getElementById('calcTotalValue').innerText=money(gross);
+  document.getElementById('calcCommVal').innerText='-'+money(commAmount);
+  document.getElementById('calcNetExpected').innerText=money(netDue);
+  const handedOver=parseFloat(amountReturned.value||0);
+  outstandingWarning.hidden=!(handedOver<(netDue-0.01));
 }
-
-function updateHolding() {
-  const opt = spSelect.options[spSelect.selectedIndex];
-  const mat = matSelect.value;
+function updateHolding(){
+  const opt=spSelect.options[spSelect.selectedIndex];
+  const mat=matSelect.value;
   calculateExpected();
-
-  if (!opt || !opt.value || !mat) {
-    holdingDisplay.innerHTML = '<span style="color:#94a3b8;">Select a team member and material to see their current stock.</span>';
-    return;
-  }
-
-  const holding = mat === 'maize' ? parseFloat(opt.dataset.maize || 0) : parseFloat(opt.dataset.wheat || 0);
-  const matLabel = mat === 'maize' ? '🌽 Maize' : '🌾 Wheat';
-  const color = holding > 0 ? '#1e3a5f' : '#dc2626';
-  const bg   = holding > 0 ? '#dbeafe' : '#fee2e2';
-
-  // Calculate sacks and pieces for display
-  const sacks = Math.floor(holding);
-  const pieces = Math.round((holding - sacks) * 10);
-
-  holdingDisplay.innerHTML = `
-    <div style="margin-bottom:.5rem;">
-      <strong style="font-size:1.1rem;color:${color};">${opt.text.split('—')[0].trim()}</strong>
-      currently holds:
-    </div>
-    <div style="padding:.75rem 1rem;background:${bg};border-radius:8px;font-size:1.3rem;font-weight:800;color:${color};text-align:center;">
-      ${sacks} sack${sacks !== 1 ? 's' : ''} 
-      ${pieces > 0 ? `<br><small style="font-size:0.9rem;">& ${pieces} piece${pieces !== 1 ? 's' : ''}</small>` : ''}
-    </div>
-    <div style="text-align:center; font-size:0.8rem; color:${color}; margin-top:0.4rem;">
-      of ${matLabel}
-    </div>
-    ${holding === 0 ? '<div style="margin-top:.5rem;font-size:.8rem;color:#dc2626;">⚠️ This member has no stock of this material.</div>' : ''}
-  `;
-
-  // We no longer strictly peg max attribute to sold input, because they might be returning things too
+  if(!opt||!opt.value||!mat){holdingDisplay.textContent='Select a team member and material to see their current stock.';return;}
+  const holding=mat==='maize'?parseFloat(opt.dataset.maize||0):parseFloat(opt.dataset.wheat||0);
+  const sacks=Math.floor(holding);
+  const pieces=Math.round((holding-sacks)*10);
+  let text=opt.text+' currently holds: '+sacks+' sack'+(sacks!==1?'s':'');
+  if(pieces>0)text+=' and '+pieces+' piece'+(pieces!==1?'s':'');
+  text+=' of '+mat+'.';
+  if(holding===0)text+=' This member has no stock of this material.';
+  holdingDisplay.textContent=text;
 }
-
-document.getElementById('salesResultForm').addEventListener('submit', function(e) {
-  const sacksSold = parseInt(qtySold.value || 0);
-  const piecesSold = parseInt(qtyPiecesSold.value || 0);
-  const sacksRet = parseInt(document.getElementById('qtyReturned').value || 0);
-  const piecesRet = parseInt(document.getElementById('qtyPiecesReturned').value || 0);
-  
-  if (sacksSold === 0 && piecesSold === 0 && sacksRet === 0 && piecesRet === 0) {
-    e.preventDefault();
-    alert('Please enter at least one sack or piece sold OR returned.');
-  }
+document.getElementById('salesResultForm').addEventListener('submit',function(e){
+  const sacksSold=parseInt(qtySold.value||0);
+  const piecesSold=parseInt(qtyPiecesSold.value||0);
+  const sacksRet=parseInt(document.getElementById('qtyReturned').value||0);
+  const piecesRet=parseInt(document.getElementById('qtyPiecesReturned').value||0);
+  if(sacksSold===0&&piecesSold===0&&sacksRet===0&&piecesRet===0){e.preventDefault();document.getElementById('submitError').hidden=false;}
 });
-
-spSelect.addEventListener('change', updateHolding);
-matSelect.addEventListener('change', updateHolding);
-qtySold.addEventListener('input', calculateExpected);
-qtyPiecesSold.addEventListener('input', calculateExpected);
-amountReturned.addEventListener('input', calculateExpected);
-
-window.addEventListener('load', updateHolding);
+spSelect.addEventListener('change',updateHolding);
+matSelect.addEventListener('change',updateHolding);
+qtySold.addEventListener('input',calculateExpected);
+qtyPiecesSold.addEventListener('input',calculateExpected);
+amountReturned.addEventListener('input',calculateExpected);
+window.addEventListener('load',updateHolding);
 </script>
-
 {% endblock %}

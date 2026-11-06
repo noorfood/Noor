@@ -1,130 +1,61 @@
-{% extends 'base.html' %}
-{% block title %}Raw Material Stock Log — Noor Foods{% endblock %}
-{% block nav_proc_list %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Raw Material Stock Log — Noor Foods{% endblock %}{% block nav_receive %}active{% endblock %}{% block breadcrumb %}Raw Material Stock Log{% endblock %}
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #065f46 0%, #064e3b 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">📑 Stock List</span>
-            <h1 class="hero-title" style="color: #fff;">Raw Material Record</h1>
-            <p class="hero-subtitle" style="color: rgba(255,255,255,0.7);">History of bags received from suppliers and bags given to the cleaner.</p>
-        </div>
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Stock Ledger View: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
+<div class="page-heading"><div><div class="eyebrow">RAW MATERIALS</div><h1>Raw material record</h1></div><div>
+{% if current_user.role == 'store_officer' or current_user.role == 'manager' %}<a class="button button-primary" href="{% url 'procurement:receive' %}">Receive stock</a>
+<a class="button button-secondary" href="{% url 'procurement:issue' %}">Issue to cleaner</a>{% endif %}
+{% if current_user.role == 'md' %}<span class="notice">Read-only view for management.</span>{% else %}<a class="button button-secondary" href="{% url 'procurement:dashboard' %}">Back to dashboard</a>{% endif %}
+</div></div>
 {% if current_user.is_manager_or_above %}
-<div class="balance-grid" style="margin-bottom: 3rem;">
-  <div class="balance-card" style="border-left: 4px solid var(--amber);">
-    <div class="balance-label" style="color: var(--amber);">🌽 Maize in Store</div>
-    <div class="balance-value">{{ balance_maize }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Verified Bags in Store</div>
-  </div>
-  <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
-    <div class="balance-label" style="color: #8b5cf6;">🌾 Wheat in Store</div>
-    <div class="balance-value">{{ balance_wheat }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Verified Bags in Store</div>
-  </div>
-  {% if f_from or f_to %}
-  <div class="balance-card" style="border-left: 4px solid var(--emerald);">
-    <div class="balance-label" style="color: var(--emerald);">Period Change</div>
-    <div class="balance-value" style="color: var(--emerald);">
-        +{{ p_rec_m|add:p_rec_w }} / -{{ p_iss_m|add:p_iss_w }}
-    </div>
-    <div style="font-size: 0.75rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 700;">Rec vs Issued in Period</div>
-  </div>
-  {% endif %}
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STORE</span><h2>Store balances</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags</span></div><span class="metric-value">{{ balance_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags</span></div><span class="metric-value">{{ balance_wheat }}</span></div>
+{% if f_from or f_to %}
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Period change</span></div><span class="metric-value">+{{ p_rec_m|add:p_rec_w }} / -{{ p_iss_m|add:p_iss_w }}</span><span class="metric-label">Received / issued in period</span></div>
 {% endif %}
-
-<div class="action-bar-modern">
-  <div style="display:flex; gap:0.75rem; align-items:center;">
-    <span style="font-weight:800; color:var(--slate-800); margin-right: 0.5rem;">⚡ Quick Actions:</span>
-    <a href="{% url 'procurement:receive' %}" class="btn-modern btn-modern-primary">+ Receive New Stock</a>
-    <a href="{% url 'procurement:issue' %}" class="btn-modern" style="background:var(--slate-100); color:var(--slate-700);">Give to Cleaner →</a>
-  </div>
-</div>
-
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
-  <div>
-    <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📥 Bags Received from Suppliers</h3>
-  </div>
-</div>
-<div class="table-wrapper">
-  <table class="premium-table">
-    <thead>
-      <tr>
-        <th>S/N</th><th>Date</th><th>Material</th><th>Supplier</th><th class="num">Bags</th><th class="num">Weight</th><th>Cost</th><th>Received By</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in receipts %}
-      <tr>
-        <td style="font-family:monospace; color:var(--slate-400);">{{ forloop.counter }}</td>
-        <td>{{ r.date }}</td>
-        <td><span class="badge-soft {% if r.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ r.material_type|upper }}</span></td>
-        <td><strong>{{ r.supplier }}</strong></td>
-        <td class="num" style="color:var(--emerald); font-weight: 800;">+{{ r.num_bags }}</td>
-        <td class="num" style="color:var(--slate-500);">{{ r.approx_weight_kg|floatformat:0 }}kg</td>
-        <td>
-          {% if r.cost_status == 'pending' %}
-            <span class="badge-soft badge-soft-warning">No Price</span>
-          {% else %}
-            <div style="font-weight:800; color:var(--navy);">₦{{ r.total_cost|floatformat:0 }}</div>
-          {% endif %}
-        </td>
-        <td style="font-size:0.85rem;">{{ r.received_by.full_name }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8" style="text-align:center; padding: 3rem; color:var(--slate-400);">No receipts found for this period.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1rem; margin-top: 3rem;">
-  <h3 style="font-size:1.2rem; font-weight:800; color:var(--navy); margin:0;">📤 Bags Sent to Cleaner</h3>
-</div>
-<div class="table-wrapper">
-  <table class="premium-table">
-    <thead>
-      <tr>
-        <th>S/N</th><th>Date</th><th>Material</th><th class="num">Bags</th><th>Given To</th><th>Recorded By</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for i in issuances %}
-      <tr>
-        <td style="font-family:monospace; color:var(--slate-400);">{{ forloop.counter }}</td>
-        <td>{{ i.date }}</td>
-        <td><span class="badge-soft {% if i.material_type == 'maize' %}badge-soft-warning{% else %}badge-soft-success{% endif %}">{{ i.material_type|upper }}</span></td>
-        <td class="num" style="color:var(--rose); font-weight: 800;">-{{ i.num_bags_issued }}</td>
-        <td><strong>{{ i.issued_to }}</strong></td>
-        <td>{{ i.issued_by.full_name }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6" style="text-align:center; padding: 3rem; color:var(--slate-400);">No issuances found for this period.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-<div style="margin-top:2rem;">
-  <a href="{% url 'procurement:dashboard' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600);">← Back to Dashboard</a>
-</div>
+</div></section>
+{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button><a class="button button-secondary" href="?">Reset</a></div></form>
+{% include 'partials/date_toggles.html' %}</section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">RECEIPTS</span><h2>Bags received from suppliers</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Material</th><th>Supplier</th><th class="number">Bags</th><th class="number">Weight kg</th><th>Cost</th><th>Received by</th></tr></thead>
+<tbody>
+{% for r in receipts %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ r.date }}</td>
+<td><span class="status-pill">{{ r.material_type|upper }}</span></td>
+<td><strong>{{ r.supplier }}</strong></td>
+<td class="number">{{ r.num_bags }}</td>
+<td class="number">{% if r.approx_weight_kg %}{{ r.approx_weight_kg|floatformat:0 }} kg{% else %}—{% endif %}</td>
+<td>{% if r.cost_status == 'pending' %}<span class="status-pill">No price</span>{% if current_user.role == 'md' %} <a class="button button-secondary" href="{% url 'procurement:set_cost' r.pk %}">Set cost</a>{% endif %}{% else %}₦{{ r.total_cost|floatformat:0 }}{% endif %}</td>
+<td>{{ r.received_by.full_name }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="8" class="empty-state">No receipts found for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ISSUANCES</span><h2>Bags sent to cleaner</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Material</th><th class="number">Bags issued</th><th>Issued to</th><th>Issued by</th></tr></thead>
+<tbody>
+{% for i in issuances %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ i.date }}</td>
+<td><span class="status-pill">{{ i.material_type|upper }}</span></td>
+<td class="number">{{ i.num_bags_issued }}</td>
+<td>{{ i.issued_to }}</td>
+<td>{{ i.issued_by.full_name }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No issuances found for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

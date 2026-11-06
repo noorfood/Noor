@@ -24,6 +24,9 @@ INSTALLED_APPS = [
     # Project apps
     'accounts',
     'procurement',
+    'operations',
+    'bag_stock',
+    'commerce',
     'cleaning',
     'clean_store',
     'production',
@@ -40,6 +43,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Optimized for Render
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'accounts.session_security.PasswordSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -114,6 +118,8 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    # Render serves the whole site over HTTPS only.
+    SECURE_HSTS_SECONDS = 31536000
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -137,3 +143,18 @@ NOOR_STANDARD_BAG_WEIGHT_KG = 100
 NOOR_DEFAULT_EXPECTED_LOSS_PCT = 20.0
 NOOR_NORMAL_MAX_LOSS_PCT = 13.0
 NOOR_WARNING_MAX_LOSS_PCT = 18.0
+
+# An extra opt-in guard, not a claim of production readiness. Operators must set
+# NOOR_PRODUCTION=True explicitly; independent release gates still apply.
+if os.getenv('NOOR_PRODUCTION', 'False') == 'True':
+    from django.core.exceptions import ImproperlyConfigured
+    if DEBUG:
+        raise ImproperlyConfigured('Production requires DJANGO_DEBUG=False.')
+    if not os.getenv('DJANGO_SECRET_KEY') or len(SECRET_KEY) < 50 or SECRET_KEY == 'noor-foods-secret-key-change-in-production-2024':
+        raise ImproperlyConfigured('Production requires a separately provisioned strong DJANGO_SECRET_KEY.')
+    if not ALLOWED_HOSTS or any(not host.strip() or '*' in host for host in ALLOWED_HOSTS):
+        raise ImproperlyConfigured('Production requires specific DJANGO_ALLOWED_HOSTS.')
+    if DATABASES['default']['ENGINE'] != 'django.db.backends.postgresql':
+        raise ImproperlyConfigured('Production requires PostgreSQL; SQLite is development only.')
+    if not SECURE_SSL_REDIRECT:
+        raise ImproperlyConfigured('Production requires HTTPS redirect.')

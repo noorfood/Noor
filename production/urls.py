@@ -5,8 +5,8 @@ app_name = 'production'
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('milling/new/', views.record_milling, name='record_milling'),
-    path('packaging/new/', views.record_packaging, name='record_packaging'),
+    path('milling/new/', views.legacy_milling_redirect, name='record_milling'),
+    path('packaging/new/', views.legacy_packaging_redirect, name='record_packaging'),
     path('list/', views.list_batches, name='list'),
     path('outstanding/', views.outstanding_view, name='outstanding'),
     path('returns/new/', views.initiate_return, name='initiate_return'),

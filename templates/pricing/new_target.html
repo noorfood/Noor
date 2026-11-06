@@ -1,128 +1,14 @@
-{% extends 'base.html' %}
-{% block title %}Set Sales Target — Noor Foods{% endblock %}
-
-{% block content %}
-<style>
-    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
-    .form-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
-        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
-        transition: all 0.2s;
-    }
-    .form-input:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1); background: #fff; }
-</style>
-
-<div class="page-hero">
-    <div>
-        <span class="hero-badge">📈 Performance Strategy</span>
-        <h1 class="hero-title">Define Performance Target</h1>
-        <p class="hero-subtitle">Assign monthly sales volume goals to a specific Sales Manager.</p>
-    </div>
-</div>
-
-<div class="card" style="max-width: 900px; margin: 0 auto;">
-
-    {% if error %}
-    <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; color: #991b1b; font-size: 0.85rem; font-weight: 600;">
-        ⚠️ {{ error }}
-    </div>
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div>
-                <label class="form-label">Sales Manager</label>
-                <select name="sales_manager_id" class="form-input" required>
-                    <option value="">— Select Personnel —</option>
-                    {% for sm in sales_managers %}
-                    <option value="{{ sm.pk }}">{{ sm.full_name }}</option>
-                    {% empty %}
-                    <option disabled>No active sales managers found</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label class="form-label">Material Type</label>
-                <select name="material_type" class="form-input" required>
-                    <option value="">— Select Category —</option>
-                    {% for val, label in material_choices %}
-                    <option value="{{ val }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div>
-                <label class="form-label">Frequency</label>
-                <select name="target_type" id="targetType" class="form-input" required onchange="toggleFreq()">
-                    <option value="monthly" selected>Monthly Target</option>
-                    <option value="weekly">Weekly Target</option>
-                </select>
-            </div>
-            <div>
-                <label class="form-label">Target Year</label>
-                <input type="number" name="year" value="{{ current_year }}" min="2020" max="2035" class="form-input" required>
-            </div>
-        </div>
-
-        <div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div id="monthGrp">
-                <label class="form-label">Target Month</label>
-                <select name="month" id="monthInput" class="form-input">
-                    <option value="1" {% if current_month == 1 %}selected{% endif %}>January</option>
-                    <option value="2" {% if current_month == 2 %}selected{% endif %}>February</option>
-                    <option value="3" {% if current_month == 3 %}selected{% endif %}>March</option>
-                    <option value="4" {% if current_month == 4 %}selected{% endif %}>April</option>
-                    <option value="5" {% if current_month == 5 %}selected{% endif %}>May</option>
-                    <option value="6" {% if current_month == 6 %}selected{% endif %}>June</option>
-                    <option value="7" {% if current_month == 7 %}selected{% endif %}>July</option>
-                    <option value="8" {% if current_month == 8 %}selected{% endif %}>August</option>
-                    <option value="9" {% if current_month == 9 %}selected{% endif %}>September</option>
-                    <option value="10" {% if current_month == 10 %}selected{% endif %}>October</option>
-                    <option value="11" {% if current_month == 11 %}selected{% endif %}>November</option>
-                    <option value="12" {% if current_month == 12 %}selected{% endif %}>December</option>
-                </select>
-            </div>
-            
-            <div id="weekGrp" style="display: none;">
-                <label class="form-label">Target Week (ISO 1-53)</label>
-                <input type="number" name="week" id="weekInput" min="1" max="53" value="{{ current_week }}" class="form-input">
-            </div>
-
-            <div>
-                <label class="form-label">Target Quantity (Sacks)</label>
-                <input type="number" name="target_qty" min="1" class="form-input" placeholder="e.g. 500" required>
-            </div>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <label class="form-label">Directives / Notes (Optional)</label>
-            <textarea name="notes" class="form-input" rows="3" placeholder="Specific goal context..."></textarea>
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button type="submit" class="btn-modern btn-modern-primary">🚀 Set Performance Goal</button>
-            <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; border: 1px solid var(--slate-300); color: var(--slate-600);">Cancel & Return</a>
-        </div>
-    </form>
-</div>
-
-<script>
-function toggleFreq() {
-    const type = document.getElementById('targetType').value;
-    const mGrp = document.getElementById('monthGrp');
-    const wGrp = document.getElementById('weekGrp');
-    
-    if (type === 'weekly') {
-        mGrp.style.display = 'none';
-        wGrp.style.display = 'block';
-    } else {
-        mGrp.style.display = 'block';
-        wGrp.style.display = 'none';
-    }
-}
-window.addEventListener('load', toggleFreq);
-</script>
+{% extends 'rebuild/base.html' %}{% block title %}Set Sales Target{% endblock %}{% block nav_pricing %}active{% endblock %}{% block breadcrumb %}Set sales target{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">PRICES &amp; COSTS</div><h1>Set sales target</h1></div></div>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Details</h2></div><form method="post" novalidate>{% csrf_token %}<div class="form-grid">
+<div class="field"><label for="id_sales_manager_id">Sales manager *</label><select id="id_sales_manager_id" name="sales_manager_id" required>{% for sm in sales_managers %}<option value="{{ sm.pk }}">{{ sm.full_name }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_material_type">Material *</label><select id="id_material_type" name="material_type" required>{% for val, label in material_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_target_type">Frequency *</label><select id="id_target_type" name="target_type" required><option value="monthly" selected>Monthly</option><option value="weekly">Weekly</option></select></div>
+<div class="field"><label for="id_year">Year *</label><input type="number" id="id_year" name="year" value="{{ current_year }}" required min="2020" max="2035"></div>
+<div class="field"><label for="id_month">Month</label><select id="id_month" name="month"><option value="1" {% if current_month == 1 %}selected{% endif %}>January</option><option value="2" {% if current_month == 2 %}selected{% endif %}>February</option><option value="3" {% if current_month == 3 %}selected{% endif %}>March</option><option value="4" {% if current_month == 4 %}selected{% endif %}>April</option><option value="5" {% if current_month == 5 %}selected{% endif %}>May</option><option value="6" {% if current_month == 6 %}selected{% endif %}>June</option><option value="7" {% if current_month == 7 %}selected{% endif %}>July</option><option value="8" {% if current_month == 8 %}selected{% endif %}>August</option><option value="9" {% if current_month == 9 %}selected{% endif %}>September</option><option value="10" {% if current_month == 10 %}selected{% endif %}>October</option><option value="11" {% if current_month == 11 %}selected{% endif %}>November</option><option value="12" {% if current_month == 12 %}selected{% endif %}>December</option></select></div>
+<div class="field"><label for="id_week">Week</label><input type="number" id="id_week" name="week" value="{{ current_week }}" min="1" max="53"></div>
+<div class="field"><label for="id_target_qty">Target quantity *</label><input type="number" id="id_target_qty" name="target_qty" required min="1"></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Save target</button><a class="button button-quiet" href="{% url 'pricing:targets' %}">Back to targets</a></div></form></section>
 {% endblock %}

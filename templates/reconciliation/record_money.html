@@ -1,116 +1,14 @@
-{% extends 'base.html' %}
-{% block title %}Record Money Receipt — Noor Foods{% endblock %}
-{% block nav_rc_record %}active{% endblock %}
-{% block content %}
+{% extends 'rebuild/base.html' %}{% block title %}Record Money Receipt{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Record money receipt{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">RECONCILIATION</div><h1>Record money receipt</h1></div></div>
 
-{# Standardized Form Page Styles from global context #}
-
-<div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">💰 Financial Hub</span>
-            <h1 class="hero-title">Record Money Receipt</h1>
-            <p class="hero-subtitle">Log physical cash or transfers verified from sales personnel.</p>
-        </div>
-    </div>
-</div>
-
-    <div class="form-body">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="action-bar-modern" style="background: #f0f9ff; border-left: 5px solid var(--blue); margin-bottom: 2.5rem;">
-    <div style="color: #0369a1; font-weight: 500; font-size: 0.9rem;">
-        <strong style="color: var(--navy);">Audit Tip:</strong> Specifying a <strong>Reconciliation Period</strong> enables automated cross-verification against sales logs.
-    </div>
-</div>
-
-{% if error %}
-<div class="action-bar-modern" style="background: #fff1f2; border-left: 5px solid var(--rose); margin-bottom: 2rem;">
-    <div style="color: #9f1239; font-weight: 700;">⚠ Error: {{ error }}</div>
-</div>
-{% endif %}
-
-            <div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2.5rem;">
-    <div class="card" style="padding: 2rem;">
-        <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
-            Receipt Parameters
-        </h3>
-        
-        <form method="post">
-            {% csrf_token %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <label class="form-label" for="date">Date Received</label>
-                    <input type="date" name="date" id="date" value="{{ today }}" required class="form-input">
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="sales_person_id">Personnel Member</label>
-                    <select name="sales_person_id" id="sales_person_id" required class="form-input">
-                        <option value="">Select Member...</option>
-                        {% for sp in sales_persons %}
-                        <option value="{{ sp.pk }}" {% if preselected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>{{ sp.name }} ({{ sp.get_channel_display }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--slate-50); border-radius: 12px; border: 1px solid var(--slate-100);">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="cash_received">Cash (₦)</label>
-                    <input type="number" name="cash_received" id="cash_received" step="0.01" placeholder="0.00" class="form-input" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
-                </div>
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label" for="transfer_received">Transfer (₦)</label>
-                    <input type="number" name="transfer_received" id="transfer_received" step="0.01" placeholder="0.00" class="form-input" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">
-                </div>
-            </div>
-
-            <div style="background: #fffbeb; padding: 1.5rem; border-radius: 16px; border: 1px solid #fef3c7; margin-bottom: 1.5rem;">
-                <h4 style="margin: 0 0 1rem 0; font-size: 0.7rem; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">Reconciliation Correlation (Optional)</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" for="period_start">Start Date</label>
-                        <input type="date" name="period_start" id="period_start" class="form-input">
-                    </div>
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label" for="period_end">End Date</label>
-                        <input type="date" name="period_end" id="period_end" class="form-input">
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 2rem;">
-                <label class="form-label" for="notes">Audit Remarks</label>
-                <textarea name="notes" id="notes" class="form-input" rows="3" placeholder="Additional receipt details..."></textarea>
-            </div>
-
-            <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--slate-100);">
-                <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.8rem 2rem;">
-                    Secure Receipt Record
-                </button>
-                <a href="/reconciliation/dashboard/" class="btn-modern" style="padding: 0.8rem 2rem; background: var(--slate-100); color: var(--slate-600);">
-                    Cancel
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div class="card" style="padding: 1.5rem; background: #f8fafc; border: 1px dashed var(--slate-300);">
-            <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; text-transform: uppercase;">
-                Verification Guide
-            </h4>
-            <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--slate-600); display: flex; flex-direction: column; gap: 0.75rem;">
-                <li>Verify transfer success on banking portal before logging.</li>
-                <li>Count physical cash twice for accuracy.</li>
-                <li>Ensure the personnel name matches the depositor.</li>
-            </ul>
-        </div>
-    </div>
-</div>
-        </form>
-    </div>
-</div>
-
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Details</h2></div><form method="post" novalidate>{% csrf_token %}<div class="form-grid">
+<div class="field"><label for="id_date">Date *</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_sp">Sales person *</label><select id="id_sp" name="sales_person_id" required>{% for sp in sales_persons %}<option value="{{ sp.pk }}" {% if preselected_sp_id == sp.pk|stringformat:"s" %}selected{% endif %}>{{ sp.name }} ({{ sp.get_channel_display }})</option>{% endfor %}</select></div>
+<div class="field"><label for="id_cash">Cash received (₦)</label><input type="number" id="id_cash" name="cash_received" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="id_transfer">Transfer received (₦)</label><input type="number" id="id_transfer" name="transfer_received" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="id_start">Period start</label><input type="date" id="id_start" name="period_start"></div>
+<div class="field"><label for="id_end">Period end</label><input type="date" id="id_end" name="period_end"></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Save receipt</button><a class="button button-quiet" href="{% url 'reconciliation:list' %}">Back to list</a></div></form></section>
 {% endblock %}

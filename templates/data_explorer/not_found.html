@@ -1,0 +1,6 @@
+{% extends 'rebuild/base.html' %}{% block title %}Not found{% endblock %}{% block nav_home %}active{% endblock %}{% block breadcrumb %}Not found{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">DATA EXPLORER</div><h1>Not found</h1></div></div>
+
+<div class="notice">Model "{{ model_name }}" was not found.</div>
+<a class="button button-secondary" href="{% url 'data_explorer:home' %}">Back to data explorer</a>
+{% endblock %}

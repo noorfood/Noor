@@ -1,271 +1,67 @@
-{% extends 'base.html' %}
-{% block title %}Production Dashboard — Noor Foods{% endblock %}
-{% block nav_pr_list %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Production Dashboard — Noor Foods{% endblock %}{% block nav_production %}active{% endblock %}{% block breadcrumb %}Production Dashboard{% endblock %}
 {% block content %}
-{# Standardized Production Styles #}
-<style>
-  .floor-risk-card {
-    background: #fff7ed; border-left: 4px solid #f97316;
-    padding: 1.25rem; border-radius: 16px; margin-bottom: 2rem;
-    display: flex; align-items: center; justify-content: space-between;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
-    transition: all 0.3s ease;
-  }
-  .floor-risk-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15); }
-  
-  .control-card {
-    background: #fff; border: 1px solid #f1f5f9;
-    padding: 1.75rem; border-radius: 20px;
-    display: flex; align-items: center; gap: 1.25rem;
-    text-decoration: none; color: inherit;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .control-card:hover { border-color: #6366f1; transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-
-  .balance-card {
-    background: #ffffff;
-    border-radius: 24px;
-    padding: 1.5rem;
-    border: 1px solid rgba(226, 232, 240, 0.8);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-  .balance-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  }
-  .balance-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    margin-bottom: 0.5rem;
-  }
-  .balance-value {
-    font-size: 2.25rem;
-    font-weight: 900;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-  }
-</style>
-
-{# ═══ ALERTS ══════════════════════════════════════════════════════════ #}
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;">
+<div class="page-heading"><div><div class="eyebrow">PRODUCTION</div><h1>Production dashboard</h1></div><div>
 {% if current_user.is_production_officer %}
-    {% if pending_transfers %}
-        <div class="floor-risk-card" style="background:#f0f9ff; border-left-color:#0ea5e9; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-left: 5px solid #0ea5e9; border-radius: 12px;">
-            <div>
-                <h4 style="margin:0; color:#0369a1; font-weight: 800;">📥 Stock Handover Needed</h4>
-                <p style="margin:0.25rem 0 0 0; font-size:0.9rem; color:#0c4a6e;">You have <strong>{{ pending_transfers|length }}</strong> stock items waiting for you to confirm receipt.</p>
-            </div>
-            <a href="/production/outstanding/" class="btn-modern" style="background:#0ea5e9; color:white; padding: 0.4rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.85rem;">Confirm Now →</a>
-        </div>
-    {% endif %}
+<a class="button button-primary" href="{% url 'production:record_milling' %}">Record milling</a>
+<a class="button button-primary" href="{% url 'production:record_packaging' %}">Record packaging</a>
+<a class="button button-secondary" href="{% url 'production:issue_to_store' %}">Issue sacks to store</a>
 {% endif %}
-
+<a class="button button-secondary" href="{% url 'production:outstanding' %}">Outstanding bags</a>
+<a class="button button-secondary" href="{% url 'production:list' %}">Production records</a>
+</div></div>
+{% if current_user.is_production_officer and pending_transfers %}
+<div class="notice" role="status">{{ pending_transfers|length }} transfers waiting for confirmation. <a href="{% url 'production:outstanding' %}">Confirm now</a></div>
+{% endif %}
 {% if current_user.is_production_officer and outstanding_total and outstanding_total > 0 %}
-<div class="floor-risk-card" style="border-left-color: #f59e0b; background: #fffbeb;">
-    <div>
-        <h4 style="margin:0; color:#b45309; font-weight: 800;">⚠️ Too many bags on Floor</h4>
-        <p style="margin:0.25rem 0 0 0; font-size:0.9rem; color:#92400e;">There are <strong>{{ outstanding_total }} bags</strong> sitting on the factory floor waiting to be ground (milled).</p>
-    </div>
-    <a href="/production/outstanding/" class="btn-modern" style="background:#f59e0b; color:white; padding: 0.4rem 1.25rem;">See Details →</a>
-</div>
+<div class="notice" role="status">{{ outstanding_total }} bags waiting to be milled.</div>
 {% endif %}
-
-{# ═══ HERO ══════════════════════════════════════════════════════════ #}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 2rem; border-radius: 32px; padding: 3rem 2rem; text-align: center;">
-    <div style="display:flex; flex-direction: column; align-items: center; gap: 1rem;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 700; border: 1px solid rgba(52, 211, 153, 0.2); padding: 0.25rem 0.75rem; border-radius: 20px;">🏭 Factory Ops</span>
-            <h1 class="hero-title" style="color: #fff; font-size: 3rem; letter-spacing: -0.02em; margin-top: 1rem;">Production Status</h1>
-            <p class="hero-subtitle" style="color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto;">Grinding (Milling), Bagging (Packaging), and Waste Monitoring Control Center.</p>
-        </div>
-        <div style="margin-top: 1.5rem;">
-            <div style="font-size:0.85rem; color:#34d399; font-weight:700; text-transform:uppercase; letter-spacing:0.2em;">{{ "now"|date:"l, d F Y" }}</div>
-            <div style="font-size:1.5rem; font-weight:800; color:#fff; margin-top:0.5rem;">{{ current_user.full_name }}</div>
-        </div>
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Production window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button><a class="button button-secondary" href="?">Reset</a></div></form>
+{% include 'partials/date_toggles.html' %}</section>
 {% if current_user.is_production_officer %}
-    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">🏭 Floor Balances (Real-time)</h3>
-        <div style="flex: 1; height: 1px; background: var(--slate-100);"></div>
-    </div>
-    <div class="balance-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
-        <div class="balance-card" style="border-top: 5px solid #f59e0b;">
-            <div class="balance-label">Maize on Floor</div>
-            <div class="balance-value" style="color: #f59e0b;">{{ balance_maize|default:0 }} <small style="font-size: 0.9rem; opacity: 0.5;">bags</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Grain in hand</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #0ea5e9;">
-            <div class="balance-label">Maize Powder</div>
-            <div class="balance-value" style="color: #0ea5e9;">{{ powder_maize|floatformat:1 }} <small style="font-size: 0.9rem; opacity: 0.5;">kg</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Bulk flour</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #8b5cf6;">
-            <div class="balance-label">Wheat on Floor</div>
-            <div class="balance-value" style="color: #8b5cf6;">{{ balance_wheat|default:0 }} <small style="font-size: 0.9rem; opacity: 0.5;">bags</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Grain in hand</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #6366f1;">
-            <div class="balance-label">Wheat Powder</div>
-            <div class="balance-value" style="color: #6366f1;">{{ powder_wheat|floatformat:1 }} <small style="font-size: 0.9rem; opacity: 0.5;">kg</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Bulk flour</div>
-        </div>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📦 Handshake Status</h3>
-        <div style="flex: 1; height: 1px; background: var(--slate-100);"></div>
-    </div>
-    <div class="balance-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 4rem;">
-        <div class="balance-card" style="border-top: 5px solid #f97316; background: #fffcf9;">
-            <div class="balance-label">Maize in Hand</div>
-            <div class="balance-value" style="color: #f97316;">{{ sacks_hand_maize }} <small style="font-size: 0.9rem; opacity: 0.5;">sacks</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Packaged & Unissued</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #ea580c; background: #fff8f1;">
-            <div class="balance-label">Maize in Transit</div>
-            <div class="balance-value" style="color: #ea580c;">{{ sacks_transit_maize }} <small style="font-size: 0.9rem; opacity: 0.5;">sacks</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Sent to store</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #ec4899; background: #fffafc;">
-            <div class="balance-label">Wheat in Hand</div>
-            <div class="balance-value" style="color: #ec4899;">{{ sacks_hand_wheat }} <small style="font-size: 0.9rem; opacity: 0.5;">sacks</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Packaged & Unissued</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid #db2777; background: #fff5f9;">
-            <div class="balance-label">Wheat in Transit</div>
-            <div class="balance-value" style="color: #db2777;">{{ sacks_transit_wheat }} <small style="font-size: 0.9rem; opacity: 0.5;">sacks</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Sent to store</div>
-        </div>
-    </div>
-
-    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📉 Period Performance ({{ f_from|default:"All" }} - {{ f_to|default:"Now" }})</h3>
-        <div style="flex: 1; height: 1px; background: var(--slate-100);"></div>
-    </div>
-    <div class="balance-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 4rem;">
-        <div class="balance-card" style="border-top: 5px solid var(--emerald);">
-            <div class="balance-label">Total Bags Milled</div>
-            <div class="balance-value" style="color: var(--emerald);">{{ period_milled_bags }} <small style="font-size: 0.9rem; opacity: 0.5;">bags</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Grain processed into powder</div>
-        </div>
-        <div class="balance-card" style="border-top: 5px solid var(--indigo);">
-            <div class="balance-label">Total Sacks Packaged</div>
-            <div class="balance-value" style="color: var(--indigo);">{{ period_packaged_sacks }} <small style="font-size: 0.9rem; opacity: 0.5;">sacks</small></div>
-            <div style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">Finished 10kg units made</div>
-        </div>
-    </div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">FLOOR</span><h2>Floor balances</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags</span></div><span class="metric-value">{{ balance_maize|default:0 }}</span><span class="metric-label">Bags in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize powder</span></div><span class="metric-value">{{ powder_maize|floatformat:1 }} kg</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags</span></div><span class="metric-value">{{ balance_wheat|default:0 }}</span><span class="metric-label">Bags in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat powder</span></div><span class="metric-value">{{ powder_wheat|floatformat:1 }} kg</span></div>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SACKS</span><h2>Sacks in hand and in transit</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize sacks in hand</span></div><span class="metric-value">{{ sacks_hand_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize sacks in transit</span></div><span class="metric-value">{{ sacks_transit_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat sacks in hand</span></div><span class="metric-value">{{ sacks_hand_wheat }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat sacks in transit</span></div><span class="metric-value">{{ sacks_transit_wheat }}</span></div>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PERIOD</span><h2>Period performance</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Bags milled</span></div><span class="metric-value">{{ period_milled_bags }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sacks packaged</span></div><span class="metric-value">{{ period_packaged_sacks }}</span></div>
+</div></section>
 {% endif %}
-
-{# ═══ QUICK ACTIONS ══════════════════════════════════════════════════ #}
-{% if current_user.is_production_officer %}
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">⚡ Production Controls</h3>
-    <div style="flex: 1; height: 1px; background: var(--slate-100);"></div>
-</div>
-
-<div class="quick-links" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.25rem; margin-bottom: 3rem;">
-    <a href="/production/milling/new/" class="control-card">
-        <div style="font-size: 2rem;">🚜</div>
-        <div>
-            <div style="font-weight: 800; color: var(--navy); font-size: 1rem;">Record Grinding (Milling)</div>
-            <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.1rem;">Grind whole grain into powder</div>
-        </div>
-    </a>
-    <a href="{% url 'production:record_packaging' %}" class="control-card">
-        <div style="font-size: 2rem;">📦</div>
-        <div>
-            <div style="font-weight: 800; color: var(--navy); font-size: 1rem;">Record Packaging</div>
-            <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.1rem;">Pack powder into 10kg sacks</div>
-        </div>
-    </a>
-    <a href="{% url 'production:issue_to_store' %}" class="control-card">
-        <div style="font-size: 2rem;">📤</div>
-        <div>
-            <div style="font-weight: 800; color: var(--navy); font-size: 1rem;">Issue Sacks to Store</div>
-            <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.1rem;">Transfer sacks from hand to warehouse</div>
-        </div>
-    </a>
-</div>
-{% endif %}
-
-{# ═══ OVERSIGHT ══════════════════════════════════════════════════════ #}
 {% if all_user_stats %}
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">🏢 Production Team Accountability</h3>
-    <div style="flex: 1; height: 1px; background: var(--slate-100);"></div>
-</div>
-
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>Production Officer</th>
-                <th class="num">Maize (Bags)</th>
-                <th class="num">Wheat (Bags)</th>
-                <th class="num">Milling (Period)</th>
-                <th class="num">Packaged (Period)</th>
-                <th class="num">Sacks Handshake</th>
-                <th class="num">Flour Stock (kg)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for stat in all_user_stats %}
-            <tr>
-                <td>
-                    <strong style="display: block; color: var(--navy);">{{ stat.user.full_name }}</strong>
-                    <span style="font-size: 0.75rem; color: var(--slate-400); font-weight: 600;">Floor Accountability</span>
-                </td>
-                <td class="num"><strong class="{% if stat.bags_maize > 0 %}text-amber{% else %}text-slate-300{% endif %}">{{ stat.bags_maize }}</strong></td>
-                <td class="num"><strong class="{% if stat.bags_wheat > 0 %}text-indigo-heavy{% else %}text-slate-300{% endif %}">{{ stat.bags_wheat }}</strong></td>
-                <td class="num">
-                    <span class="badge-soft badge-soft-success" style="font-weight: 800;">{{ stat.period_milled }} bags</span>
-                </td>
-                <td class="num">
-                    <span class="badge-soft badge-soft-primary" style="font-weight: 800;">{{ stat.period_packaged }} sacks</span>
-                </td>
-                <td class="num">
-                    <div style="font-size: 0.85rem; font-weight: 800; color: #ea580c;">In Hand: {{ stat.sacks_hand_maize|add:stat.sacks_hand_wheat }}</div>
-                    <div style="font-size: 0.85rem; font-weight: 800; color: #64748b; opacity: 0.8;">Transit: {{ stat.sacks_transit_maize|add:stat.sacks_transit_wheat }}</div>
-                </td>
-                <td class="num">
-                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--amber);">M: {{ stat.powder_maize|floatformat:1 }} kg</div>
-                    <div style="font-size: 0.85rem; font-weight: 800; color: #8b5cf6;">W: {{ stat.powder_wheat|floatformat:1 }} kg</div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TEAM</span><h2>Production team</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Production officer</th><th class="number">Maize bags</th><th class="number">Wheat bags</th><th class="number">Milled in period</th><th class="number">Packaged in period</th><th class="number">Sacks in hand</th><th class="number">Sacks in transit</th><th class="number">Maize powder kg</th><th class="number">Wheat powder kg</th></tr></thead>
+<tbody>
+{% for stat in all_user_stats %}
+<tr>
+<td><strong>{{ stat.user.full_name }}</strong></td>
+<td class="number">{{ stat.bags_maize }}</td>
+<td class="number">{{ stat.bags_wheat }}</td>
+<td class="number">{{ stat.period_milled }}</td>
+<td class="number">{{ stat.period_packaged }}</td>
+<td class="number">{{ stat.sacks_hand_maize|add:stat.sacks_hand_wheat }}</td>
+<td class="number">{{ stat.sacks_transit_maize|add:stat.sacks_transit_wheat }}</td>
+<td class="number">{{ stat.powder_maize|floatformat:1 }}</td>
+<td class="number">{{ stat.powder_wheat|floatformat:1 }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endif %}
-
 {% include 'includes/_daily_ledger.html' %}
-</div>
 {% endblock %}

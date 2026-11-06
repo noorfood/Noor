@@ -1,109 +1,24 @@
-{% extends 'base.html' %}
-{% block title %}Issue Finished Goods to Company — Noor Foods{% endblock %}
-{% block nav_fg_issue %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Issue Finished Goods to Company — Noor Foods{% endblock %}{% block nav_finished %}active{% endblock %}{% block breadcrumb %}Issue Finished Goods to Company{% endblock %}
 {% block content %}
-{# Standardized Form Page Styles from global context #}
-
-<div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">📤 Store Issuance</span>
-            <h1 class="hero-title">Issue Finished Goods</h1>
-            <p class="hero-subtitle">Transfer packaged goods from store to company retail or disposal.</p>
-        </div>
-    </div>
-</div>
-
-{% if error %}
-<div class="action-bar-modern" style="background: #fff1f2; border-left: 5px solid var(--rose); margin-bottom: 2.5rem;">
-    <div style="color: #9f1239; font-weight: 700;">⚠ {{ error }}</div>
-</div>
-{% endif %}
-
-<div class="action-bar-modern" style="background: #f0f9ff; border-left: 5px solid var(--blue); margin-bottom: 2.5rem;">
-    <div style="color: #0369a1; font-weight: 500; font-size: 0.9rem;">
-        <strong style="color: var(--navy);">Handshake Protocol:</strong> This issuance requires explicit authorization from the GM/MD before stock is deducted.
-    </div>
-</div>
-
-<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
-    <div class="card" style="padding: 2rem;">
-        <h3 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--slate-500); margin-bottom: 1.5rem; letter-spacing: 0.5px; border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
-            Issuance Parameters
-        </h3>
-        
-        <form method="post">
-            {% csrf_token %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <label class="form-label" for="date">Issuance Date</label>
-                    <input type="date" id="date" name="date" value="{{ today }}" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Sales Channel</label>
-                    <div style="padding: 0.65rem 0.85rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; color: var(--slate-500); font-weight: 700; font-size: 0.9rem;">
-                        🏢 COMPANY DIRECT
-                    </div>
-                    <input type="hidden" name="channel" value="company">
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <label class="form-label" for="material_type">Material Category</label>
-                    <select id="material_type" name="material_type" class="form-input" required>
-                        {% for val, label in material_choices %}
-                        <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="qty_issued">Quantity (10kg Sacks)</label>
-                    <input type="number" id="qty_issued" name="qty_issued" min="1" placeholder="e.g. 50" class="form-input" required>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-                <div class="form-group">
-                    <label class="form-label" for="buyer_name">Recipient Identity</label>
-                    <input type="text" id="buyer_name" name="buyer_name" placeholder="Name of recipient" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="approver_id">Authorizing Officer</label>
-                    <select id="approver_id" name="approver_id" class="form-input" required>
-                        <option value="">-- Authority Selection --</option>
-                        {% for officer in approvers %}
-                        <option value="{{ officer.id }}">{{ officer.full_name }} ({{ officer.get_role_display }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 2rem;">
-                <label class="form-label" for="notes">Purpose / Remarks</label>
-                <textarea id="notes" name="notes" rows="3" class="form-input" placeholder="Justification for this issuance..."></textarea>
-            </div>
-
-            <div style="display: flex; gap: 1rem; padding-top: 1.5rem; border-top: 1px solid var(--slate-100);">
-                <button type="submit" class="btn-modern btn-modern-primary" style="padding: 0.8rem 2rem;">
-                    Send Record
-                </button>
-                <a href="{% url 'finished_store:list' %}" class="btn-modern" style="padding: 0.8rem 2rem; background: var(--slate-100); color: var(--slate-600);">
-                    Cancel
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div class="card" style="padding: 1.5rem; background: #f8fafc; border: 1px dashed var(--slate-300);">
-            <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; text-transform: uppercase;">
-                Chain of Custody
-            </h4>
-            <p style="font-size: 0.85rem; color: var(--slate-600); line-height: 1.5; margin: 0;">
-                All company-direct issuances must be approved by high-level management to ensure fiscal accountability. Stock balance is only adjusted after digital signature.
-            </p>
-        </div>
-    </div>
-</div>
+<div class="page-heading"><div><div class="eyebrow">FINISHED GOODS</div><h1>Issue finished goods to company</h1></div><div><a class="button button-secondary" href="{% url 'finished_store:list' %}">View records</a></div></div>
+<section class="panel form-panel"><div class="form-heading"><h2>Issue details</h2></div>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material_type" required>
+{% for val, label in material_choices %}
+<option value="{{ val }}">{{ label }}</option>
+{% endfor %}
+</select></div>
+<div class="field"><label for="id_qty">Number of 10 kg sacks</label><input type="number" id="id_qty" name="qty_issued" min="1" required></div>
+<div class="field"><label for="id_buyer">Buyer name</label><input type="text" id="id_buyer" name="buyer_name" required></div>
+<div class="field"><label for="id_approver">Approver</label><select id="id_approver" name="approver_id" required>
+{% for officer in approvers %}
+<option value="{{ officer.id }}">{{ officer.full_name }} · {{ officer.get_role_display }}</option>
+{% endfor %}
+</select></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions">{% if current_user.role == 'md' %}<span class="notice">You are viewing as MD. Recording is done by the finished store officer.</span>{% else %}<button class="button button-primary" type="submit">Issue goods</button>{% endif %}<a class="button button-quiet" href="{% url 'finished_store:list' %}">Cancel</a></div></form></section>
 {% endblock %}

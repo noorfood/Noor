@@ -19,6 +19,9 @@ urlpatterns = [
     path('distribution/new/', views.record_distribution, name='record_distribution'),
     path('sales-result/new/', views.record_sales_result, name='record_sales_result'),
     path('sp-performance/', views.sp_performance, name='sp_performance'),
+    path('corrections/', views.list_sales_corrections, name='list_sales_corrections'),
+    path('corrections/new/', views.request_sales_correction_view, name='request_sales_correction'),
+    path('corrections/<int:pk>/', views.sales_correction_detail, name='sales_correction_detail'),
     path('salespersons/<int:sp_id>/history/', views.sp_detail, name='sp_detail'),
 
     # ── SM Payments (SM sends money → GM confirms) ─────────────────────────
@@ -29,8 +32,14 @@ urlpatterns = [
     # ── Outstanding balances (SM level) ────────────────────────────────────
     path('outstanding/', views.outstanding_view, name='outstanding'),
 
+    # ── Direct-sale outstanding balances (customers who still owe) ────────
+    path('direct-sales/outstanding/', views.outstanding_balances, name='outstanding_balances'),
+    path('direct-sales/outstanding/<int:pk>/', views.outstanding_customer, name='outstanding_customer'),
+
     # ── Company Direct Sales & Brand (GM only — separate flow) ────────────
     path('bran-sale/new/', views.record_bran_sale, name='record_bran_sale'),
+    path('bran-receipt/new/', views.record_bran_receipt, name='record_bran_receipt'),
+    path('report/', views.sm_report, name='sm_report'),
     
     # ── GM Factory-Gate Direct Sales & MD Confirmation ─────────────────────
     path('direct-sale/new/', views.record_direct_sale, name='record_direct_sale'),

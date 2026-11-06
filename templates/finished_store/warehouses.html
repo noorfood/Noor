@@ -1,0 +1,38 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Warehouses — Noor Foods{% endblock %}{% block nav_deliveries %}active{% endblock %}{% block breadcrumb %}Warehouses{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">WAREHOUSE DELIVERIES</div><h1>Warehouses</h1></div></div>
+<p>Warehouses in other states that receive finished goods. Add more any time; deactivating one hides it from the delivery form without deleting its history.</p>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">WAREHOUSES</span><h2>{{ warehouses|length }} warehouse{{ warehouses|length|pluralize }}</h2></div></div>
+{% if warehouses %}
+<div class="table-scroll"><table>
+<thead><tr><th>Name</th><th>State</th><th>Status</th>{% if current_user.role == 'store_officer' or current_user.role == 'md' %}<th>Action</th>{% endif %}</tr></thead>
+<tbody>
+{% for w in warehouses %}
+<tr>
+<td><strong>{{ w.name }}</strong></td>
+<td>{{ w.state|default:"—" }}</td>
+<td>{% if w.is_active %}<span class="status-pill">Active</span>{% else %}<span class="status-pill">Inactive</span>{% endif %}</td>
+{% if current_user.role == 'store_officer' or current_user.role == 'md' %}
+<td><form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="warehouse_id" value="{{ w.pk }}"><button class="button button-secondary" type="submit">{% if w.is_active %}Deactivate{% else %}Activate{% endif %}</button></form></td>
+{% endif %}
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">No warehouses yet.</p>
+{% endif %}
+</section>
+{% if current_user.role == 'store_officer' or current_user.role == 'md' %}
+<section class="panel form-panel"><div class="form-heading"><h2>Add a warehouse</h2></div>
+<form method="post">{% csrf_token %}
+<input type="hidden" name="action" value="add">
+<div class="form-grid">
+<div class="field"><label for="id_name">Warehouse name</label><input type="text" id="id_name" name="name" placeholder="e.g. Kaduna Warehouse" required></div>
+<div class="field"><label for="id_state">State <span class="optional">Optional</span></label><input type="text" id="id_state" name="state" placeholder="e.g. Kaduna State"></div>
+</div>
+<div class="form-actions"><button class="button button-primary" type="submit">Add warehouse</button></div>
+</form></section>
+{% endif %}
+{% endblock %}

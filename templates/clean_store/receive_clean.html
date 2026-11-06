@@ -1,182 +1,47 @@
-{% extends 'base.html' %}
-{% block title %}Receive Clean Bags{% endblock %}
-{% block nav_cs_receive %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Receive Clean Bags — Noor Foods{% endblock %}{% block nav_work %}active{% endblock %}{% block breadcrumb %}Receive Clean Bags{% endblock %}
 {% block content %}
-<style>
-    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
-    .form-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
-        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
-        transition: all 0.2s;
-    }
-    .form-input:focus { outline: none; border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); background: #fff; }
-    .row-selected { background: #fffbeb; }
-    .form-disabled { opacity: 0.6; pointer-events: none; }
-</style>
-
-<div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--emerald);">✨ Inbound</span>
-            <h1 class="hero-title">Receive Clean Bags</h1>
-            <p class="hero-subtitle">Acknowledge processed grain and move it into the Clean Raw Store.</p>
-        </div>
-        <a href="/clean-store/list/" class="btn-modern" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);">View Clean Registry</a>
-    </div>
-</div>
-
-<div class="balance-grid" style="margin-bottom: 2rem;">
-    <div class="card" style="padding: 1.25rem;">
-        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Total Clean Maize</div>
-        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_maize }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    </div>
-    <div class="card" style="padding: 1.25rem;">
-        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Total Clean Wheat</div>
-        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_wheat }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    </div>
-</div>
-
-{% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
-
-{# --- NEW: CLEAR LIST OF PENDING WORK --- #}
-<div class="card" style="padding: 1.5rem; margin-bottom: 2.5rem; border-left: 5px solid var(--amber);">
-    <h3 style="font-size: 0.9rem; font-weight: 800; color: #92400e; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">
-        ⏳ Pending Cleanings (Dirty Bags with Cleaners)
-    </h3>
-    <div class="table-container" style="box-shadow: none; border: 1px solid var(--slate-100);">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Date Sent</th>
-                    <th>Cleaner Name</th>
-                    <th>Material</th>
-                    <th class="num">Sent</th>
-                    <th class="num">Received</th>
-                    <th class="num">Outstanding</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for iss in pending_issuances %}
-                <tr class="{% if selected_issuance.pk == iss.pk %}row-selected{% endif %}">
-                    <td>{{ iss.date|date:"M d" }}</td>
-                    <td style="font-weight: 800; color: var(--navy);">{{ iss.issued_to }}</td>
-                    <td>
-                        <span style="font-size: 0.65rem; font-weight: 900; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">
-                            {{ iss.material_type|upper }}
-                        </span>
-                    </td>
-                    <td class="num" style="font-weight: 600; color: var(--slate-600);">{{ iss.num_bags_issued }}</td>
-                    <td class="num" style="font-weight: 700; color: var(--emerald);">{{ iss.already_received }}</td>
-                    <td class="num" style="font-weight: 800; color: var(--amber);">{{ iss.outstanding }}</td>
-                    <td>
-                        <a href="?issuance={{ iss.pk }}#reception-form" class="btn-modern" style="padding: 4px 12px; font-size: 0.7rem; background: var(--blue); color: rgb(241, 12, 12); border: none;">
-                            Receive →
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--slate-400); font-style: italic;">No dirty bags currently out for cleaning.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
-    <div class="card {% if not selected_issuance %}form-disabled{% endif %}" id="reception-form" style="padding:2rem;">
-        {% if not selected_issuance %}
-        <div style="text-align: center; padding: 2rem; border: 2px dashed var(--slate-200); border-radius: 12px; margin-bottom: 2rem;">
-            <p style="color: var(--slate-500); font-weight: 600;">Please select a pending cleaning from the list above to record reception.</p>
-        </div>
-        {% endif %}
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-                <div>
-                    <label class="form-label">Reception Date*</label>
-                    <input type="date" name="date" value="{{ today }}" required class="form-input">
-                </div>
-                <div>
-                    <label class="form-label">Cleaning Job / Cleaner*</label>
-                    {% if selected_issuance %}
-                        <div style="padding: 0.7rem 1rem; background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; font-weight: 700; color: #92400e; font-size: 0.85rem; height: 100%; display: flex; align-items: center;">
-                            👤 {{ selected_issuance.issued_to }} ({{ selected_issuance.material_type|upper }} - {{ selected_issuance.num_bags_issued }} bags)
-                        </div>
-                        <input type="hidden" name="issuance_id" value="{{ selected_issuance.pk }}">
-                    {% else %}
-                        <select name="issuance_id" required class="form-input">
-                            <option value="">— Select Pending Job —</option>
-                            {% for iss in pending_issuances %}
-                            <option value="{{ iss.pk }}">#{{ iss.pk }} | {{ iss.material_type|upper }} | {{ iss.num_bags_issued }} bags ({{ iss.issued_to }})</option>
-                            {% endfor %}
-                        </select>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-                <div>
-                    <label class="form-label">Clean Bags Received*</label>
-                    <input type="number" name="clean_bags_produced" min="1" value="{{ selected_issuance.outstanding|default:'' }}" placeholder="e.g. 50" required class="form-input">
-                    {% if selected_issuance %}
-                        <small style="color:var(--amber); font-weight: 700; display: block; margin-top: 4px;">ℹ️ Cleaner still has {{ selected_issuance.outstanding }} bags expected.</small>
-                    {% endif %}
-                </div>
-                <div style="display: flex; align-items: flex-end; padding-bottom: 0.2rem;">
-                    <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; background: #fff; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200); width: 100%; height: 100%; transition: all 0.2s;">
-                        <input type="checkbox" name="is_final" style="width: 1.2rem; height: 1.2rem; cursor: pointer;" checked>
-                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--navy);">Mark Job as COMPLETED</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-                <div>
-                    <label class="form-label">Approx. Dirty Weight (kg)*</label>
-                    <input type="number" name="approx_dirty_weight_kg" step="0.01" min="0.1" placeholder="Weight before cleaning" required class="form-input">
-                </div>
-                <div>
-                    <label class="form-label">Yield Note</label>
-                    <div style="padding: 0.75rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 12px; color: var(--slate-500); font-size: 0.75rem; line-height: 1.4;">
-                        Note: Clean bags will always weigh than dirty bags due to waste removal.
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-bottom:2rem;">
-                <label class="form-label">Notes</label>
-                <textarea name="notes" rows="3" placeholder="Any issues during cleaning? (e.g. high moisture, too much waste)" class="form-input"></textarea>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:1rem; padding-top:1.5rem; border-top:1px solid var(--slate-100);">
-                <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--emerald); border-color: var(--emerald); padding: 0.75rem 1.75rem;">
-                    Complete Reception
-                </button>
-                <span style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">⚠️ High precision required for mass reconciliation.</span>
-            </div>
-        </form>
-    </div>
-
-    <div class="card" style="padding: 1.5rem; background: var(--slate-50); border: 1px solid var(--slate-200);">
-        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.1rem; color: var(--navy); font-weight: 800;">Accountability</h3>
-        
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Receiving Officer</label>
-            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">{{ current_user.full_name }}</span>
-        </div>
-        
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Department</label>
-            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">Clean Raw Material Store</span>
-        </div>
-        
-        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1.5rem 0;">
-        
-        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6; font-weight: 500;">
-            Recording clean bags received updates your clean inventory directly. This is the bridge between dirty procurement and clean production.
-        </p>
-    </div>
-</div>
+<div class="page-heading"><div><div class="eyebrow">CLEAN STORE</div><h1>Receive clean bags</h1></div><div><a class="button button-secondary" href="{% url 'clean_store:list' %}">View log</a></div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STORE</span><h2>Store balances</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags</span></div><span class="metric-value">{{ balance_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags</span></div><span class="metric-value">{{ balance_wheat }}</span></div>
+</div></section>
+{% if selected_issuance %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SELECTED</span><h2>Selected issuance</h2></div></div>
+<div class="record-list">
+<div class="record-row"><div><strong>{{ selected_issuance.material_type|upper }} · {{ selected_issuance.num_bags_issued }} bags issued</strong><span>Issued to {{ selected_issuance.issued_to }} · {{ selected_issuance.outstanding|default:0 }} bags outstanding</span></div></div>
+</div></section>
+{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Receipt details</h2></div>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_issuance">Issuance</label><select id="id_issuance" name="issuance_id" required>
+{% for iss in pending_issuances %}
+<option value="{{ iss.pk }}" {% if selected_issuance and selected_issuance.pk == iss.pk %}selected{% endif %}>#{{ iss.pk }} · {{ iss.material_type|upper }} · {{ iss.outstanding }} bags outstanding · {{ iss.date }}</option>
+{% endfor %}
+</select></div>
+<div class="field"><label for="id_clean">Clean bags received</label><input type="number" id="id_clean" name="clean_bags_produced" min="1" required></div>
+<div class="field"><label for="id_weight">Approximate dirty weight kg</label><input type="number" id="id_weight" name="approx_dirty_weight_kg" step="0.01" min="0" required></div>
+<div class="field"><label for="id_final">Final return for this issuance</label><input type="checkbox" id="id_final" name="is_final"></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Save receipt</button><a class="button button-quiet" href="{% url 'clean_store:list' %}">Cancel</a></div></form></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ISSUANCES</span><h2>Open issuances</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Material</th><th class="number">Bags issued</th><th class="number">Already received</th><th class="number">Outstanding</th></tr></thead>
+<tbody>
+{% for iss in pending_issuances %}
+<tr>
+<td>{{ iss.date|date:"d M Y" }}</td>
+<td><span class="status-pill">{{ iss.material_type|upper }}</span></td>
+<td class="number">{{ iss.num_bags_issued }}</td>
+<td class="number">{{ iss.already_received }}</td>
+<td class="number">{{ iss.outstanding }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No open issuances.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

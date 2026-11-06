@@ -1,0 +1,79 @@
+{% load static %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Overview{% endblock %} · Noor Foods</title><meta name="theme-color" content="#173d72">
+<link rel="stylesheet" href="{% static 'css/rebuild.css' %}"></head>
+<body class="app-shell">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="mobile-header"><a class="brand brand-mobile" href="{% url 'dashboard' %}"><span class="brand-mark" aria-hidden="true">N</span><span>Noor <b>Foods</b></span></a><button class="menu-button" type="button" aria-expanded="false" aria-controls="sidebar" id="menu-toggle"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span class="sr-only">Open navigation</span></button></header>
+<div class="backdrop" id="backdrop" hidden></div>
+<aside class="sidebar" id="sidebar" aria-label="Main navigation">
+  <a href="{% url 'dashboard' %}" class="brand"><span class="brand-mark" aria-hidden="true">N</span><span class="brand-text">Noor <b>Foods</b><small>Operations</small></span></a>
+  <button type="button" class="close-menu" id="close-menu" aria-label="Close navigation">×</button>
+  <nav class="navigation">
+    {% if request.session.user_role == 'manager' or request.session.user_role == 'md' %}
+    <div class="nav-section">MENU</div>
+    <a class="nav-item {% block nav_home %}{% endblock %}" href="{% url 'dashboard' %}"><span class="nav-icon" aria-hidden="true">⌂</span> Home</a>
+    <a class="nav-item {% block nav_direct_sales %}{% endblock %}" href="{% url 'sales:list_direct_sales' %}"><span class="nav-icon" aria-hidden="true">₦</span> Direct Sales</a>
+    {% if request.session.user_role == 'manager' or request.session.user_role == 'md' %}
+    <a class="nav-item {% block nav_procurement %}{% endblock %}" href="{% url 'procurement:dashboard' %}"><span class="nav-icon" aria-hidden="true">▤</span> Procurement</a>
+    {% endif %}
+    <a class="nav-item {% block nav_outstanding %}{% endblock %}" href="{% url 'sales:outstanding_balances' %}"><span class="nav-icon" aria-hidden="true">◷</span> Outstanding Balances</a>
+    <a class="nav-item {% block nav_deliveries %}{% endblock %}" href="{% url 'finished_store:deliveries_report' %}"><span class="nav-icon" aria-hidden="true">▣</span> Warehouse Deliveries</a>
+    <a class="nav-item {% block nav_reports_index %}{% endblock %}" href="{% url 'reports:index' %}"><span class="nav-icon" aria-hidden="true">▤</span> Reports</a>
+    <a class="nav-item {% block nav_weekly %}{% endblock %}" href="{% url 'reports:weekly_summary' %}"><span class="nav-icon" aria-hidden="true">▦</span> Weekly Summary</a>
+    {% if request.session.user_role == 'md' %}
+    <a class="nav-item {% block nav_oversight %}{% endblock %}" href="{% url 'reports:oversight' %}"><span class="nav-icon" aria-hidden="true">◉</span> Oversight</a>
+    {% endif %}
+    {% else %}
+    <div class="nav-section">WORKSPACE</div>
+    {% if request.session.user_role == 'md' or request.session.user_role == 'manager' or request.session.store_type == 'raw' or request.session.user_role == 'production_officer' %}<a class="nav-item {% block nav_work %}{% endblock %}" href="{% url 'operations:home' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l8-4 8 4v11l-8 4-8-4zM4 7l8 4 8-4M12 11v11"/></svg></span> Materials &amp; handovers</a>{% endif %}
+    {% if request.session.user_role == 'production_officer' or request.session.user_role == 'manager' or request.session.user_role == 'md' %}<a class="nav-item {% block nav_production %}{% endblock %}" href="{% url 'operations:production_home' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l5-3v4l5-3v4l6-3v12zM8 16h1m4 0h1m4 0h1"/></svg></span> Production</a>{% endif %}
+    {% if request.session.user_role == 'production_officer' or request.session.user_role == 'manager' or request.session.user_role == 'md' or request.session.store_type == 'finished' %}<a class="nav-item {% block nav_finished %}{% endblock %}" href="{% url 'operations:finished_home' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="15" rx="1"/><path d="M3 10h18M8 3h8M9 15h6"/></svg></span> Finished goods</a>{% endif %}
+    {% if request.session.user_role == 'sales_manager' or request.session.user_role == 'manager' or request.session.user_role == 'md' or request.session.store_type == 'finished' %}<a class="nav-item {% block nav_sales_goods %}{% endblock %}" href="{% url 'operations:sales_goods_home' %}"><span class="nav-icon" aria-hidden="true">↗</span> Sales handovers</a>{% endif %}
+    {% if request.session.user_role == 'sales_manager' or request.session.user_role == 'manager' or request.session.user_role == 'md' %}<a class="nav-item {% block nav_commerce %}{% endblock %}" href="{% url 'commerce:home' %}"><span class="nav-icon" aria-hidden="true">₦</span> Sales records</a>{% endif %}
+    {% if request.session.user_role == 'sales_manager' or request.session.user_role == 'manager' or request.session.user_role == 'md' %}<a class="nav-item {% block nav_money %}{% endblock %}" href="{% url 'commerce:money_home' %}"><span class="nav-icon" aria-hidden="true">₦</span> Money handovers</a>{% endif %}
+    {% if request.session.user_role == 'sales_manager' %}<a class="nav-item {% block nav_sm_report %}{% endblock %}" href="{% url 'sales:sm_report' %}"><span class="nav-icon" aria-hidden="true">▤</span> My report</a>{% endif %}
+    <a class="nav-item" href="{% url 'dashboard' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span> Overview</a>
+    {% if request.session.store_type == 'raw' %}
+    <a class="nav-item {% block nav_receive %}{% endblock %}" href="{% url 'procurement:receive' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v16m-5-5 5 5 5-5"/></svg></span> Receive raw materials</a>
+    <a class="nav-item" href="{% url 'procurement:list' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h6"/></svg></span> Raw material records</a>
+    <a class="nav-item {% block nav_bran_sale %}{% endblock %}" href="{% url 'sales:record_bran_sale' %}"><span class="nav-icon" aria-hidden="true">₦</span> Record bran sale</a>
+    <a class="nav-item" href="{% url 'sales:record_bran_receipt' %}"><span class="nav-icon" aria-hidden="true">↓</span> Record bran received</a>
+    <a class="nav-item" href="{% url 'reports:bran_sales' %}"><span class="nav-icon" aria-hidden="true">▤</span> Bran history</a>
+    {% endif %}
+    {% if request.session.user_role == 'md' or request.session.user_role == 'manager' %}
+    <div class="nav-section">MANAGEMENT</div>
+    <a class="nav-item {% block nav_reports %}{% endblock %}" href="{% url 'reports:store' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7l8-4 8 4v11l-8 4-8-4zM4 7l8 4 8-4M12 11v11"/></svg></span> Stock reports</a>
+    <a class="nav-item {% block nav_production_reports %}{% endblock %}" href="{% url 'reports:production' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V9l5-3v4l5-3v4l6-3v12zM8 16h1m4 0h1m4 0h1"/></svg></span> Production reports</a>
+    <a class="nav-item" href="{% url 'sales:list_direct_sales' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L19 5M9 5h10v10"/></svg></span> Direct sales</a>
+    <a class="nav-item" href="{% url 'sales:list_sm_payments' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V5l14 14V5M3 10h18M3 14h18"/></svg></span> Sales payments</a>
+    {% if request.session.user_role == 'md' %}<div class="nav-section">SETTINGS</div><a class="nav-item {% block nav_staff %}{% endblock %}" href="{% url 'accounts:staff_list' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg></span> Staff</a><a class="nav-item {% block nav_pricing %}{% endblock %}" href="{% url 'pricing:list' %}"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M19 5l-1.5 1.5m-11 11L5 19"/><circle cx="12" cy="12" r="8"/></svg></span> Prices &amp; costs</a>{% endif %}
+    {% endif %}
+    {% endif %}
+  </nav>
+  <form method="post" action="{% url 'reports:no_activity' %}" class="sign-out-form">{% csrf_token %}<button type="submit" class="sign-out" title="Record that you had no work to record today">No activity today</button></form>
+  <div class="sidebar-bottom"><div class="avatar">{{ request.session.user_name|default:'N'|slice:':1'|upper }}</div><div class="account-name"><strong>{{ request.session.user_name }}</strong><span>{{ current_user.get_role_display }}</span></div><form method="post" action="{% url 'logout' %}" class="sign-out-form">{% csrf_token %}<button type="submit" class="sign-out">Sign out</button></form></div>
+</aside>
+<div class="workspace"><header class="desktop-header"><span>NOOR FOODS <span class="header-separator">/</span> {% block breadcrumb %}Overview{% endblock %}</span><span>{{ current_user.full_name }}</span></header>
+<main class="content-wrap" id="main">
+{% if request.session.impersonate_id %}<div class="notice">Viewing as {{ request.session.user_name }}. <a href="{% url 'accounts:md_stop_impersonating' %}">Exit view</a></div>{% endif %}
+{% for message in messages %}<div class="notice notice-success" role="status">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}</main></div>
+<script>
+const toggle=document.getElementById('menu-toggle'), sidebar=document.getElementById('sidebar'), backdrop=document.getElementById('backdrop'), closeMenu=document.getElementById('close-menu');
+function setMenu(open){sidebar.classList.toggle('is-open',open);toggle.setAttribute('aria-expanded',open?'true':'false');backdrop.hidden=!open;}
+toggle.addEventListener('click',()=>{setMenu(true);closeMenu.focus()});function closeNavigation(){setMenu(false);toggle.focus()}closeMenu.addEventListener('click',closeNavigation);backdrop.addEventListener('click',closeNavigation);document.addEventListener('keydown',e=>{if(e.key==='Escape' && toggle.getAttribute('aria-expanded')==='true')closeNavigation()});
+
+function setFilterDates(range){
+  const rangeInput=document.querySelector('[name="range"]');
+  if(rangeInput){const f=document.querySelector('[name="date_from"]');const t=document.querySelector('[name="date_to"]');if(f)f.value="";if(t)t.value="";rangeInput.value=range;rangeInput.closest('form').submit();return;}
+  const fromInput=document.querySelector('[name="date_from"]');const toInput=document.querySelector('[name="date_to"]');if(!fromInput||!toInput)return;
+  const todayObj=new Date();const offset=todayObj.getTimezoneOffset();const localToday=new Date(todayObj.getTime()-(offset*60*1000));const todayStr=localToday.toISOString().split('T')[0];
+  let fromStr="";let toStr=todayStr;
+  if(range==='week'){const d=new Date(todayObj);const day=d.getDay();const diff=d.getDate()-day+(day===0?-6:1);const monday=new Date(d.setDate(diff));fromStr=new Date(monday.getTime()-(offset*60*1000)).toISOString().split('T')[0];}
+  else if(range==='month'){const first=new Date(todayObj.getFullYear(),todayObj.getMonth(),1);fromStr=new Date(first.getTime()-(offset*60*1000)).toISOString().split('T')[0];}
+  else if(range==='year'){const start=new Date(todayObj.getFullYear(),0,1);fromStr=new Date(start.getTime()-(offset*60*1000)).toISOString().split('T')[0];}
+  else if(range==='all'){fromStr="";toStr="";}
+  fromInput.value=fromStr;toInput.value=toStr;fromInput.closest('form').submit();
+}
+</script></body></html>

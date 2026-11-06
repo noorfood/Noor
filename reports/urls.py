@@ -12,8 +12,11 @@ urlpatterns = [
     path('bran-sales/', views.bran_sales_report, name='bran_sales'),
     path('outstanding/', views.outstanding_report, name='outstanding'),
     path('flow/', views.company_flow, name='flow'),
-    path('financial-summary/', views.financial_summary, name='financial_summary'),
     path('md-ledger/', views.md_ledger, name='ledger'),
     path('snapshot/record/', views.record_monthly_snapshot, name='record_monthly_snapshot'),
+    path('', views.reports_index, name='index'),
+    path('weekly/', views.weekly_summary, name='weekly_summary'),
+    path('oversight/', views.oversight, name='oversight'),
+    path('no-activity/', views.report_no_activity, name='no_activity'),
 ]
 

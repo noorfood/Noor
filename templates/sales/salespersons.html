@@ -1,73 +1,10 @@
-{% extends 'base.html' %}
-{% block title %}My Sales Team — Noor Foods{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}My Sales Team — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}My Sales Team{% endblock %}
 {% block content %}
-<style>
-  .member-card {
-    background: #fff; border: 1px solid var(--slate-200); border-radius: 16px;
-    padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    transition: transform .2s, box-shadow .2s, border-color .2s; position: relative;
-    cursor: pointer; text-decoration: none; display: flex; flex-direction: column; color: inherit;
-  }
-  .member-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,.1); border-color: var(--indigo); }
-  .member-card .view-hint {
-    position: absolute; top: 1.25rem; right: 1.25rem;
-    background: var(--indigo-light); color: var(--indigo); border-radius: 8px;
-    padding: .2rem .55rem; font-size: .72rem; font-weight: 800;
-    opacity: 0; transition: opacity .2s;
-  }
-  .member-card:hover .view-hint { opacity: 1; }
-</style>
-
-<div class="page-hero">
-  <div>
-    <span class="hero-badge">👥 Sales Team</span>
-    <h1 class="hero-title">My Sales Team</h1>
-    <p class="hero-subtitle">Manage your promoters and drivers. All financial accountability remains with you as the Sales Manager.</p>
-  </div>
-  <a href="{% url 'sales:add_salesperson' %}" class="btn-modern btn-modern-success">+ Add Team Member</a>
-</div>
-
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
-  {% for sp in persons %}
-  <div onclick="window.location.href='{% url 'sales:sp_detail' sp.pk %}';" class="member-card">
-    {# Hover hint #}
-    <span class="view-hint">View History →</span>
-
-    {% if sp.status != 'active' %}
-    <div style="position: absolute; top: 1.25rem; right: 1.25rem;" class="badge-soft badge-soft-danger">Inactive</div>
-    {% endif %}
-
-    <div>
-    <span class="badge-soft {% if sp.channel == 'promoter' %}badge-soft-info{% else %}badge-soft-warning{% endif %}" style="margin-bottom: 0.75rem;">
-      {{ sp.get_channel_display }}
-    </span>
-    </div>
-    <div style="font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 0.25rem;">{{ sp.name }}</div>
-    <div style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1.25rem;">📞 {{ sp.phone|default:"No phone recorded" }}</div>
-
-    <div style="display: flex; gap: 1rem; border-top: 1px solid var(--slate-100); padding-top: 1.1rem; margin-top: auto;">
-      <div>
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; margin-bottom: 0.2rem;">Total Distributed</div>
-        <div style="font-size: 1.1rem; font-weight: 800; color: var(--slate-900); font-family: monospace;">{{ sp.distributions.count }} <span style="font-size: 0.8rem; color: var(--slate-500); font-family: sans-serif; font-weight: 600;">batches</span></div>
-      </div>
-      <div>
-        <div style="font-size: 0.65rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; margin-bottom: 0.2rem;">Active Since</div>
-        <div style="font-size: 0.95rem; font-weight: 700; color: var(--slate-800);">{{ sp.created_at|date:"b Y" }}</div>
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;" onclick="event.stopPropagation();">
-      <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-modern btn-modern-primary" style="padding: 0.45rem 1rem; font-size: 0.8rem;">📦 Give Goods</a>
-      <a href="{% url 'sales:record_sales_result' %}?sp={{ sp.pk }}" class="btn-modern" style="padding: 0.45rem 1rem; font-size: 0.8rem; background: var(--slate-100); color: var(--slate-800);">✓ Record Sale</a>
-    </div>
-  </div>
-  {% empty %}
-  <div style="grid-column: 1/-1; background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: 16px; padding: 4rem; text-align: center;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
-    <h3 style="color:var(--slate-700);margin-bottom:.5rem;font-weight:800;">No Team Members Registered</h3>
-    <p style="color:var(--slate-500);margin-bottom:2rem;">You haven't added any promoters or drivers yet.</p>
-    <a href="{% url 'sales:add_salesperson' %}" class="btn-modern btn-modern-success">+ Register Your First Member</a>
-  </div>
-  {% endfor %}
+<div class="page-heading"><div><div class="eyebrow">SALES TEAM</div><h1>My sales team</h1></div><a class="button button-primary" href="{% url 'sales:add_salesperson' %}">Add team member</a></div>
+<div class="record-list">
+{% for sp in persons %}
+<div class="record-row"><div><strong>{{ sp.name }}</strong><span>{{ sp.get_channel_display }} · {{ sp.phone|default:"No phone recorded" }}{% if sp.status != 'active' %} · Inactive{% endif %}</span><span>{{ sp.distributions.count }} batches distributed · Active since {{ sp.created_at|date:"b Y" }}</span></div><div><a class="button button-primary" href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}">Give goods</a> <a class="button button-secondary" href="{% url 'sales:record_sales_result' %}?sp={{ sp.pk }}">Record sale</a> <a class="button button-secondary" href="{% url 'sales:sp_detail' sp.pk %}">View history</a></div></div>
+{% empty %}<div class="simple-empty">No team members registered. <a class="button button-primary" href="{% url 'sales:add_salesperson' %}">Register your first member</a></div>{% endfor %}
 </div>
 {% endblock %}

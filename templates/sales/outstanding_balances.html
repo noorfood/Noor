@@ -1,0 +1,22 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Outstanding Balances — Noor Foods{% endblock %}{% block nav_outstanding %}active{% endblock %}{% block breadcrumb %}Outstanding Balances{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">DIRECT SALES</div><h1>Outstanding balances</h1></div></div>
+<p>Customers who still owe money on a confirmed direct sale. Full payment means the balance is ₦0 and the customer does not appear here.</p>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">OWED TO THE COMPANY</span><h2>{{ count }} customer{{ count|pluralize }} owing</h2></div><strong class="metric-value">₦{{ total_outstanding|floatformat:0 }}</strong></div>
+{% if owing %}
+<div class="table-scroll"><table>
+<thead><tr><th>Customer</th><th class="number">Balance owed (₦)</th></tr></thead>
+<tbody>
+{% for s in owing %}
+<tr>
+<td><strong><a href="{% url 'sales:outstanding_customer' s.pk %}">{{ s.buyer_name }}</a></strong></td>
+<td class="number"><strong>{{ s.balance|floatformat:0 }}</strong></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">Nobody owes money. Every confirmed direct sale is fully paid.</p>
+{% endif %}
+</section>
+{% endblock %}

@@ -1,388 +1,103 @@
-{% extends 'base.html' %}
-{% block title %}Management Command Center — Noor Foods{% endblock %}
-{% block nav_md_dash %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Management Command Center — Noor Foods{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Management Command Center{% endblock %}
 {% block content %}
-{# Standardized Command Center Styles #}
-
-{# ══════════════════════════════════════════════════════════ #}
-{# COMMAND CENTER HERO                                        #}
-{# ══════════════════════════════════════════════════════════ #}
-<div class="page-hero" style="background: linear-gradient(145deg, #020617, #0f172a);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🛡️ Factory Oversight Live</span>
-            <h1 class="hero-title" style="color: #fff;">Command Center</h1>
-            <p class="hero-subtitle" style="color: var(--slate-400);">Real-time monitoring of all factory operations and money flow.</p>
-        </div>
-        <div style="display: flex; gap: 0.75rem; align-items: center;">
-            {% if current_user.role == 'md' or current_user.role == 'manager' %}
-            <form action="{% url 'reports:record_monthly_snapshot' %}" method="POST" style="margin: 0;">
-                {% csrf_token %}
-                <button type="submit" class="btn-modern" style="background: var(--emerald); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="return confirm('Confirm Month-End Closing?\n\nThis will take a permanent snapshot of all Store, Production, Sales, and GM balances for the corporate ledger.');">
-                    🛡️ Record Month-End Closing
-                </button>
-            </form>
-            {% endif %}
-            {% if current_user.role == 'md' %}
-            <a href="/reports/md-insights/" class="btn-modern btn-modern-primary" style="background: var(--blue); border: none;">
-                Strategic Insights →
-            </a>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-{# ═══ PENDING HANDSHAKES (GM / MD) ══════════════════════════════════════ #}
-{% if pending_company_issuances or pending_sm_payments %}
-<div class="action-bar-modern" style="background: #fffbeb; border: 1px solid #fcd34d; margin-bottom: 2rem;">
-    <div style="display: flex; align-items: center; gap: 1rem;">
-        <span style="font-size: 1.5rem;">⏱️</span>
-        <div>
-            <div style="font-size: 0.9rem; font-weight: 800; color: #92400e;">Pending Actions Requiring Confirmation</div>
-            <div style="font-size: 0.8rem; color: #b45309;">Please confirm these transfers and payments to keep the system up to date.</div>
-        </div>
-    </div>
-    <div class="action-group">
-      {% if pending_raw_costs %}
-      <a href="{% url 'procurement:list' %}" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">🚜 {{ pending_raw_costs|length }} Stock Review</a>
-      {% endif %}
-      {% if pending_company_issuances %}
-      <a href="/finished-store/list/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">🏢 {{ pending_company_issuances|length }} Handovers</a>
-      {% endif %}
-      {% if pending_sm_payments %}
-      <a href="/sales/dashboard/" class="btn-modern" style="background: #fff; color: #92400e; border: 1px solid #fcd34d; font-size: 0.75rem;">💳 {{ pending_sm_payments|length }} Payments</a>
-      {% endif %}
-    </div>
-</div>
+<div class="page-heading"><div><div class="eyebrow">MANAGEMENT</div><h1>Management command center</h1></div></div>
+<div class="notice">Counts and balances below are from legacy records. In-store balances are all-time balances, not period totals.</div>
+{% if pending_company_issuances or pending_sm_payments or pending_raw_costs %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">NEEDS ATTENTION</span><h2>Pending items</h2></div></div><div class="record-list">
+{% if pending_raw_costs %}<a class="record-row record-link" href="{% url 'procurement:list' %}"><div><strong>Raw material costs awaiting review</strong><span>Cost entries pending</span></div><div class="record-value"><strong>{{ pending_raw_costs|length }}</strong></div></a>{% endif %}
+{% if pending_company_issuances %}<a class="record-row record-link" href="{% url 'finished_store:list' %}"><div><strong>Company handovers awaiting acknowledgement</strong><span>Finished goods issuances pending</span></div><div class="record-value"><strong>{{ pending_company_issuances|length }}</strong></div></a>{% endif %}
+{% if pending_sm_payments %}<a class="record-row record-link" href="{% url 'sales:dashboard' %}"><div><strong>Sales manager payments awaiting confirmation</strong><span>Payments pending GM confirmation</span></div><div class="record-value"><strong>{{ pending_sm_payments|length }}</strong></div></a>{% endif %}
+</div></section>
 {% endif %}
-
-{% if current_user.role == 'md' %}
-<div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; margin-bottom: 3rem;">
-    <h3 style="color: #60a5fa; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌽</span> Maize Command Center &mdash; {% if f_from == f_to and f_from == today_str %}Today{% elif not f_from and not f_to %}All Time{% else %}Period View{% endif %}
-    </h3>
-    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Produced</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.maize.produced }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">10kg Factory Output</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total In Store</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.maize.in_store }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Val: ₦{{ md_metrics.maize.inventory_value|floatformat:0 }}</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Given Out</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.maize.issued }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">To Sales Team & Drivers</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Actual Sales</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.maize.sold }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Bags actually sold to customers</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Cash Received</div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.maize.money_received|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Actual money in bank</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Unpaid (Debt)</div>
-            <div class="{% if md_metrics.maize.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.maize.outstanding|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #475569; margin-top: 0.25rem;">Money outside with staff</div>
-        </div>
-    </div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MAIZE</span><h2>Maize</h2></div></div><div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Produced</span></div><span class="metric-value">{{ md_metrics.maize.produced }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">In store</span></div><span class="metric-value">{{ md_metrics.maize.in_store }}</span><span class="metric-label">Value ₦{{ md_metrics.maize.inventory_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Issued</span></div><span class="metric-value">{{ md_metrics.maize.issued }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sold</span></div><span class="metric-value">{{ md_metrics.maize.sold }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money received</span></div><span class="metric-value">₦{{ md_metrics.maize.money_received|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Outstanding</span></div><span class="metric-value">₦{{ md_metrics.maize.outstanding|floatformat:0 }}</span></div>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">WHEAT</span><h2>Wheat</h2></div></div><div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Produced</span></div><span class="metric-value">{{ md_metrics.wheat.produced }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">In store</span></div><span class="metric-value">{{ md_metrics.wheat.in_store }}</span><span class="metric-label">Value ₦{{ md_metrics.wheat.inventory_value|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Issued</span></div><span class="metric-value">{{ md_metrics.wheat.issued }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sold</span></div><span class="metric-value">{{ md_metrics.wheat.sold }}</span><span class="metric-label">Sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money received</span></div><span class="metric-value">₦{{ md_metrics.wheat.money_received|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Outstanding</span></div><span class="metric-value">₦{{ md_metrics.wheat.outstanding|floatformat:0 }}</span></div>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES MANAGERS</span><h2>Sales manager accountability</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Sales manager</th><th class="number">Maize held</th><th class="number">Wheat held</th><th class="number">Money outstanding (₦)</th><th class="number">Collections pending</th></tr></thead>
+<tbody>
+{% for row in sm_summaries %}
+<tr><td><strong>{{ row.sm.full_name }}</strong></td><td class="number">{{ row.maize_holding|floatformat:0 }}</td><td class="number">{{ row.wheat_holding|floatformat:0 }}</td><td class="number">{{ row.money_outstanding|floatformat:0 }}</td><td class="number">{{ row.pending_count }}</td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No sales managers recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Total batches</span></div><span class="metric-value">{{ total_batches }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Flagged batches</span></div><span class="metric-value">{{ flagged_batches }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Open reconciliation flags</span></div><span class="metric-value">{{ open_flags }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Production outstanding, maize</span></div><span class="metric-value">{{ outstanding_production_maize }}</span><span class="metric-label">Bags</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Production outstanding, wheat</span></div><span class="metric-value">{{ outstanding_production_wheat }}</span><span class="metric-label">Bags</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Production outstanding, total</span></div><span class="metric-value">{{ outstanding_production }}</span><span class="metric-label">Bags</span></div>
 </div>
-
-<div class="card" style="padding: 2.5rem; background: linear-gradient(145deg, #2e1065, #1e1b4b); border: 1px solid #4c1d95; margin-bottom: 3rem;">
-    <h3 style="color: #c084fc; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.5rem;">🌾</span> Wheat Command Center &mdash; {% if f_from == f_to and f_from == today_str %}Today{% elif not f_from and not f_to %}All Time{% else %}Period View{% endif %}
-    </h3>
-    <div class="balance-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 2rem;">
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Produced</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #fff;">{{ md_metrics.wheat.produced }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">10kg Factory Output</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total In Store</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #f59e0b;">{{ md_metrics.wheat.in_store }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Val: ₦{{ md_metrics.wheat.inventory_value|floatformat:0 }}</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Given Out</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #818cf8;">{{ md_metrics.wheat.issued }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">To Sales & Internal</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Actual Sales</div>
-            <div style="font-size: 2rem; font-weight: 900; color: #0ea5e9;">{{ md_metrics.wheat.sold }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Final Consumer Exit</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Cash Received</div>
-            <div style="font-size: 1.5rem; font-weight: 900; color: #34d399;">₦{{ md_metrics.wheat.money_received|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Verified Receipts</div>
-        </div>
-        <div>
-            <div style="font-size: 0.7rem; color: #a78bfa; font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem;">Total Unpaid (Debt)</div>
-            <div class="{% if md_metrics.wheat.outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.5rem; font-weight: 900;">₦{{ md_metrics.wheat.outstanding|floatformat:0 }}</div>
-            <div style="font-size: 0.65rem; color: #4c1d95; margin-top: 0.25rem;">Pending Liquidation</div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{# SM ACCOUNTABILITY OVERVIEW #}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PRODUCTION</span><h2>Flagged batches</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Officer</th><th>Material</th><th class="number">Bags milled</th><th class="number">Loss %</th><th>Flag</th><th>Reason</th></tr></thead>
+<tbody>
+{% for b in recent_flagged %}
+<tr><td>{{ b.date }}</td><td>{{ b.production_officer.full_name }}</td><td><span class="status-pill">{{ b.material_type|upper }}</span></td><td class="number">{{ b.bags_milled_new }}</td><td class="number">{{ b.loss_pct }}</td><td><span class="status-pill">{{ b.flag_level }}</span></td><td>{{ b.flag_reason|truncatechars:100 }}</td></tr>
+{% empty %}
+<tr><td colspan="7" class="empty-state">No flagged batches.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAFF</span><h2>Staff roster</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Name</th><th>Role</th>{% if current_user.role == 'md' %}<th>Action</th>{% endif %}</tr></thead>
+<tbody>
+{% for s in staff_roster %}
+<tr><td><strong>{{ s.full_name }}</strong></td><td>{{ s.get_role_display|default:s.role }}</td>{% if current_user.role == 'md' %}<td><a class="button button-secondary" href="{% url 'accounts:md_impersonate' s.pk %}">View as staff</a></td>{% endif %}</tr>
+{% empty %}
+<tr><td colspan="{% if current_user.role == 'md' %}3{% else %}2{% endif %}" class="empty-state">No staff recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ACTIVITY</span><h2>Recent activity</h2></div></div><div class="record-list">
+{% for log in audit_feed %}
+<div class="record-row"><div><strong>{{ log.action }} · {{ log.user_name }}</strong><span>{{ log.description }}</span></div><div class="record-value"><strong>{{ log.timestamp|date:"M d" }}</strong><span>{{ log.timestamp|date:"H:i" }} · {{ log.user_role }}</span></div></div>
+{% empty %}
+<div class="simple-empty">No recent activity.</div>
+{% endfor %}
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">COMPANY SALES</span><h2>Recent company sales</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Person</th><th>Material</th><th class="number">Quantity sold</th><th class="number">Total value (₦)</th></tr></thead>
+<tbody>
+{% for s in company_sales %}
+<tr><td>{{ s.date|date:"M d" }}</td><td>{{ s.display_person }}</td><td><span class="status-pill">{{ s.material_type|upper }}</span></td><td class="number">{{ s.qty_sold }}</td><td class="number">{{ s.total_value|floatformat:0 }}</td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No company sales recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">BRAN SALES</span><h2>Recent bran sales</h2></div><a class="text-link" href="{% url 'reports:bran_sales' %}">View full report</a></div><div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Buyer</th><th class="number">Sacks</th><th class="number">Total (₦)</th></tr></thead>
+<tbody>
+{% for b in bran_sales %}
+<tr><td>{{ b.date|date:"M d" }}</td><td>{{ b.buyer_name }}</td><td class="number">{{ b.qty_sacks }}</td><td class="number">{{ b.total_amount|floatformat:0 }}</td></tr>
+{% empty %}
+<tr><td colspan="4" class="empty-state">No bran sales recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">RETAIL</span><h2>Retail balances</h2></div></div><div class="table-scroll"><table>
+<thead><tr><th>Material</th><th class="number">Pieces</th></tr></thead>
+<tbody>
+{% for rb in retail_balances %}
+<tr><td><strong>{{ rb.material|upper }}</strong></td><td class="number">{{ rb.pieces }}</td></tr>
+{% empty %}
+<tr><td colspan="2" class="empty-state">No retail balances recorded.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% if current_user.role == 'md' or current_user.role == 'manager' %}
-<h3 class="ops-section-heading">📦 Sales Manager Accountability — Goods &amp; Money</h3>
-<div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 3rem;">
-  {% for row in sm_summaries %}
-  <div class="card {% if row.money_outstanding > 0 %}border-rose{% elif row.goods_balance > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-    <div>
-      <div style="font-weight: 800; color: var(--navy); font-size: 1rem; margin-bottom: 0.1rem;">{{ row.sm.full_name }}</div>
-      <div style="font-size: 0.75rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase;">Primary Accounts Sentinel</div>
-    </div>
-    <div style="display: flex; gap: 0.75rem; align-items: center;">
-      <span style="background: var(--slate-100); color: var(--navy); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌽 {{ row.maize_holding|floatformat:0 }} Maize</span>
-      <span style="background: var(--slate-100); color: #4c1d95; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">🌾 {{ row.wheat_holding|floatformat:0 }} Wheat</span>
-      {% if row.money_outstanding > 0 %}
-      <span style="background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">₦{{ row.money_outstanding|floatformat:0 }} Unpaid</span>
-      {% else %}
-      <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">✓ Balanced</span>
-      {% endif %}
-      {% if row.pending_count > 0 %}
-      <span style="background: #fef9c3; color: #854d0e; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800;">⏳ {{ row.pending_count }} Pending</span>
-      {% endif %}
-    </div>
-  </div>
-  {% empty %}
-  <div style="padding: 4rem; text-align: center; background: white; border-radius: 20px; border: 1px dashed var(--slate-200); color: var(--slate-400);">No active Sales Managers registered.</div>
-  {% endfor %}
-</div>
+<section class="panel form-panel"><div class="form-heading"><h2>Monthly snapshot</h2></div>
+<form method="post" action="{% url 'reports:record_monthly_snapshot' %}">{% csrf_token %}<div class="form-actions"><button type="submit" class="button button-primary">Record monthly snapshot</button></div></form>
+<div class="form-actions"><a class="button button-secondary" href="{% url 'sales:record_direct_sale' %}">Record direct sale</a></div></section>
 {% endif %}
-
-{# OPERATIONAL HEALTH #}
-<h3 class="ops-section-heading">🏗️ Milling Plant & Operations Health</h3>
-<div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
-  <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--emerald);">
-    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Milling Batches</div>
-    <div style="font-size: 1.75rem; font-weight: 900; color: var(--navy);">{{ total_batches }}</div>
-    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Total processed cycles</div>
-  </div>
-  <div class="card {% if flagged_batches > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Critical Flags</div>
-    <div class="font-bold {% if flagged_batches > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ flagged_batches }}</div>
-    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Excessive loss detect</div>
-  </div>
-  <div class="card {% if outstanding_production_maize > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌽 Maize Floor</div>
-    <div class="font-bold {% if outstanding_production_maize > 0 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ outstanding_production_maize }}</div>
-    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">WIP Sacks in packaging</div>
-  </div>
-  <div class="card {% if outstanding_production_wheat > 0 %}border-amber{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">🌾 Wheat Floor</div>
-    <div class="font-bold {% if outstanding_production_wheat > 0 %}text-amber{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ outstanding_production_wheat }}</div>
-    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">WIP Sacks in packaging</div>
-  </div>
-  <div class="card {% if open_flags > 0 %}border-rose{% else %}border-emerald{% endif %}" style="padding: 1.5rem;">
-    <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Financial Flags</div>
-    <div class="font-bold {% if open_flags > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.75rem;">{{ open_flags }}</div>
-    <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">Unresolved audit gaps</div>
-  </div>
-</div>
-
-{# OVERSIGHT: LIVE FEED + PERSONNEL ROSTER (MD ONLY) #}
-{% if current_user.role == 'md' %}
-<h3 class="ops-section-heading">🛡️ Operational Oversight — Factory Activity & Staffing</h3>
-<div class="layout-grid" style="grid-template-columns: 1.8fr 1fr; gap: 2rem; margin-bottom: 3rem;">
-  
-  <!-- AUDIT LOG PANEL -->
-  <div class="card" style="padding: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
-    <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--slate-100); display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin: 0;">📜 Live System Audit Ledger</h4>
-        <a href="/audit/log/" style="font-size: 0.75rem; font-weight: 700; color: var(--blue);">View Full History →</a>
-    </div>
-    <div style="max-height: 500px; overflow-y: auto; padding: 1.5rem;">
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        {% for log in audit_feed %}
-        <div class="card" style="padding: 1rem; border: 1px solid var(--slate-100); background: #fff; box-shadow: none;">
-          <div style="display: flex; gap: 1rem;">
-            <div style="min-width: 60px; text-align: center; border-right: 1px solid var(--slate-100); padding-right: 1rem;">
-              <div style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 0.8rem; color: var(--navy);">{{ log.timestamp|date:"H:i" }}</div>
-              <div style="font-size: 0.6rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase;">{{ log.timestamp|date:"M d" }}</div>
-            </div>
-            <div style="flex: 1;">
-              <div style="font-size: 0.65rem; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem;">{{ log.user_name }} • {{ log.user_role }}</div>
-              <div style="font-size: 0.85rem; color: var(--slate-600); line-height: 1.4; font-weight: 500;">{{ log.description }}</div>
-              <div style="display: inline-block; margin-top: 0.5rem; font-size: 0.6rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; background: var(--slate-100); color: var(--slate-500);">
-                {{ log.action }}
-              </div>
-            </div>
-          </div>
-        </div>
-        {% empty %}
-        <div style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">No recent system activity detected.</div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  <!-- PERSONNEL ROSTER PANEL -->
-  <div class="card" style="padding: 0; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px);">
-    <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--slate-100);">
-        <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin: 0;">👥 Active Personnel Registry</h4>
-    </div>
-    <div style="max-height: 500px; overflow-y: auto; padding: 1.5rem;">
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-        {% for s in staff_roster %}
-        <div class="card" style="padding: 0.75rem 1rem; border: 1px solid var(--slate-100); background: #fff; box-shadow: none; display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div style="width: 32px; height: 32px; background: var(--slate-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
-              {% if s.role == 'manager' %}👑{% elif s.role == 'md' %}🛡️{% elif 'store' in s.role %}📦{% else %}⚙️{% endif %}
-            </div>
-            <div>
-              <div style="font-size: 0.85rem; font-weight: 800; color: var(--navy);">{{ s.full_name }}</div>
-              <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">{{ s.get_role_display|default:s.role }}</div>
-            </div>
-          </div>
-          <a href="{% url 'accounts:md_impersonate' s.pk %}" class="btn-modern" style="padding: 4px 10px; font-size: 0.7rem;" onclick="return confirm('Initiate administrative spectate for {{ s.full_name }}?');">
-            Spectate
-          </a>
-        </div>
-        {% empty %}
-        <div style="text-align: center; padding: 2rem; color: var(--slate-400);">No active personnel profiles.</div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
-
-{# RETAIL & BRAN SALES #}
-<div class="action-bar-modern" style="background: transparent; border: none; padding: 0; margin-bottom: 1.5rem;">
-    <h3 style="font-size: 1rem; font-weight: 800; color: var(--navy); margin: 0;">🏬 Direct & Bran Sales Channel</h3>
-    <div class="action-group">
-        <a href="{% url 'sales:record_direct_sale' %}" class="btn-modern btn-modern-primary">🛒 Record Retail Sale</a>
-        <a href="{% url 'sales:record_bran_sale' %}" class="btn-modern" style="background: var(--emerald); color: white; border: none;">🌾 Record Bran Sale</a>
-    </div>
-</div>
-
-<div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
-    {% for rb in retail_balances %}
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid var(--blue);">
-        <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 800; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">{{ rb.material|upper }} Retail Pieces</div>
-        <div style="font-size: 1.75rem; font-weight: 900; color: var(--blue);">{{ rb.pieces }}</div>
-        <div style="font-size: 0.65rem; color: var(--slate-400); margin-top: 0.25rem;">1kg bags available at desk</div>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="layout-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem;">
-  <div class="card" style="padding: 0;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--slate-100); background: var(--slate-50);">
-        <h4 style="margin:0; font-size: 0.8rem; font-weight: 900; color: var(--navy); text-transform: uppercase;">🛒 Recent Direct Retail Sales</h4>
-    </div>
-    <div class="table-container">
-      <table class="premium-table">
-        <thead><tr><th>Date</th><th>Buyer Profile</th><th class="num">Volume</th><th class="num">₦ Value</th></tr></thead>
-        <tbody>
-          {% for s in company_sales %}
-          <tr>
-            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ s.date|date:"M d" }}</td>
-            <td>
-                <div style="font-weight: 800; color: var(--navy);">{{ s.display_person }}</div>
-                <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">Channel: Direct</div>
-            </td>
-            <td class="num">
-                <span style="font-weight: 800; color: var(--slate-600);">{{ s.qty_sold }}</span> 
-                <span style="font-size: 0.65rem; font-weight: 800; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">{{ s.material_type|upper }}</span>
-            </td>
-            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--navy);">₦{{ s.total_value|floatformat:0 }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--slate-400); font-style: italic;">No recent retail records.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card" style="padding: 0;">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #dcfce7; background: #f0fdf4; display: flex; justify-content: space-between; align-items: center;">
-        <h4 style="margin:0; font-size: 0.8rem; font-weight: 900; color: #166534; text-transform: uppercase;">🌾 Recent Bran Sales Channel</h4>
-        <a href="{% url 'reports:bran_sales' %}" style="font-size: 0.75rem; font-weight: 700; color: #059669;">View Full Report →</a>
-    </div>
-    <div class="table-container">
-      <table class="premium-table">
-        <thead><tr><th>Date</th><th>Trading Partner</th><th class="num">Bags</th><th class="num">₦ Value</th></tr></thead>
-        <tbody>
-          {% for b in bran_sales %}
-          <tr>
-            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ b.date|date:"M d" }}</td>
-            <td>
-                <div style="font-weight: 800; color: #166534;">{{ b.buyer_name }}</div>
-                <div style="font-size: 0.65rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase;">By-product Flow</div>
-            </td>
-            <td class="num">
-                <span style="font-weight: 800; color: var(--slate-600);">{{ b.qty_sacks }}</span>
-                <span style="font-size: 0.65rem; font-weight: 800; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; color: #166534;">{{ b.material_type|upper }}</span>
-            </td>
-            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: #166534;">₦{{ b.total_amount|floatformat:0 }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" style="text-align: center; padding: 3rem; color: var(--slate-400); font-style: italic;">No recent bran records.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-{# EMERGENCY FLAGS #}
-{% if recent_flagged %}
-<div class="card" style="padding: 0; border: 1px solid var(--rose); margin-bottom: 3rem; overflow: hidden;">
-    <div style="padding: 1.25rem 1.5rem; background: var(--rose); color: white;">
-        <h3 style="margin:0; font-size: 0.9rem; font-weight: 800; text-transform: uppercase;">🚨 Production Problems — High Waste</h3>
-    </div>
-    <div class="table-container">
-      <table class="premium-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Batch Details</th>
-            <th>Reporting Officer</th>
-            <th class="num">Volume</th>
-            <th class="num">Loss %</th>
-            <th>Severity</th>
-            <th>Diagnostic</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in recent_flagged %}
-          <tr class="{% if b.flag_level == 'critical' %}bg-rose-light{% else %}bg-amber-light{% endif %}">
-            <td style="font-weight: 700; color: var(--slate-400); font-size: 0.8rem;">{{ b.date|date:"M d" }}</td>
-            <td>
-                <span style="font-size: 0.65rem; font-weight: 900; background: var(--slate-100); padding: 2px 6px; border-radius: 4px; color: var(--slate-500);">{{ b.material_type|upper }}</span>
-            </td>
-            <td style="font-weight: 800; color: var(--navy);">{{ b.production_officer.full_name }}</td>
-            <td class="num" style="font-weight: 700; color: var(--slate-600);">{{ b.bags_milled_new }} <small style="font-size: 0.7rem;">Bags</small></td>
-            <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--rose);">{{ b.loss_pct }}%</td>
-            <td>
-                <span class="{% if b.flag_level == 'critical' %}bg-rose{% else %}bg-amber{% endif %}" style="color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; font-weight: 900; text-transform: uppercase;">
-                    {{ b.flag_level }}
-                </span>
-            </td>
-            <td style="font-size: 0.75rem; color: var(--slate-600); max-width: 300px;">{{ b.flag_reason|truncatechars:100 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-</div>
-{% endif %}
-
-{% include 'includes/_daily_ledger.html' %}
-
 {% endblock %}

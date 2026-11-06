@@ -4,13 +4,8 @@ from audit.models import AuditLog
 def log_action(request, user, module, action, description='',
                object_type='', object_id='', old_data='', new_data=''):
     """Utility function to create an audit log entry."""
-    ip = None
-    if request:
-        x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded:
-            ip = x_forwarded.split(',')[0].strip()
-        else:
-            ip = request.META.get('REMOTE_ADDR')
+    # Forwarded headers are client-controlled unless a trusted proxy is configured.
+    ip = request.META.get('REMOTE_ADDR') if request else None
 
     AuditLog.objects.create(
         user_id=user.pk if user else None,

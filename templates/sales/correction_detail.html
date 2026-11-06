@@ -1,0 +1,23 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Sales Correction — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Sales Correction{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">CORRECTIONS</div><h1>Correction request #{{ correction.pk }}</h1></div></div>
+<div class="notice">Request by the recorder. Decision only by an independent MD. The original is kept, and amounts are never edited.</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">REQUEST</span><h2>Request</h2></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<div class="record-list">
+<div class="record-row"><span>Status</span><strong>{{ correction.status }}</strong></div>
+<div class="record-row"><span>Sales result</span><strong>#{{ correction.sales_result_id }} · {{ correction.sales_result.sales_person.name }} · {{ correction.sales_result.date }} · {{ correction.sales_result.material_type }} · {{ correction.sales_result.qty_sold }} sacks</strong></div>
+<div class="record-row"><span>Requested by</span><strong>{{ correction.requested_by.full_name }}</strong></div>
+<div class="record-row"><span>Reason</span><strong>{{ correction.reason }}</strong></div>
+{% if correction.decided_by %}<div class="record-row"><span>Decided by</span><strong>{{ correction.decided_by.full_name }}</strong></div><div class="record-row"><span>Decision note</span><strong>{{ correction.decision_note }}</strong></div>{% endif %}
+</div></section>
+{% if current_user.role == 'md' and correction.status == 'pending' %}
+<section class="panel form-panel"><div class="form-heading"><h2>Decision</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid"><div class="field field-wide"><label for="id_note">Decision note</label><textarea name="decision_note" id="id_note" rows="3" required></textarea></div></div>
+<div class="form-actions"><button class="button button-primary" type="submit" name="decision" value="approved">Approve</button><button class="button button-secondary" type="submit" name="decision" value="rejected">Reject</button></div>
+</form></section>
+{% endif %}
+<div class="form-actions"><a class="button button-secondary" href="{% url 'sales:list_sales_corrections' %}">Back to corrections</a></div>
+{% endblock %}

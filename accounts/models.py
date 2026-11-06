@@ -1,4 +1,7 @@
 import hashlib
+import hmac
+import re
+from django.contrib.auth.hashers import make_password, check_password as check_django_password
 from django.db import models
 
 
@@ -58,10 +61,13 @@ class User(models.Model):
         return f"{self.full_name} ({self.get_role_display()})"
 
     def set_password(self, raw_password):
-        self.password_hash = hashlib.sha256(raw_password.encode()).hexdigest()
+        self.password_hash = make_password(raw_password)
+        self.plain_password = None
 
     def check_password(self, raw_password):
-        return self.password_hash == hashlib.sha256(raw_password.encode()).hexdigest()
+        if re.fullmatch(r"[0-9a-f]{64}", self.password_hash or ""):
+            return hmac.compare_digest(self.password_hash, hashlib.sha256(raw_password.encode()).hexdigest())
+        return check_django_password(raw_password, self.password_hash)
 
     def get_role_display_short(self):
         return dict(self.ROLE_CHOICES).get(self.role, self.role)

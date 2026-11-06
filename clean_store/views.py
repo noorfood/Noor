@@ -136,7 +136,8 @@ def receive_clean(request):
                            (' (Job Finalized)' if is_final else ' (Partial Reception)'),
                            'CleanRawReceipt', receipt.pk)
                 
-                messages.success(request, f'Clean bag receipt #{receipt.pk} saved. {clean_bags_produced} bags added to store.')
+                balance_now = _get_clean_store_balance(issuance.material_type)
+                messages.success(request, f'Clean bag receipt #{receipt.pk} saved. {clean_bags_produced} bags added to store. Clean store {issuance.material_type} balance now: {balance_now} bags.')
                 return redirect('clean_store:list')
         except Exception as e:
             error = f'Error: {str(e)}'
@@ -189,7 +190,8 @@ def issue_clean(request):
                     log_action(request, user, 'clean_store', 'ISSUE_CLEAN',
                                f'Issued {num_bags} {material_type} bags to {issued_to.full_name}',
                                'CleanRawIssuance', issuance.pk)
-                    messages.success(request, f'Issuance #{issuance.pk} saved. {num_bags} bags issued to {issued_to.full_name}.')
+                    balance_now = _get_clean_store_balance(material_type)
+                    messages.success(request, f'Issuance #{issuance.pk} saved. {num_bags} bags issued to {issued_to.full_name}. Clean store {material_type} balance now: {balance_now} bags.')
                     return redirect('clean_store:list')
         except Exception as e:
             error = f'Error: {str(e)}'
@@ -219,7 +221,8 @@ def acknowledge_return(request, return_id):
             ret.received_by = user
             ret.save()
             log_action(request, user, 'clean_store', 'ACCEPT_RETURN', f'Accepted {ret.num_bags} {ret.material_type} bags from {ret.returned_by.full_name}', 'CleanRawReturn', ret.pk)
-            messages.success(request, f'Return #{ret.pk} accepted. Stock added to store.')
+            balance_now = _get_clean_store_balance(ret.material_type)
+            messages.success(request, f'Return #{ret.pk} accepted. Stock added to store. Clean store {ret.material_type} balance now: {balance_now} bags.')
         elif action == 'reject':
             if not note:
                 messages.error(request, 'You must provide a reason for rejecting the return.')

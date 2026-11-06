@@ -14,7 +14,7 @@ def _get_raw_store_balance(material_type):
     return received - issued
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'manager', md_read='raw store officer or GM')
 @store_type_required('raw')
 def dashboard(request):
     user = get_current_user(request)
@@ -57,52 +57,44 @@ def dashboard(request):
     })
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'manager', md_read='raw store officer or GM')
 @store_type_required('raw')
 def receive_raw(request):
+    from django.db import IntegrityError, transaction
+    from accounts.mixins import forbidden_response
+    from django.utils import timezone
+    from .forms import RawReceiptForm
+    from bag_stock.models import RawReceiptSubmission
     user = get_current_user(request)
-    error = None
-
-    if request.method == 'POST':
+    if user is None:
+        return redirect('login')
+    if request.session.get('impersonate_id') or user.status!='active' or not (user.role in ('manager','md') or (user.role=='store_officer' and user.store_type=='raw')):
+        return forbidden_response(request)
+    form = RawReceiptForm(request.POST if request.method == 'POST' else None, initial={'date': timezone.localdate()})
+    if request.method == 'POST' and form.is_valid():
         try:
-            date_val = request.POST.get('date')
-            material_type = request.POST.get('material_type')
-            supplier = request.POST.get('supplier', '').strip()
-            num_bags = int(request.POST.get('num_bags', 0))
-            approx_weight_kg = float(request.POST.get('approx_weight_kg', 0))
-            reference_no = request.POST.get('reference_no', '').strip()
-            notes = request.POST.get('notes', '').strip()
-
-            if not date_val or not material_type or not supplier or num_bags <= 0 or approx_weight_kg <= 0:
-                error = 'Please fill in all required fields with valid values.'
-            else:
-                receipt = RawMaterialReceipt.objects.create(
-                    date=date_val,
-                    material_type=material_type,
-                    supplier=supplier,
-                    num_bags=num_bags,
-                    approx_weight_kg=approx_weight_kg,
-                    reference_no=reference_no,
-                    received_by=user,
-                    notes=notes,
-                    is_locked=True,
-                    cost_status='pending',
-                )
+            with transaction.atomic():
+                receipt = form.save(commit=False)
+                receipt.received_by = user
+                receipt.is_locked = True
+                receipt.cost_status = 'pending'
+                receipt.save()
+                RawReceiptSubmission.objects.create(request_key=form.cleaned_data['request_key'],receipt=receipt)
+                from bag_stock.services import post_receipt
+                post_receipt(receipt, user)
                 log_action(request, user, 'procurement', 'RECEIVE_RAW',
-                           f'Received {num_bags} bags of {material_type} from {supplier}',
+                           f'Received {receipt.num_bags} bags of {receipt.material_type} from {receipt.supplier}',
                            'RawMaterialReceipt', receipt.pk)
-                messages.success(request, f'Receipt #{receipt.pk} saved. Awaiting MD cost review.')
-                return redirect('procurement:list')
-        except Exception as e:
-            error = f'Error saving record: {str(e)}'
-
-    return render(request, 'procurement/receive_raw.html', {
-        'current_user': user, 'error': error,
-        'today': datetime.date.today().isoformat(),
-    })
+            balance_now = _get_raw_store_balance(receipt.material_type)
+            messages.success(request, f'Receipt #{receipt.pk} saved. {receipt.num_bags} bags of {receipt.material_type} received. Raw store {receipt.material_type} balance now: {balance_now} bags.')
+            return redirect('procurement:receive')
+        except IntegrityError:
+            if not RawReceiptSubmission.objects.filter(request_key=form.cleaned_data['request_key']).exists():raise
+            form.add_error(None, 'This submission was already recorded. Check the records before trying again.')
+    return render(request, 'rebuild/receive_raw.html', {'current_user': user, 'form': form})
 
 
-@role_required('store_officer', 'manager', 'md')
+@role_required('store_officer', 'manager', md_read='raw store officer or GM')
 @store_type_required('raw')
 def issue_raw(request):
     user = get_current_user(request)
@@ -219,40 +211,44 @@ def list_records(request):
 
 @role_required('md')
 def set_receipt_cost(request, receipt_id):
-    """MD enters the purchase cost per bag for a raw material receipt."""
+    from decimal import Decimal
+    from django.db import transaction
+    from accounts.mixins import forbidden_response
+    from django.utils import timezone
+    from accounts.models import User
+    from .forms import PurchaseCostForm
+
     user = get_current_user(request)
     receipt = get_object_or_404(RawMaterialReceipt, pk=receipt_id)
-
-    if request.method == 'POST':
-        try:
-            cost_per_bag = float(request.POST.get('cost_per_bag', 0))
-            if cost_per_bag <= 0:
-                messages.error(request, 'Cost per bag must be greater than zero.')
-                return redirect('procurement:set_cost', receipt_id=receipt_id)
-
-            import django.utils.timezone as tz
-            receipt.cost_per_bag = cost_per_bag
-            receipt.total_cost = cost_per_bag * receipt.num_bags
-            receipt.cost_status = 'approved'
-            receipt.cost_approved_by = user
-            receipt.cost_approved_at = tz.now()
-            receipt.save()
-
-            log_action(request, user, 'procurement', 'SET_COST',
-                       f'Set cost ₦{cost_per_bag}/bag for Receipt #{receipt.pk} '
-                       f'({receipt.material_type}) — Total ₦{receipt.total_cost:,.0f}',
-                       'RawMaterialReceipt', receipt.pk)
-            messages.success(request,
-                             f'Cost set: ₦{cost_per_bag:,.0f}/bag × {receipt.num_bags} bags = '
-                             f'₦{receipt.total_cost:,.0f} for Receipt #{receipt.pk}.')
-            return redirect('procurement:list')
-        except Exception as e:
-            messages.error(request, f'Error: {e}')
-
-    return render(request, 'procurement/set_cost.html', {
-        'current_user': user,
-        'receipt': receipt,
-    })
+    form = PurchaseCostForm(request.POST if request.method == 'POST' else None,
+                            initial={'cost_per_bag': receipt.cost_per_bag})
+    if request.method == 'POST' and form.is_valid():
+        with transaction.atomic():
+            locked_user = User.objects.select_for_update().filter(pk=user.pk, status='active', role='md').first()
+            if not locked_user:
+                return forbidden_response(request)
+            receipt = get_object_or_404(RawMaterialReceipt.objects.select_for_update(), pk=receipt_id)
+            total = form.cleaned_data['cost_per_bag'] * receipt.num_bags
+            if receipt.num_bags <= 0 or total > Decimal('999999999999.99'):
+                form.add_error('cost_per_bag', 'Invalid total cost.')
+            elif receipt.cost_status == 'approved' and not form.cleaned_data['revision_note'].strip():
+                form.add_error('revision_note', 'Enter a revision note.')
+            else:
+                old_data = f'Cost per bag: {receipt.cost_per_bag}; total: {receipt.total_cost}; status: {receipt.cost_status}'
+                receipt.cost_per_bag = form.cleaned_data['cost_per_bag']
+                receipt.total_cost = total
+                receipt.cost_status = 'approved'
+                receipt.cost_approved_by = locked_user
+                receipt.cost_approved_at = timezone.now()
+                receipt.save(update_fields=['cost_per_bag','total_cost','cost_status','cost_approved_by','cost_approved_at'])
+                note = form.cleaned_data['revision_note'].strip()
+                log_action(request, locked_user, 'procurement', 'SET_COST',
+                           f'Purchase cost set for Receipt #{receipt.pk}. Revision note: {note}',
+                           'RawMaterialReceipt', receipt.pk, old_data,
+                           f'Cost per bag: {receipt.cost_per_bag}; total: {receipt.total_cost}; status: approved')
+                messages.success(request, 'Purchase cost saved.')
+                return redirect('procurement:list')
+    return render(request, 'procurement/set_cost.html', {'current_user': user, 'receipt': receipt, 'form': form})
 
 
 @role_required('md')

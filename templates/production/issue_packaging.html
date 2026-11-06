@@ -1,95 +1,21 @@
-{% extends 'base.html' %}
-{% block title %}Issue Sacks to Store — Noor Foods{% endblock %}
-
+{% extends 'rebuild/base.html' %}
+{% block title %}Issue Sacks to Store — Noor Foods{% endblock %}{% block nav_production %}active{% endblock %}{% block breadcrumb %}Issue Sacks to Store{% endblock %}
 {% block content %}
-<div style="max-width: 600px; margin: 2rem auto;">
-    <div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 2rem; border-radius: 24px; padding: 2rem; text-align: center;">
-        <h1 class="hero-title" style="color: #fff; font-size: 1.75rem;">Issue to FG Store</h1>
-        <p class="hero-subtitle" style="color: #94a3b8;">Transferring packaged sacks from your hand to the main warehouse.</p>
-    </div>
-
-    <div style="background: white; padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);">
-        <style>
-            .mat-maize-box { padding: 1rem; background: #fffbeb; border-radius: 12px; border: 1px solid #fef3c7; text-align: center; }
-            .mat-wheat-box { padding: 1rem; background: #f5f3ff; border-radius: 12px; border: 1px solid #ddd6fe; text-align: center; }
-            .mat-neutral-box { padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; }
-        </style>
-        {# Balance Header #}
-        <div style="margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="{% if material_type == 'maize' %}mat-maize-box{% else %}mat-neutral-box{% endif %}">
-                <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Maize In Hand</div>
-                <div style="font-size: 1.25rem; font-weight: 800; color: #f59e0b;">{{ hand_maize }} sacks</div>
-            </div>
-            <div class="{% if material_type == 'wheat' %}mat-wheat-box{% else %}mat-neutral-box{% endif %}">
-                <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Wheat In Hand</div>
-                <div style="font-size: 1.25rem; font-weight: 800; color: #8b5cf6;">{{ hand_wheat }} sacks</div>
-            </div>
-        </div>
-
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem;">Material Type</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <label style="cursor: pointer;">
-                        <input type="radio" name="material_type" value="maize" {% if material_type == 'maize' %}checked{% endif %} required style="display: none;">
-                        <div class="material-btn" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; font-weight: 700;">🌽 Maize</div>
-                    </label>
-                    <label style="cursor: pointer;">
-                        <input type="radio" name="material_type" value="wheat" {% if material_type == 'wheat' %}checked{% endif %} required style="display: none;">
-                        <div class="material-btn" style="padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 12px; text-align: center; font-weight: 700;">🌾 Wheat</div>
-                    </label>
-                </div>
-            </div>
-
-            <style>
-                input[type="radio"]:checked + .material-btn {
-                    border-color: #6366f1;
-                    background: #f5f3ff;
-                    color: #6366f1;
-                }
-            </style>
-
-            <div class="form-group" style="margin-bottom: 1.5rem;">
-                <label for="qty_to_issue" style="display: block; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem;">Quantity to Issue</label>
-                <input type="number" name="qty_to_issue" id="qty_to_issue" min="1" max="{{ current_hand }}" placeholder="How many sacks?" required
-                       style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1.1rem; font-weight: 700;">
-            </div>
-
-            <div class="form-group" style="margin-bottom: 2rem;">
-                <label for="notes" style="display: block; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem;">Handover Notes</label>
-                <textarea name="notes" id="notes" rows="2" placeholder="Any details for the store officer..."
-                          style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 12px;"></textarea>
-            </div>
-
-            <div style="display: flex; gap: 1rem;">
-                <a href="{% url 'production:dashboard' %}" class="btn-secondary" style="flex: 1; text-align: center; padding: 0.75rem; border-radius: 12px; font-weight: 700; text-decoration: none; background: #f1f5f9; color: #475569;">Cancel</a>
-                <button type="submit" class="btn-primary" style="flex: 2; padding: 0.75rem; border-radius: 12px; font-weight: 700; background: #ea580c; border: none; color: white;">Confirm Transfer →</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-    document.querySelectorAll('input[name="material_type"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const mat = this.value;
-            const input = document.getElementById('qty_to_issue');
-            const handMaize = Number("{{ hand_maize|default:0 }}");
-            const handWheat = Number("{{ hand_wheat|default:0 }}");
-            
-            if (mat === 'maize') {
-                input.max = handMaize;
-            } else {
-                input.max = handWheat;
-            }
-            
-            // Optional: reset value if it exceeds new max
-            if (parseInt(input.value) > parseInt(input.max)) {
-                input.value = input.max;
-            }
-        });
-    });
-</script>
+<div class="page-heading"><div><div class="eyebrow">PRODUCTION</div><h1>Issue sacks to store</h1></div><div><a class="button button-secondary" href="{% url 'production:dashboard' %}">Back to dashboard</a></div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SACKS IN HAND</span><h2>Available sacks</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize sacks in hand</span></div><span class="metric-value">{{ hand_maize|default:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat sacks in hand</span></div><span class="metric-value">{{ hand_wheat|default:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Selected material in hand</span></div><span class="metric-value">{{ current_hand }}</span><span class="metric-label">{{ material_type|upper }}</span></div>
+</div></section>
+<section class="panel form-panel"><div class="form-heading"><h2>Issue details</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material_type" required>
+<option value="maize" {% if material_type == "maize" %}selected{% endif %}>Maize</option>
+<option value="wheat" {% if material_type == "wheat" %}selected{% endif %}>Wheat</option>
+</select></div>
+<div class="field"><label for="id_qty">Number of 10 kg sacks</label><input type="number" id="id_qty" name="qty_to_issue" min="1" required></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Issue sacks</button><a class="button button-quiet" href="{% url 'production:dashboard' %}">Cancel</a></div></form></section>
 {% endblock %}

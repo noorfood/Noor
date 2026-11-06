@@ -1,0 +1,20 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Bran Receipt — Noor Foods{% endblock %}{% block nav_bran_sale %}active{% endblock %}{% block breadcrumb %}Record Bran Receipt{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">BRAN</div><h1>Record bran received</h1></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bran on hand</span></div><span class="metric-value">{{ balance_maize }} sacks</span><span class="metric-label">Received from milling minus sold</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bran on hand</span></div><span class="metric-value">{{ balance_wheat }} sacks</span><span class="metric-label">Received from milling minus sold</span></div>
+</div>
+<section class="panel form-panel"><div class="form-heading"><h2>Bran receipt details</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date received</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_material">Material source</label><select id="id_material" name="material_type" required>{% for val, label in material_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_qty">Quantity (sacks/bags)</label><input type="number" id="id_qty" name="qty" min="1" required></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="2"></textarea></div>
+</div>
+<div class="form-actions">{% if current_user.role == 'md' %}<span class="notice">You are viewing as MD. Recording is done by the raw store officer.</span>{% else %}<button class="button button-primary" type="submit">Record bran receipt</button>{% endif %}<a class="button button-secondary" href="{% url 'reports:bran_sales' %}">Bran history</a></div>
+</form></section>
+{% endblock %}

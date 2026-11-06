@@ -1,0 +1,25 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Warehouse Delivery — Noor Foods{% endblock %}{% block nav_deliveries %}active{% endblock %}{% block breadcrumb %}Record Warehouse Delivery{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">WAREHOUSE DELIVERIES</div><h1>Record a warehouse delivery</h1></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Delivery details</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label>Date</label><strong>{{ today }}</strong><span class="optional">Automatic — cannot be changed</span></div>
+<div class="field"><label for="id_warehouse">Warehouse</label><select id="id_warehouse" name="warehouse" required>{% for w in warehouses %}<option value="{{ w.pk }}">{{ w.name }}</option>{% empty %}<option value="">No active warehouse — add one first</option>{% endfor %}</select></div>
+<div class="field"><label for="id_name">Delivery name</label><input type="text" id="id_name" name="delivery_name" placeholder="e.g. March supply run" required></div>
+<div class="field"><label for="id_supply">Supply to (name of receiver)</label><input type="text" id="id_supply" name="supply_to" required></div>
+<div class="field"><label for="id_phone">Receiver phone number</label><input type="tel" id="id_phone" name="supply_to_phone" placeholder="08031234567" required></div>
+<div class="field"><label for="id_qty">Quantity (10kg sacks)</label><input type="number" id="id_qty" name="quantity" min="1" required></div>
+<div class="field"><label for="id_material">Material / product type</label><select id="id_material" name="material_type" required>{% for val, label in material_choices %}<option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>{% endfor %}</select></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="2"></textarea></div>
+</div>
+<div class="form-actions">{% if current_user.role == 'md' %}<span class="notice">You are viewing as MD. Recording is done by the finished store officer.</span>{% else %}<button class="button button-primary" type="submit">Record delivery</button>{% endif %}<a class="button button-secondary" href="{% url 'finished_store:deliveries_report' %}">Cancel</a></div>
+</form></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STOCK</span><h2>Finished goods available</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize</span></div><span class="metric-value">{{ balance_maize|floatformat:0 }} sacks</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat</span></div><span class="metric-value">{{ balance_wheat|floatformat:0 }} sacks</span></div>
+</div></section>
+{% endblock %}

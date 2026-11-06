@@ -1,0 +1,55 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Warehouse Deliveries — Noor Foods{% endblock %}{% block nav_deliveries %}active{% endblock %}{% block breadcrumb %}Warehouse Deliveries{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">WAREHOUSE DELIVERIES</div><h1>Warehouse deliveries</h1></div>{% if current_user.role == 'store_officer' %}<a class="button button-primary" href="{% url 'finished_store:record_delivery' %}">Record a delivery</a>{% endif %}</div>
+{% if current_user.role == 'manager' or current_user.role == 'md' %}<p>You are viewing this report read-only. Only the Finished Goods Officer records deliveries.</p>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Filter</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_wh">Warehouse</label><select id="id_wh" name="warehouse"><option value="">All warehouses</option>{% for w in warehouses %}<option value="{{ w.pk }}" {% if f_warehouse == w.pk|stringformat:"s" %}selected{% endif %}>{{ w.name }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_from">From date</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">To date</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button><a class="button button-secondary" href="{% url 'finished_store:deliveries_report' %}">Reset</a></div></form></section>
+{% if per_warehouse %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TOTALS</span><h2>Deliveries per warehouse</h2></div><strong class="metric-value">{{ total_qty }} sacks</strong></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Warehouse</th><th class="number">Deliveries</th><th class="number">Sacks</th></tr></thead>
+<tbody>
+{% for row in per_warehouse %}
+<tr><td><strong>{{ row.warehouse__name }}</strong></td><td class="number">{{ row.count }}</td><td class="number">{{ row.qty }}</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">ALL DELIVERIES</span><h2>{{ deliveries|length }} deliver{{ deliveries|length|pluralize:"y,ies" }}</h2></div><a class="button button-secondary" href="{% url 'finished_store:warehouses' %}">Manage warehouses</a></div>
+{% if deliveries %}
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Delivery</th><th>Warehouse</th><th>Receiver</th><th>Product</th><th class="number">Sacks</th><th>Status</th>{% if current_user.role == 'store_officer' %}<th>Action</th>{% endif %}</tr></thead>
+<tbody>
+{% for d in deliveries %}
+<tr>
+<td><strong>{{ d.date }}</strong></td>
+<td><strong>{{ d.delivery_name }}</strong><span>By {{ d.recorded_by.full_name }}</span></td>
+<td>{{ d.warehouse.name }}</td>
+<td><strong>{{ d.supply_to }}</strong><span>{{ d.supply_to_phone }}</span></td>
+<td><span class="status-pill">{{ d.material_type|upper }}</span> {{ d.product_size }}</td>
+<td class="number">{{ d.quantity }}</td>
+<td>{% if d.status == 'pending' %}<span class="status-pill">Waiting for receiver</span>{% elif d.status == 'accepted' %}<span class="status-pill">Received</span>{% else %}<span class="status-pill">Difference reported</span>{% endif %}{% if d.confirmed_by_name %}<span>Confirmed by {{ d.confirmed_by_name }}</span>{% endif %}{% if d.confirm_note %}<span>{{ d.confirm_note }}</span>{% endif %}</td>
+{% if current_user.role == 'store_officer' %}<td>{% if d.status == 'pending' %}<a class="button button-primary" href="{% url 'finished_store:confirm_delivery' d.pk %}">Confirm</a>{% else %}Closed{% endif %}</td>{% endif %}
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">No deliveries recorded yet.</p>
+{% endif %}
+</section>
+{% if confirm_delivery %}
+<section class="panel form-panel"><div class="form-heading"><h2>Confirm delivery: {{ confirm_delivery.delivery_name }}</h2></div>
+<p>Goods were sent to {{ confirm_delivery.supply_to }} ({{ confirm_delivery.supply_to_phone }}) at {{ confirm_delivery.warehouse.name }} on {{ confirm_delivery.date }}. Record what the receiver said.</p>
+<form method="post" action="{% url 'finished_store:confirm_delivery' confirm_delivery.pk %}">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_confirmer">Confirmed by (name)</label><input type="text" id="id_confirmer" name="confirmed_by_name" value="{{ confirm_delivery.supply_to }}"></div>
+<div class="field field-wide"><label for="id_note">Note — describe any difference <span class="optional">Required if reporting a difference</span></label><textarea id="id_note" name="confirm_note" rows="2"></textarea></div>
+</div>
+<div class="form-actions"><button class="button button-primary" type="submit" name="action" value="confirm">Receiver confirmed — goods received</button><button class="button button-secondary" type="submit" name="action" value="difference">Receiver reported a difference</button></div>
+</form></section>
+{% endif %}
+{% endblock %}

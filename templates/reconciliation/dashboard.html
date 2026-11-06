@@ -1,131 +1,15 @@
-{% extends 'base.html' %}
-{% block title %}Financial Reconciliation — Noor Foods{% endblock %}
-{% block nav_rc_list %}active{% endblock %}
-{% block content %}
+{% extends 'rebuild/base.html' %}{% block title %}Financial Reconciliation{% endblock %}{% block nav_finance %}active{% endblock %}{% block breadcrumb %}Reconciliation{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">RECONCILIATION</div><h1>Reconciliation</h1></div></div>
 
-{# Standardized Hub Styles #}
-
-<div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">💎 Revenue Audit</span>
-            <h1 class="hero-title">Financial Reconciliation</h1>
-            <p class="hero-subtitle">Comparing physical receipts against recorded sales performance.</p>
-        </div>
-    </div>
-</div>
-
-<div class="balance-grid" style="margin-top: -3.5rem;">
-    <div class="balance-card">
-        <div class="balance-label">Expected Net Due</div>
-        <div class="balance-value" style="color: var(--navy);">₦{{ total_expected|floatformat:0 }}</div>
-        <div class="balance-meta">Total sales volume recorded</div>
-    </div>
-    <div class="balance-card">
-        <div class="balance-label">Confirmed Receipts</div>
-        <div class="balance-value" style="color: var(--emerald);">₦{{ total_actual|floatformat:0 }}</div>
-        <div class="balance-meta">Physically verified cash & transfers</div>
-    </div>
-    <div class="balance-card">
-        <div class="balance-label">Current Exposure</div>
-        <div class="balance-value {% if total_diff > 0 %}text-rose{% else %}text-emerald{% endif %}">
-            ₦{{ total_diff|floatformat:0 }}
-        </div>
-        <div class="balance-meta">Outstanding revenue in personnel hands</div>
-    </div>
-</div>
-
-<div class="action-bar-modern">
-    <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Audit money receipts..." class="search-input">
-    </div>
-    <div class="action-group">
-        {% if current_user.role == 'sales_manager' %}
-        <a href="/reconciliation/money/record/" class="btn-modern btn-modern-primary">
-            + Record Money Receipt
-        </a>
-        {% endif %}
-        <a href="/reconciliation/list/" class="btn-modern" style="background: var(--slate-100); color: var(--slate-600);">
-            View Detailed Summary Hub
-        </a>
-    </div>
-</div>
-
-<div class="main-grid" style="display: grid; grid-template-columns: 1fr 350px; gap: 2.5rem; margin-top: 1.5rem;">
-    <div class="card" style="padding: 0;">
-        <div style="padding: 1.5rem 2rem; border-bottom: 1px solid var(--slate-100);">
-            <h3 style="font-size: 0.9rem; font-weight: 800; color: var(--navy); margin: 0;">Recent Money Receipts</h3>
-        </div>
-        
-        <div class="table-container">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Personnel Member</th>
-                        <th class="num">Cashflow</th>
-                        <th class="num">Transfer</th>
-                        <th class="num">Net Collected</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for r in receipts %}
-                    <tr>
-                        <td style="font-weight: 700; color: var(--slate-500);">{{ r.date }}</td>
-                        <td>
-                            <div style="font-weight: 800; color: var(--navy);">{{ r.sales_person.name }}</div>
-                            <div style="font-size: 0.7rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase;">{{ r.sales_person.get_channel_display }}</div>
-                        </td>
-                        <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--slate-600);">₦{{ r.cash_received|floatformat:0 }}</td>
-                        <td class="num" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--slate-600);">₦{{ r.transfer_received|floatformat:0 }}</td>
-                        <td class="num">
-                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 900; color: var(--navy); background: #f1f5f9; padding: 4px 10px; border-radius: 6px;">
-                                ₦{{ r.total_received|floatformat:0 }}
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 4rem; color: var(--slate-400); font-style: italic;">
-                            No recent receipts found in the registry.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="sidebar">
-        {% if flags %}
-        <div class="card" style="padding: 1.5rem; background: #fff1f2; border: 1px solid #fda4af; margin-bottom: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; color: #be123c; font-weight: 900; margin-bottom: 0.75rem; text-transform: uppercase; font-size: 0.75rem;">
-                <span style="background: #be123c; color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem;">{{ flags|length }}</span>
-                ⚠️ Discrepancy Alert
-            </div>
-            <p style="font-size: 0.85rem; color: #9f1239; margin-bottom: 1.25rem; line-height: 1.4;">
-                System has detected mismatches between recorded sales volume and physical money collected.
-            </p>
-            <a href="/reconciliation/flags/" class="btn-modern shadow-sm" style="background: #be123c; color: white; font-size: 0.8rem; padding: 0.6rem 1rem; width: 100%; justify-content: center; border: none;">
-                Resolve Flags Now
-            </a>
-        </div>
-        {% endif %}
-
-        <div class="card" style="padding: 1.5rem; background: var(--slate-50); border: 1px dashed var(--slate-300);">
-            <h4 style="font-size: 0.8rem; font-weight: 800; color: var(--navy); margin-bottom: 1rem; text-transform: uppercase;">
-                Audit Framework
-            </h4>
-            <p style="font-size: 0.8rem; color: var(--slate-600); line-height: 1.6; margin: 0;">
-                The reconciliation hub captures <strong>Actual Cashflow</strong> vs <strong>Calculated Revenue</strong>. 
-                <br><br>
-                Discrepancies often indicate unremitted funds or data entry errors in sales results. Regular audits ensure the <strong>Exposure</strong> level remains minimal.
-            </p>
-        </div>
-    </div>
-</div>
-
+<div class="metric-grid"><div class="metric-card"><div class="metric-top"><span class="metric-label">Expected</span></div><span class="metric-value">₦{{ total_expected|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Actual received</span></div><span class="metric-value">₦{{ total_actual|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Difference</span></div><span class="metric-value">₦{{ total_diff|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Open flags</span></div><span class="metric-value">{{ flags|length }}</span></div></div>
+{% if flags %}<section class="panel" style="margin-top:20px"><div class="panel-header"><h2>Open flags</h2><a class="button button-secondary" href="{% url 'reconciliation:flags' %}">View flags</a></div><p class="simple-empty">{{ flags|length }} open flags awaiting review.</p></section>{% endif %}
+<section class="panel" style="margin-top:20px"><div class="panel-header"><div><span class="panel-kicker">RECEIPTS</span><h2>Recent receipts</h2></div><a class="button button-secondary" href="{% url 'reconciliation:list' %}">View list</a></div>
+<div class="table-scroll"><table><thead><tr><th>Date</th><th>Sales person</th><th>Channel</th><th class="number">Cash (₦)</th><th class="number">Transfer (₦)</th><th class="number">Total (₦)</th></tr></thead><tbody>
+{% for r in receipts %}<tr><td>{{ r.date }}</td><td><strong>{{ r.sales_person.name }}</strong></td><td>{{ r.sales_person.get_channel_display }}</td><td class="number">{{ r.cash_received|floatformat:0 }}</td><td class="number">{{ r.transfer_received|floatformat:0 }}</td><td class="number">{{ r.total_received|floatformat:0 }}</td></tr>
+{% empty %}<tr><td colspan="6" class="empty-state">No receipts recorded.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% include 'includes/_daily_ledger.html' %}
-
 {% endblock %}

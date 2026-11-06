@@ -24,11 +24,11 @@ def dashboard(request):
     # Overall Stats
     # Actual money collected from personnel: Remittances + Initial Handovers
     remittances = MoneyReceipt.objects.aggregate(t=Sum('cash_received') + Sum('transfer_received'))['t'] or 0
-    initial_handovers = SalesResult.objects.aggregate(t=Sum('amount_returned'))['t'] or 0
+    initial_handovers = SalesResult.objects.filter(is_corrected=False).aggregate(t=Sum('amount_returned'))['t'] or 0
     total_actual = float(remittances) + float(initial_handovers)
     
     # Expected money from sales results
-    total_expected = SalesResult.objects.aggregate(t=Sum('net_due_to_company'))['t'] or 0
+    total_expected = SalesResult.objects.filter(is_corrected=False).aggregate(t=Sum('net_due_to_company'))['t'] or 0
 
     return render(request, 'reconciliation/dashboard.html', {
         'current_user': user,
@@ -81,7 +81,7 @@ def record_money(request):
                 if period_start and period_end:
                     # Expected from SalesResults
                     results_in_period = SalesResult.objects.filter(
-                        sales_person=sp,
+                        sales_person=sp, is_corrected=False,
                         date__gte=period_start,
                         date__lte=period_end
                     )
@@ -155,7 +155,7 @@ def list_view(request):
 
     for sp in persons_qs:
         # 1. Finance (Include initial handovers from SalesResult)
-        results_qs = SalesResult.objects.filter(sales_person=sp)
+        results_qs = SalesResult.objects.filter(sales_person=sp, is_corrected=False)
         dist_qs = SalesDistributionRecord.objects.filter(sales_person=sp)
         money_qs = MoneyReceipt.objects.filter(sales_person=sp)
 

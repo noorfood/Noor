@@ -1,84 +1,9 @@
-{% extends 'base.html' %}
-{% block title %}Sales Targets — Noor Foods{% endblock %}
-{% block nav_pr_targets %}active{% endblock %}
-
-{% block content %}
-<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
-    <div>
-        <span class="hero-badge">📈 Strategic Sales Targets</span>
-        <h1 class="hero-title">Sales Performance Targets</h1>
-        <p class="hero-subtitle">MD-defined monthly goals for Sales Managers. Real-time tracking against actual verified sales.</p>
-    </div>
-</div>
-
-<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
-        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
-        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
-    </div>
-</div>
-
-<div style="margin-top: 2.5rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">📈 Strategic Sales Targets</h4>
-        {% if current_user.role == 'md' %}
-        <a href="{% url 'pricing:new_target' %}" class="btn-modern btn-modern-primary">+ Set New Target</a>
-        {% endif %}
-    </div>
-    
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Sales Manager</th>
-                    <th>Product Details</th>
-                    <th style="text-align: right;">Target (Sacks)</th>
-                    <th style="text-align: right;">Actual Sold</th>
-                    <th style="text-align: right;">Performance</th>
-                    <th>Timeline / Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in targets %}
-                <tr>
-                    <td>
-                        <div style="font-weight:800; color:var(--navy); font-size: 1.1rem;">{{ t.sales_manager.full_name }}</div>
-                        <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase; margin-top:2px;">By {{ t.created_by.full_name }}</div>
-                    </td>
-                    <td>
-                        <span class="badge-soft badge-soft-primary">{{ t.get_material_type_display|upper }}</span>
-                        <span style="font-weight:700; color:var(--slate-700); margin-left:6px;">{{ t.product_size }}</span>
-                    </td>
-                    <td style="text-align: right; font-weight:800; color:var(--slate-600); font-family: monospace; font-size: 1.15rem;">{{ t.target_qty }}</td>
-                    <td style="text-align: right; font-weight:800; color:var(--blue); font-family: monospace; font-size: 1.15rem;">{{ t.actual_qty }}</td>
-                    <td style="text-align: right;">
-                        {% if t.target_qty %}
-                            {% with pct=t.performance_pct %}
-                            {% if pct >= 100 %}
-                            <span class="badge-soft badge-soft-success">✓ {{ pct }}%</span>
-                            {% elif pct >= 50 %}
-                            <span class="badge-soft badge-soft-warning">{{ pct }}%</span>
-                            {% else %}
-                            <span class="badge-soft badge-soft-danger">{{ pct }}%</span>
-                            {% endif %}
-                            {% endwith %}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>
-                        <div style="font-size:0.9rem; font-weight:700; color:var(--slate-800);">
-                            {% if t.target_type == 'weekly' %}W{{ t.week }}{% else %}{{ t.month }}{% endif %}/{{ t.year }}
-                        </div>
-                        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:4px;">{{ t.notes|default:"No specific notes." }}</div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No targets set for the current period. {% if current_user.role == 'md' %}<a href="{% url 'pricing:new_target' %}" style="color:var(--indigo); font-weight:700;">Set a new target</a>.{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% extends 'rebuild/base.html' %}{% block title %}Sales Targets{% endblock %}{% block nav_pricing %}active{% endblock %}{% block breadcrumb %}Sales targets{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">PRICES &amp; COSTS</div><h1>Sales targets</h1></div></div>
+<div class="operation-actions"><a class="button button-secondary" href="{% url 'pricing:list' %}">Pricing</a><a class="button button-secondary" href="{% url 'pricing:commissions' %}">Commissions</a><a class="button button-secondary" href="{% url 'pricing:targets' %}">Targets</a><a class="button button-secondary" href="{% url 'pricing:expenses' %}">Expenses</a><a class="button button-secondary" href="{% url 'pricing:packaging_costs' %}">Costs</a></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TARGETS</span><h2>Sales targets</h2></div><a class="button button-primary" href="{% url 'pricing:new_target' %}">Set target</a></div>
+<div class="table-scroll"><table><thead><tr><th>Sales manager</th><th>Material</th><th>Package size</th><th>Period</th><th class="number">Target</th><th class="number">Actual</th><th class="number">Achieved</th><th>Notes</th><th>Set by</th></tr></thead><tbody>
+{% for t in targets %}{% with pct=t.performance_pct %}<tr><td><strong>{{ t.sales_manager.full_name }}</strong></td><td>{{ t.get_material_type_display|upper }}</td><td>{{ t.product_size }}</td><td>{% if t.week %}Week {{ t.week }}, {{ t.year }}{% else %}{{ t.month }}/{{ t.year }}{% endif %}</td><td class="number">{{ t.target_qty }}</td><td class="number">{{ t.actual_qty }}</td><td class="number">{{ pct }}%</td><td>{{ t.notes|default:"—" }}</td><td>{{ t.created_by.full_name }}</td></tr>{% endwith %}
+{% empty %}<tr><td colspan="9" class="empty-state">No sales targets set.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

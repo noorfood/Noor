@@ -1,65 +1,21 @@
-{% extends 'base.html' %}
-{% block title %}Confirm Payment #{{ payment.pk }}{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Confirm Payment #{{ payment.pk }}{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Confirm Payment #{{ payment.pk }}{% endblock %}
 {% block content %}
-<div class="page-header">
-    <div class="page-title">Confirm Sales Manager Payment #{{ payment.pk }}</div>
-    <div class="page-subtitle">Verify that the funds have been received in the company account before confirming.</div>
+<div class="page-heading"><div><div class="eyebrow">PAYMENT</div><h1>Confirm sales manager payment #{{ payment.pk }}</h1></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PAYMENT</span><h2>Payment details</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Date</span></div><span class="metric-value">{{ payment.date }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Sales manager</span></div><span class="metric-value">{{ payment.sales_manager.full_name }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Cash</span></div><span class="metric-value">₦{{ payment.amount_cash|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Transfer</span></div><span class="metric-value">₦{{ payment.amount_transfer|floatformat:0 }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Total payment</span></div><span class="metric-value">₦{{ payment.total|floatformat:0 }}</span></div>
 </div>
-
-{% if error %}
-<div class="alert alert-danger">{{ error }}</div>
-{% endif %}
-
-<div class="detail-card" style="margin-bottom:1.5rem; padding:1.5rem; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-label">DATE</div>
-            <div class="stat-value">{{ payment.date }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">SALES MANAGER</div>
-            <div class="stat-value">{{ payment.sales_manager.full_name }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">CASH</div>
-            <div class="stat-value">₦{{ payment.amount_cash|floatformat:0 }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">TRANSFER</div>
-            <div class="stat-value">₦{{ payment.amount_transfer|floatformat:0 }}</div>
-        </div>
-        <div class="stat-card stat-card-primary">
-            <div class="stat-label">TOTAL PAYMENT</div>
-            <div class="stat-value">₦{{ payment.total|floatformat:0 }}</div>
-        </div>
-    </div>
-    <div style="margin-top:1rem; color:var(--text-secondary);">
-        <strong>SM Notes:</strong> {{ payment.notes|default:"None" }}
-    </div>
-</div>
-
-<div class="form-card" style="padding:1.5rem;">
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label>Confirmation/Rejection Notes (Optional)</label>
-            <textarea name="gm_notes" class="form-control" rows="3" placeholder="e.g. Confirmed in Access Bank statement."></textarea>
-        </div>
-        
-        <div style="display:flex; gap:1rem; margin-top:1.5rem;">
-            <button type="submit" name="action" value="confirm" class="btn btn-success btn-lg" 
-                onclick="return confirm('Are you sure you want to CONFIRM this payment? This will update the SM balance.')">
-                ✓ Confirm Payment
-            </button>
-            <button type="submit" name="action" value="reject" class="btn btn-danger btn-lg"
-                onclick="return confirm('Are you sure you want to REJECT this payment? The SM will be notified to re-record.')">
-                ✗ Reject Payment
-            </button>
-        </div>
-    </form>
-</div>
-
-<div style="margin-top:1.5rem;">
-    <a href="{% url 'sales:list_sm_payments' %}" class="btn btn-secondary">← Back to Payments</a>
-</div>
+<div class="record-list"><div class="record-row"><span>SM notes</span><strong>{{ payment.notes|default:"None" }}</strong></div></div></section>
+<section class="panel form-panel"><div class="form-heading"><h2>Decision</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid"><div class="field field-wide"><label for="id_gm">Confirmation / rejection notes <span class="optional">Optional</span></label><textarea name="gm_notes" id="id_gm" rows="3"></textarea></div></div>
+<div class="form-actions"><button class="button button-primary" type="submit" name="action" value="confirm" onclick="return confirm('Confirm this payment? This will update the SM balance.')">Confirm payment</button><button class="button button-secondary" type="submit" name="action" value="reject" onclick="return confirm('Reject this payment? The SM will be notified to re-record.')">Reject payment</button></div>
+</form></section>
+<div class="form-actions"><a class="button button-secondary" href="{% url 'sales:list_sm_payments' %}">Back to payments</a></div>
 {% endblock %}

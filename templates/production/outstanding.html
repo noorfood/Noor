@@ -1,137 +1,52 @@
-{% extends 'base.html' %}
-{% block title %}Outstanding Bags — Noor Foods{% endblock %}
-{% block nav_pr_out %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Outstanding Bags — Noor Foods{% endblock %}{% block nav_production %}active{% endblock %}{% block breadcrumb %}Outstanding Bags{% endblock %}
 {% block content %}
-{# Standardized Production Styles #}
-<style>
-    .handshake-card {
-        background: #fff; border: 1px solid #bae6fd;
-        border-left: 4px solid #0ea5e9; padding: 1.5rem;
-        border-radius: 12px; margin-bottom: 2rem;
-        box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.05);
-    }
-</style>
-
-{# ═══ HERO ══════════════════════════════════════════════════════════ #}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); margin-bottom: 3rem;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">📊 Floor Accountability</span>
-            <h1 class="hero-title" style="color: #fff;">Outstanding Floor Stock</h1>
-            <p class="hero-subtitle" style="color: var(--slate-400);">Immutable audit of bags received but not yet processed into flour.</p>
-        </div>
-        <div style="text-align:right;">
-            <div style="font-size:0.75rem; color:#10b981; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Audit Level</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#fff; margin-top:0.25rem;">Mass Balance Required</div>
-        </div>
-    </div>
-
-    {% if current_user.is_production_officer %}
-    <div class="balance-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 2.5rem; gap: 1.5rem;">
-        <div class="balance-card" style="border-left: 4px solid var(--amber);">
-            <div class="balance-label">Maize Balance (Floor)</div>
-            <div class="balance-value" style="color: var(--amber);">{{ balance_maize }} <span style="font-size: 0.8rem; color: var(--slate-400);">Bags</span></div>
-            <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 500;">Bags awaiting your milling machinery</div>
-        </div>
-        <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
-            <div class="balance-label">Wheat Balance (Floor)</div>
-            <div class="balance-value" style="color: #8b5cf6;">{{ balance_wheat }} <span style="font-size: 0.8rem; color: var(--slate-400);">Bags</span></div>
-            <div style="font-size: 0.8rem; color: var(--slate-500); margin-top: 0.5rem; font-weight: 500;">Bags awaiting your milling machinery</div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
+<div class="page-heading"><div><div class="eyebrow">PRODUCTION</div><h1>Outstanding floor stock</h1></div><div>
 {% if current_user.is_production_officer %}
-{# ═══ HANDSHAKES ══════════════════════════════════════════════════════ #}
-{% if pending_transfers %}
-<div class="action-bar-modern">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📥 Incoming Transfers (Handshake Required)</h3>
-</div>
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 3rem;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>S/N</th>
-                <th>Date Sent</th>
-                <th>Material</th>
-                <th class="num">Quantity</th>
-                <th>Action Required</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for iss in pending_transfers %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ iss.date }}</td>
-                <td><span class="font-bold {% if iss.material_type == 'maize' %}text-amber{% else %}text-indigo-heavy{% endif %}">{{ iss.material_type|upper }}</span></td>
-                <td class="num"><strong style="color: var(--navy); font-size: 1.1rem;">{{ iss.num_bags }} bags</strong></td>
-                <td>
-                    <form method="post" action="{% url 'production:acknowledge_transfer' iss.pk %}" style="display:flex; gap:0.5rem; align-items:center;">
-                        {% csrf_token %}
-                        <button type="submit" name="action" value="accept" class="btn-modern" style="background:#10b981; color:white; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 800;">Accept</button>
-                        <input type="text" name="rejection_note" placeholder="Note if rejecting..." style="flex:1; padding: 0.4rem 0.75rem; border: 1px solid var(--slate-200); border-radius: 6px; font-size: 0.8rem;">
-                        <button type="submit" name="action" value="reject" class="btn-modern" style="background:#ef4444; color:white; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 800;" onclick="return confirm('Reject this transfer?');">Reject</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<a class="button button-primary" href="{% url 'production:initiate_return' %}">Return to store</a>
 {% endif %}
-
-    <h2 class="section-header">🛠️ Floor Management</h2>
-    <div style="background:white; border:1px solid #e2e8f0; border-radius:14px; padding:2rem; display:flex; gap:2rem; align-items:center;">
-        <div style="flex:1;">
-            <h4 style="margin:0 0 0.5rem 0; color:#1e293b;">How to clear balances?</h4>
-            <p style="margin:0; font-size:0.9rem; color:#64748b; line-height:1.6;">
-                1. <strong>Milling</strong>: Add "Old Bags Milled" in the Milling Record.<br>
-                2. <strong>Returns</strong>: Use the button here to send wet or low-quality grain back to store.
-            </p>
-        </div>
-        <div style="display:flex; gap:1rem;">
-            <a href="/production/milling/new/" class="btn btn-primary btn-lg" style="background:#4338ca;">Process Stock</a>
-            <a href="/production/returns/new/" class="btn btn-secondary btn-lg" style="border:1px solid #cbd5e1; background:white; color:#475569;">⮌ Return to Store</a>
-        </div>
-    </div>
-
+<a class="button button-secondary" href="{% url 'production:dashboard' %}">Back to dashboard</a>
+</div></div>
+{% if current_user.is_production_officer %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">FLOOR</span><h2>Floor balances</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags</span></div><span class="metric-value">{{ balance_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags</span></div><span class="metric-value">{{ balance_wheat }}</span></div>
+</div></section>
+{% if pending_transfers %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TRANSFERS</span><h2>Incoming transfers</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date sent</th><th>Material</th><th class="number">Bags</th><th>Action</th></tr></thead>
+<tbody>
+{% for iss in pending_transfers %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ iss.date }}</td>
+<td><span class="status-pill">{{ iss.material_type|upper }}</span></td>
+<td class="number"><strong>{{ iss.num_bags }}</strong></td>
+<td><form method="post" action="{% url 'production:acknowledge_transfer' iss.pk %}">{% csrf_token %}
+<div class="field"><label for="id_note_{{ iss.pk }}">Rejection note <span class="optional">Required if rejecting</span></label><input type="text" id="id_note_{{ iss.pk }}" name="rejection_note"></div>
+<div class="form-actions"><button class="button button-primary" type="submit" name="action" value="accept">Accept</button><button class="button button-secondary" type="submit" name="action" value="reject" onclick="return confirm('Reject this transfer?');">Reject</button></div></form></td>
+</tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endif %}
 {% else %}
-{# ═══ OVERSIGHT ══════════════════════════════════════════════════════ #}
-<div class="action-bar-modern">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">👥 Team Floor Balances</h3>
-</div>
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th style="width:50px;">S/N</th>
-                <th>Production Officer</th>
-                <th class="num">Clean Maize (Bags)</th>
-                <th class="num">Clean Wheat (Bags)</th>
-                <th>Audit Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for b in user_balances %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td><strong style="color: var(--navy);">{{ b.user.full_name }}</strong></td>
-                <td class="num"><strong class="{% if b.maize > 0 %}text-amber{% else %}text-slate-300{% endif %}" style="font-size: 1.1rem;">{{ b.maize }}</strong></td>
-                <td class="num"><strong class="{% if b.wheat > 0 %}text-indigo-heavy{% else %}text-slate-300{% endif %}" style="font-size: 1.1rem;">{{ b.wheat }}</strong></td>
-                <td>
-                    {% if b.maize > 0 or b.wheat > 0 %}
-                    <span class="badge-soft badge-soft-warning" style="font-weight: 800;">Unmilled Surplus</span>
-                    {% else %}
-                    <span class="badge-soft badge-soft-success" style="font-weight: 800;">Floor Clear</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" style="text-align:center; padding:3rem; color:var(--slate-400);">All production officers have cleared their floor stock.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TEAM</span><h2>Team floor balances</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Production officer</th><th class="number">Maize bags</th><th class="number">Wheat bags</th><th>Status</th></tr></thead>
+<tbody>
+{% for b in user_balances %}
+<tr>
+<td>{{ forloop.counter }}</td>
+<td><strong>{{ b.user.full_name }}</strong></td>
+<td class="number">{{ b.maize }}</td>
+<td class="number">{{ b.wheat }}</td>
+<td>{% if b.maize > 0 or b.wheat > 0 %}<span class="status-pill">Unmilled surplus</span>{% else %}<span class="status-pill">Floor clear</span>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">All production officers have cleared their floor stock.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endif %}
 {% endblock %}

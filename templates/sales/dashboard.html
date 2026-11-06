@@ -1,258 +1,94 @@
-{% extends 'base.html' %}
-{% block title %}Sales Manager Dashboard — Noor Foods{% endblock %}
-{% block nav_sm_dash %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Sales Manager Dashboard — Noor Foods{% endblock %}{% block nav_home %}active{% endblock %}{% block breadcrumb %}Sales Manager Dashboard{% endblock %}
 {% block content %}
-{# ═══ HERO ═══════════════════════════════════════════════════════════ #}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(79, 70, 229, 0.1); color: #818cf8;">💼 Sales Area</span>
-            <h1 class="hero-title" style="color: #fff;">
-                {% if current_user.role == 'sales_manager' %}
-                    My Sales Work
-                {% else %}
-                    Sales Manager Checking
-                {% endif %}
-            </h1>
-            <p class="hero-subtitle" style="color: var(--slate-400);">
-                {% if current_user.role == 'sales_manager' %}
-                    See bags in your hands, record what you sell, and manage your staff.
-                {% else %}
-                    Check how many bags Managers have and how much money they owe the company.
-                {% endif %}
-            </p>
-        </div>
-        <div style="text-align:right;">
-            <div style="font-size:0.75rem; color:#818cf8; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">{{ "now"|date:"l, d F Y" }}</div>
-            <div style="font-size:1.1rem; font-weight:800; color:#fff; margin-top:0.25rem;">{{ current_user.full_name }}</div>
-        </div>
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Activity Window: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
-{# ═══ SM VIEW ═══════════════════════════════════════════════════════ #}
+<div class="page-heading"><div><div class="eyebrow">SALES</div><h1>{% if current_user.role == 'sales_manager' %}My sales work{% else %}Sales manager checking{% endif %}</h1></div><div><div>{{ "now"|date:"l, d F Y" }}</div><div>{{ current_user.full_name }}</div></div></div>
+<section class="panel form-panel"><div class="form-heading"><h2>Period</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button>{% include 'partials/date_toggles.html' %}</div></form></section>
+{% if f_from or f_to %}<div class="notice">Activity window: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}.</div>{% endif %}
 {% if current_user.role == 'sales_manager' %}
-
-{# Metrics #}
-<div class="balance-grid" style="margin-bottom: 3rem;">
-    <div class="balance-card" style="border-left: 4px solid var(--amber);">
-        <div class="balance-label">🌽 Maize Bags with me</div>
-        <div class="balance-value" style="color: var(--amber);">{{ maize_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Current Stock in Hand</div>
-    </div>
-    <div class="balance-card" style="border-left: 4px solid #8b5cf6;">
-        <div class="balance-label">🌾 Wheat Bags with me</div>
-        <div class="balance-value" style="color: #8b5cf6;">{{ wheat_holding }} <span style="font-size: 0.9rem; color: var(--slate-400); font-weight: 600;">bags</span></div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Current Stock in Hand</div>
-    </div>
-    <div class="balance-card" style="border-left: 4px solid var(--rose);">
-        <div class="balance-label">💳 Money I owe Company</div>
-        <div class="balance-value" style="color: var(--rose);">₦{{ money_outstanding|floatformat:0 }}</div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Owed to company accounts</div>
-    </div>
-    {% if pending_count > 0 %}
-    <div class="balance-card" style="border-left: 4px solid var(--amber); background: rgba(251, 191, 36, 0.05);">
-        <div class="balance-label">⏳ New Bags waiting for me</div>
-        <div class="balance-value" style="color: var(--amber);">{{ pending_count }}</div>
-        <div style="font-size:0.8rem; color:var(--amber); font-weight:700; margin-top:0.5rem;">You need to confirm receipt</div>
-    </div>
-    {% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MY WORK</span><h2>What I do</h2></div><a class="button button-secondary" href="{% url 'sales:sm_report' %}">My report</a></div>
+<div class="quick-links">
+<a href="{% url 'commerce:create' %}"><span>Record a sale — sell sacks and record the buyer</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:record_sm_payment' %}"><span>Record payment to company — send money in, GM confirms</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:record_distribution' %}"><span>Give goods to team — hand sacks to a salesperson</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:record_sales_result' %}"><span>Record team sales — what the team sold and returned</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:list_collections' %}"><span>My collections — bags received from the store</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:sp_performance' %}"><span>Team performance — who sold how much</span><span aria-hidden="true">→</span></a>
+</div></section>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags with me</span></div><span class="metric-value">{{ maize_holding }} bags</span><span class="metric-label">Current stock in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags with me</span></div><span class="metric-value">{{ wheat_holding }} bags</span><span class="metric-label">Current stock in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money to send to the company</span></div><span class="metric-value">₦{{ money_outstanding|floatformat:0 }}</span></div>
+{% if pending_count > 0 %}<div class="metric-card"><div class="metric-top"><span class="metric-label">Bags waiting for confirmation</span></div><span class="metric-value">{{ pending_count }}</span></div>{% endif %}
 </div>
-
-{# Collections Queue #}
-<div class="action-bar-modern">
-  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📋 Recent Bags received from Store</h3>
-  <a href="{% url 'sales:list_collections' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy); padding: 0.4rem 1rem; font-size: 0.8rem;">View All →</a>
-</div>
-
-{% if recent_collections %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MONEY</span><h2>Money collected and sent</h2></div><a class="button button-secondary" href="{% url 'sales:sm_report' %}">My report</a></div>
+<div class="table-scroll"><table>
+<thead><tr><th>What</th><th class="number">Amount (₦)</th></tr></thead>
+<tbody>
+<tr><td class="cell-main"><strong>Money collected from the team</strong></td><td class="number">{{ money_from_team|floatformat:0 }}</td></tr>
+<tr><td class="cell-main"><strong>Money sent and confirmed</strong><span>Confirmed by the GM</span></td><td class="number">{{ money_paid|floatformat:0 }}</td></tr>
+<tr><td><strong>Money sent, waiting for GM confirmation</strong></td><td class="number">{{ money_pending|floatformat:0 }}</td></tr>
+<tr><td class="cell-main"><strong>Cash in hand from sales</strong><span>Not yet sent</span></td><td class="number">{{ cash_in_hand|floatformat:0 }}</td></tr>
+<tr><td><strong>Money still to send to the company</strong></td><td class="number"><strong>{{ money_outstanding|floatformat:0 }}</strong></td></tr>
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">COLLECTIONS</span><h2>Recent bags received from store</h2></div><a class="button button-secondary" href="{% url 'sales:list_collections' %}">View all</a></div>
+<div class="record-list">
 {% for c in recent_collections %}
-<div class="card {% if c.status == 'pending' %}border-amber bg-amber-gradient{% endif %}" style="padding: 1.25rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-  <div>
-    <div style="font-weight: 800; color: var(--slate-900);">{{ c.material_type|upper }} — {{ c.qty_sacks }} bags</div>
-    <div style="font-size: 0.85rem; color: var(--slate-500); margin-top: 0.25rem;">{{ c.date }} &nbsp;·&nbsp; Recorded by {{ c.store_officer.full_name }}</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:1rem;">
-    {% if c.status == 'pending' %}
-    <span class="badge-soft badge-soft-warning">⏳ Waiting for you to confirm</span>
-    <a href="{% url 'sales:acknowledge_collection' c.pk %}" class="btn-modern btn-modern-success" style="padding: 0.4rem 1.25rem; font-size: 0.8rem;">Confirm →</a>
-    {% elif c.status == 'accepted' %}
-    <span class="badge-soft badge-soft-success">✓ Accepted</span>
-    {% if c.total_value and show_money %}<span style="color:var(--indigo); font-weight:800; font-size:1rem;">₦{{ c.total_value|floatformat:0 }}</span>{% endif %}
-    {% else %}
-    <span class="badge-soft badge-soft-danger">✗ Rejected</span>
-    {% endif %}
-  </div>
-</div>
+<div class="record-row"><div><strong>{{ c.material_type|upper }} — {{ c.qty_sacks }} bags</strong><span>{{ c.date }} · Recorded by {{ c.store_officer.full_name }}</span></div><div>{% if c.status == 'pending' %}<span class="status-pill">Waiting for confirmation</span> <a class="button button-primary" href="{% url 'sales:acknowledge_collection' c.pk %}">Confirm</a>{% elif c.status == 'accepted' %}<span class="status-pill">Accepted</span>{% if c.total_value and show_money %} <strong>₦{{ c.total_value|floatformat:0 }}</strong>{% endif %}{% else %}<span class="status-pill">Rejected</span>{% endif %}</div></div>
+{% empty %}<div class="simple-empty">No recent collections for this period.</div>{% endfor %}
+</div></section>
+{% if recent_sales %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES</span><h2>Recent sales I reported</h2></div><a class="button button-secondary" href="{% url 'commerce:home' %}">All sales</a></div>
+<div class="record-list">
+{% for s in recent_sales %}
+<a class="record-row record-link" href="{% url 'commerce:detail' s.pk %}"><div><strong>{{ s.material|upper }} — {{ s.packs }} packs</strong><span>{{ s.date }} · {{ s.buyer|default:"No buyer recorded" }}</span></div><div><strong>₦{{ s.total|floatformat:0 }}</strong></div></a>
 {% endfor %}
-{% else %}
-<div style="background:#f8fafc;border:1px dashed #e2e8f0;border-radius:10px;padding:2rem;text-align:center;color:#94a3b8;">
-  No recent collections for this period.
-</div>
+</div></section>
 {% endif %}
-
-{# Team Panel #}
-{% if salespersons %}
-<div class="action-bar-modern" style="margin-top: 3rem;">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">👥 My Sales Team</h3>
-    <a href="{% url 'sales:salespersons' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy); padding: 0.4rem 1rem; font-size: 0.8rem;">Manage Team →</a>
-</div>
-
-<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
-    {% for sp in salespersons %}
-    {% if sp.status == 'active' %}
-    <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-left: 4px solid var(--indigo);">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-                <div style="font-weight:800; color:var(--navy); font-size: 1.1rem;">{{ sp.name }}</div>
-                <div style="font-size: 0.7rem; background: var(--indigo-50); color: var(--indigo-700); border-radius: 6px; padding: 0.2rem 0.6rem; display: inline-block; margin-top: 0.25rem; font-weight: 800; text-transform: uppercase;">{{ sp.get_channel_display }}</div>
-            </div>
-            <a href="{% url 'sales:record_distribution' %}?sp={{ sp.pk }}" class="btn-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; background: var(--navy); color: #fff;">Give Bags</a>
-        </div>
-        {% if sp.phone %}<div style="font-size: 0.85rem; color: var(--slate-500); display: flex; align-items: center; gap: 0.5rem;"><span>📞</span> {{ sp.phone }}</div>{% endif %}
-    </div>
-    {% endif %}
-    {% endfor %}
-</div>
+{% if recent_payments %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PAYMENTS</span><h2>Money I sent to the company</h2></div><a class="button button-secondary" href="{% url 'sales:list_sm_payments' %}">All payments</a></div>
+<div class="record-list">
+{% for p in recent_payments %}
+<div class="record-row"><div><strong>₦{{ p.total|floatformat:0 }}</strong><span>{{ p.date }}</span></div><div>{% if p.status == 'confirmed' %}<span class="status-pill">Confirmed</span>{% elif p.status == 'pending_gm' %}<span class="status-pill">Waiting for GM</span>{% else %}<span class="status-pill">Rejected</span>{% endif %}</div></div>
+{% endfor %}
+</div></section>
 {% endif %}
-
-{# ═══ GM / MD VIEW ═══════════════════════════════════════════════════ #}
 {% else %}
-<div class="balance-grid" style="margin-bottom: 3rem;">
-    <div class="balance-card" style="border-left: 4px solid var(--indigo);">
-        <div class="balance-label">👔 Active Sales Managers</div>
-        <div class="balance-value" style="color: var(--indigo);">{{ sm_summaries|length }}</div>
-        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:0.5rem; font-weight: 500;">Personnel currently in field</div>
-    </div>
-    {% for row in sm_summaries %}
-    {% if row.pending_count > 0 %}
-    <div class="balance-card" style="border-left: 4px solid var(--amber); background: rgba(251, 191, 36, 0.05);">
-        <div class="balance-label">⏳ {{ row.sm.full_name }}</div>
-        <div class="balance-value" style="color: var(--amber);">{{ row.pending_count }}</div>
-        <div style="font-size:0.8rem; color:var(--amber); font-weight: 700; margin-top:0.5rem;">Bags they haven't confirmed</div>
-    </div>
-    {% endif %}
-    {% endfor %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Active sales managers</span></div><span class="metric-value">{{ sm_summaries|length }}</span></div>
+{% for row in sm_summaries %}{% if row.pending_count > 0 %}<div class="metric-card"><div class="metric-top"><span class="metric-label">{{ row.sm.full_name }}</span></div><span class="metric-value">{{ row.pending_count }}</span><span class="metric-label">Bags not yet confirmed</span></div>{% endif %}{% endfor %}
 </div>
-
-<div class="action-bar-modern">
-    <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📊 Who has what? (Managers List)</h3>
-</div>
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 3rem;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>S/N</th>
-                <th>Sales Manager</th>
-                <th class="num">Maize (bags)</th>
-                <th class="num">Wheat (bags)</th>
-                {% if show_money %}<th class="num">Money Owed</th>{% endif %}
-                <th class="num">Pending</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in sm_summaries %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                <td><strong style="color: var(--navy);">{{ row.sm.full_name }}</strong></td>
-                <td class="num"><span class="font-bold {% if row.maize_holding > 0 %}text-amber{% else %}text-slate-400{% endif %}">{{ row.maize_holding }}</span></td>
-                <td class="num"><span class="font-bold {% if row.wheat_holding > 0 %}text-purple{% else %}text-slate-400{% endif %}">{{ row.wheat_holding }}</span></td>
-                {% if show_money %}
-                <td class="num">
-                    <strong class="font-bold {% if row.money_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.05rem;">
-                        ₦{{ row.money_outstanding|floatformat:0 }}
-                    </strong>
-                </td>
-                {% endif %}
-                <td class="num">
-                    {% if row.pending_count > 0 %}
-                    <span class="badge-soft badge-soft-warning" style="font-weight: 800;">{{ row.pending_count }}</span>
-                    {% else %}
-                    <span style="color: var(--slate-300);">0</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" style="text-align:center;color:var(--slate-400);padding:3rem;">No active Sales Managers found.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MANAGERS</span><h2>Who has what</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Sales manager</th><th class="number">Maize (bags)</th><th class="number">Wheat (bags)</th>{% if show_money %}<th class="number">Money owed</th>{% endif %}<th class="number">Pending</th><th></th></tr></thead>
+<tbody>
+{% for row in sm_summaries %}
+<tr><td>{{ forloop.counter }}</td><td><strong>{{ row.sm.full_name }}</strong></td><td class="number">{{ row.maize_holding }}</td><td class="number">{{ row.wheat_holding }}</td>{% if show_money %}<td class="number"><strong>₦{{ row.money_outstanding|floatformat:0 }}</strong></td>{% endif %}<td class="number">{% if row.pending_count > 0 %}<span class="status-pill">{{ row.pending_count }}</span>{% else %}0{% endif %}</td><td><a class="button button-secondary" href="{% url 'sales:sm_report' %}?sm={{ row.sm.pk }}">Report</a></td></tr>
+{% empty %}<tr><td colspan="7" class="empty-state">No active sales managers found.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% if pending_payments %}
-<div class="action-bar-modern" style="margin-top: 3rem;">
-  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">💳 Money given in waiting to be confirmed</h3>
-  <a href="{% url 'sales:list_sm_payments' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy); padding: 0.4rem 1rem; font-size: 0.8rem;">View All →</a>
-</div>
-<div class="table-wrapper mb-24">
-  <table class="premium-table">
-    <thead>
-      <tr>
-        <th>S/N</th><th>Date</th><th>Sales Manager</th>
-        <th style="text-align: right;">Total</th><th>Status</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in pending_payments %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ p.date }}</td>
-        <td>{{ p.sales_manager.full_name }}</td>
-        <td style="text-align: right; font-family: monospace; font-size: 1.1rem; font-weight: 800; color: var(--indigo);">₦{{ p.total|floatformat:0 }}</td>
-        <td><span class="badge-soft badge-soft-warning">⏳ Pending</span></td>
-        <td><a href="{% url 'sales:confirm_sm_payment' p.pk %}" class="btn-modern btn-modern-primary" style="padding: 0.35rem 1rem; font-size: 0.8rem;">Confirm</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PAYMENTS</span><h2>Money waiting to be confirmed</h2></div><a class="button button-secondary" href="{% url 'sales:list_sm_payments' %}">View all</a></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Sales manager</th><th class="number">Total</th><th>Status</th><th>Action</th></tr></thead>
+<tbody>
+{% for p in pending_payments %}
+<tr><td>{{ forloop.counter }}</td><td>{{ p.date }}</td><td>{{ p.sales_manager.full_name }}</td><td class="number">₦{{ p.total|floatformat:0 }}</td><td><span class="status-pill">Pending</span></td><td><a class="button button-primary" href="{% url 'sales:confirm_sm_payment' p.pk %}">Confirm</a></td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endif %}
-
 {% if recent_collections %}
-<div class="action-bar-modern" style="margin-top: 3rem;">
-  <h3 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--navy);">📋 Recent Collection Activity</h3>
-</div>
-<div class="table-wrapper">
-  <table class="premium-table">
-    <thead>
-      <tr><th>S/N</th><th>Date</th><th>Sales Manager</th><th>Material</th><th style="text-align: right;">Qty</th><th>Status</th></tr>
-    </thead>
-    <tbody>
-      {% for c in recent_collections %}
-      <tr>
-        <td>{{ forloop.counter }}</td>
-        <td>{{ c.date }}</td>
-        <td>{{ c.sales_manager.full_name }}</td>
-        <td><strong style="color:var(--slate-800);">{{ c.material_type|upper }}</strong></td>
-        <td style="text-align: right; font-family: monospace; font-size: 1.1rem; font-weight: 800;">{{ c.qty_sacks }}</td>
-        <td>
-          {% if c.status == 'accepted' %}<span class="badge-soft badge-soft-success">✓ Accepted</span>
-          {% elif c.status == 'pending' %}<span class="badge-soft badge-soft-warning">⏳ Pending</span>
-          {% else %}<span class="badge-soft badge-soft-danger">✗ Rejected</span>{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">COLLECTIONS</span><h2>Recent collection activity</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>S/N</th><th>Date</th><th>Sales manager</th><th>Material</th><th class="number">Qty</th><th>Status</th></tr></thead>
+<tbody>
+{% for c in recent_collections %}
+<tr><td>{{ forloop.counter }}</td><td>{{ c.date }}</td><td>{{ c.sales_manager.full_name }}</td><td><strong>{{ c.material_type|upper }}</strong></td><td class="number">{{ c.qty_sacks }}</td><td>{% if c.status == 'accepted' %}<span class="status-pill">Accepted</span>{% elif c.status == 'pending' %}<span class="status-pill">Pending</span>{% else %}<span class="status-pill">Rejected</span>{% endif %}</td></tr>
+{% endfor %}
+</tbody></table></div></section>
 {% endif %}
 {% endif %}
-
 {% include 'includes/_daily_ledger.html' %}
-
 {% endblock %}

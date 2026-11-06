@@ -1,0 +1,51 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}{{ sale.buyer_name }} — Outstanding Balance — Noor Foods{% endblock %}{% block nav_outstanding %}active{% endblock %}{% block breadcrumb %}Outstanding Balances{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">OUTSTANDING BALANCE</div><h1>{{ sale.buyer_name }}</h1></div><a class="button button-secondary" href="{% url 'sales:outstanding_balances' %}">Back to outstanding balances</a></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALE #{{ sale.pk }}</span><h2>Sale details</h2></div></div>
+<div class="record-list">
+<div class="record-row"><span>Customer name</span><strong>{{ sale.buyer_name }}</strong></div>
+<div class="record-row"><span>Phone</span><strong>{{ sale.customer_phone|default:"—" }}</strong></div>
+<div class="record-row"><span>Location</span><strong>{{ sale.customer_location|default:"—" }}</strong></div>
+<div class="record-row"><span>Date goods were collected</span><strong>{{ sale.date }}</strong></div>
+<div class="record-row"><span>Product</span><strong>{{ sale.get_material_type_display|upper }} — {{ sale.qty_sold }} {% if sale.product_size == '1kg' %}pieces{% else %}sacks{% endif %} ({{ sale.product_size }})</strong></div>
+<div class="record-row"><span>Total amount</span><strong>₦{{ sale.total_sale_value|floatformat:0 }}</strong></div>
+<div class="record-row"><span>Amount paid so far</span><strong>₦{{ sale.total_received|floatformat:0 }}</strong></div>
+<div class="record-row"><span>Balance remaining</span><strong>₦{{ sale.balance|floatformat:0 }}</strong></div>
+<div class="record-row"><span>Payment type</span><strong>{{ sale.get_payment_type_display }}</strong></div>
+<div class="record-row"><span>Status</span><strong>{{ sale.get_status_display }}</strong></div>
+<div class="record-row"><span>Recorded by</span><strong>{{ sale.recorded_by.full_name }}</strong></div>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">HISTORY</span><h2>Payments</h2></div></div>
+{% if history %}
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Method</th><th class="number">Amount (₦)</th><th>Recorded by</th><th>Notes</th></tr></thead>
+<tbody>
+{% for h in history %}
+<tr><td><strong>{{ h.date }}</strong></td><td>{{ h.method }}</td><td class="number">{{ h.amount|floatformat:0 }}</td><td>{{ h.recorded_by.full_name }}</td><td>{{ h.notes|default:"—" }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">No payments recorded yet.</p>
+{% endif %}
+</section>
+{% if current_user.role == 'manager' and sale.balance > 0 and sale.status == 'confirmed' %}
+<section class="panel form-panel"><div class="form-heading"><h2>Record a new payment</h2></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<p>The payment cannot be more than the balance of ₦{{ sale.balance|floatformat:0 }}. If it clears the balance, the debt is cleared and this customer leaves the Outstanding page.</p>
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_amount">Amount (₦)</label><input type="number" step="0.01" min="0.01" max="{{ sale.balance }}" id="id_amount" name="amount" required></div>
+<div class="field"><label for="id_method">Method</label><select id="id_method" name="method"><option value="cash">Cash</option><option value="transfer">Transfer</option></select></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="2"></textarea></div>
+</div>
+<div class="form-actions"><button class="button button-primary" type="submit">Record payment</button></div>
+</form></section>
+{% elif current_user.role == 'md' %}
+<div class="notice">You are viewing this page read-only. Only the GM records payments.</div>
+{% elif sale.balance == 0 %}
+<div class="notice">This sale is fully paid. It stays in sales history and no longer appears on the Outstanding page.</div>
+{% elif sale.status != 'confirmed' %}
+<div class="notice">This sale is {{ sale.get_status_display|lower }}. Payments can be recorded once the MD confirms it.</div>
+{% endif %}
+{% endblock %}

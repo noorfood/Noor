@@ -1,132 +1,19 @@
-{% extends 'base.html' %}
-{% block title %}Outstanding Balances — Noor Foods{% endblock %}
-{% block nav_sl_out %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Outstanding Balances — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Outstanding Balances{% endblock %}
 {% block content %}
-<div class="page-hero" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">📊 Financial Accountability</span>
-            <h1 class="hero-title" style="color: #fff;">Sales Outstanding Balances</h1>
-            <p class="hero-subtitle" style="color: var(--slate-300);">
-                {% if current_user.role == 'sales_manager' %}
-                    Personal goods-in-hand and financial obligations to the company.
-                {% else %}
-                    Company-level liability ledger — consolidated market exposure tracking.
-                {% endif %}
-            </p>
-        </div>
-        <div style="text-align:right;">
-            <div style="font-size:0.75rem; color:var(--rose); font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">{{ "now"|date:"l, d F Y" }}</div>
-            <div style="font-size:1rem; font-weight:800; color:#fff; margin-top:0.25rem;">Market Risk: ACTIVE</div>
-        </div>
-    </div>
-</div>
-
-{# Quick Period Toggles #}
-<div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0;">
-    <form method="get" id="dateFilterForm" style="display: none;">
-        <input type="date" name="date_from" value="{{ f_from }}">
-        <input type="date" name="date_to" value="{{ f_to }}">
-    </form>
-    <div>
-        {% if f_from or f_to %}
-        <span style="font-size: 0.75rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase;">
-            Liability Period: <span style="color: var(--navy);">{{ f_from|default:"Beginning" }}</span> to <span style="color: var(--navy);">{{ f_to|default:"Today" }}</span>
-        </span>
-        {% endif %}
-    </div>
-    {% include 'partials/date_toggles.html' %}
-</div>
-
-<div class="action-bar-modern" style="margin-bottom: 2rem;">
-    <div>
-        {% if current_user.role == 'manager' or current_user.role == 'md' %}
-        <a href="{% url 'sales:list_sm_payments' %}" class="btn-modern" style="background: var(--navy); color: #fff;">
-            💳 View All SM Payments
-        </a>
-        {% endif %}
-    </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{% url 'sales:dashboard' %}" class="btn-modern" style="background: var(--slate-100); color: var(--navy);">
-            🏠 Dashboard
-        </a>
-    </div>
-</div>
-
-<div style="background: #fff; border: 1px solid var(--slate-100); border-radius: 12px; overflow: hidden; margin-bottom: 2rem;">
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>Sales Manager</th>
-                <th class="num">Maize Holding</th>
-                <th class="num">Wheat Holding</th>
-                <th class="num">Total Collected</th>
-                <th class="num">M. Collected</th>
-                <th class="num">W. Collected</th>
-                {% if show_money %}
-                <th class="num">Money Outstanding</th>
-                {% endif %}
-                <th class="num">Pending</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in sm_outstanding %}
-            <tr>
-                <td><strong style="color: var(--navy);">{{ row.sm.full_name }}</strong></td>
-                <td class="num">
-                    {% if row.maize_holding > 0 %}
-                    <span style="font-weight: 800; color: var(--amber);">{{ row.maize_holding|floatformat:0 }}</span>
-                    {% else %}
-                    <span style="color: var(--slate-300);">0</span>
-                    {% endif %}
-                </td>
-                <td class="num">
-                    {% if row.wheat_holding > 0 %}
-                    <span style="font-weight: 800; color: #8b5cf6;">{{ row.wheat_holding|floatformat:0 }}</span>
-                    {% else %}
-                    <span style="color: var(--slate-300);">0</span>
-                    {% endif %}
-                </td>
-                <td class="num" style="color: var(--slate-500); font-weight: 600;">{{ row.total_collected }}</td>
-                <td class="num" style="color: var(--amber); font-weight: 700;">{{ row.maize_collected }}</td>
-                <td class="num" style="color: #8b5cf6; font-weight: 700;">{{ row.wheat_collected }}</td>
-                {% if show_money %}
-                <td class="num">
-                    <strong class="{% if row.money_outstanding > 0 %}text-rose{% else %}text-emerald{% endif %}" style="font-size: 1.05rem;">
-                        ₦{{ row.money_outstanding|floatformat:0 }}
-                    </strong>
-                </td>
-                {% endif %}
-                <td class="num">
-                    {% if row.pending_collection_count > 0 %}
-                    <span class="badge-soft badge-soft-warning">{{ row.pending_collection_count }}</span>
-                    {% else %}
-                    <span style="color: var(--slate-300);">0</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if row.money_outstanding > 0 or row.goods_holding > 0 %}
-                    <span class="badge-soft badge-soft-danger">Outstanding Risk</span>
-                    {% else %}
-                    <span class="badge-soft badge-soft-success">Risk Clear</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="9" style="text-align:center; padding:3rem; color:var(--slate-400);">No entries for this period.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<div class="footer-note">
-  <strong>💡 Balance Principles:</strong>
-  <ul style="margin:.5rem 0 0; padding-left:1.2rem;">
-    <li><strong>Goods in Hand:</strong> Accepted collections minus successfully recorded sales results.</li>
-    <li><strong>Money Outstanding:</strong> Total value of accepted collections minus confirmed payments confirmed by GM.</li>
-    <li>Team members (Promoters/Drivers) are internal to the SM; their holdings are for performance tracking only.</li>
-  </ul>
-</div>
-
+<div class="page-heading"><div><div class="eyebrow">SALES</div><h1>Sales outstanding balances</h1></div><div><div>{{ "now"|date:"l, d F Y" }}</div></div></div>
+<section class="panel form-panel"><div class="form-heading"><h2>Period</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button>{% include 'partials/date_toggles.html' %}</div></form></section>
+{% if f_from or f_to %}<div class="notice">Period: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}.</div>{% endif %}
+<div class="form-actions">{% if current_user.role == 'manager' or current_user.role == 'md' %}<a class="button button-secondary" href="{% url 'sales:list_sm_payments' %}">View all SM payments</a>{% endif %}<a class="button button-secondary" href="{% url 'sales:dashboard' %}">Dashboard</a></div>
+<section class="panel"><div class="table-scroll"><table>
+<thead><tr><th>Sales manager</th><th class="number">Maize holding</th><th class="number">Wheat holding</th><th class="number">Total collected</th><th class="number">Maize collected</th><th class="number">Wheat collected</th>{% if show_money %}<th class="number">Money outstanding</th>{% endif %}<th class="number">Pending</th><th>Status</th></tr></thead>
+<tbody>
+{% for row in sm_outstanding %}
+<tr><td><strong>{{ row.sm.full_name }}</strong></td><td class="number">{{ row.maize_holding|floatformat:0 }}</td><td class="number">{{ row.wheat_holding|floatformat:0 }}</td><td class="number">{{ row.total_collected }}</td><td class="number">{{ row.maize_collected }}</td><td class="number">{{ row.wheat_collected }}</td>{% if show_money %}<td class="number"><strong>₦{{ row.money_outstanding|floatformat:0 }}</strong></td>{% endif %}<td class="number">{% if row.pending_collection_count > 0 %}<span class="status-pill">{{ row.pending_collection_count }}</span>{% else %}0{% endif %}</td><td>{% if row.money_outstanding > 0 %}<span class="status-pill">Outstanding</span>{% else %}<span class="status-pill">Clear</span>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="9" class="empty-state">No entries for this period.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

@@ -3,8 +3,8 @@ from django.contrib import messages
 from accounts.mixins import get_current_user, role_required, store_type_required
 from accounts.models import User
 from audit.utils import log_action
-from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance, PRODUCT_SIZE_CHOICES
-from django.db.models import Sum
+from finished_store.models import FinishedGoodsReceipt, FinishedGoodsIssuance, Warehouse, WarehouseDelivery, PRODUCT_SIZE_CHOICES
+from django.db.models import Sum, Count
 import datetime
 
 
@@ -101,7 +101,8 @@ def acknowledge_receipt(request, receipt_id):
             log_action(request, user, 'finished_store', 'ACCEPT_RECEIPT',
                        f'Accepted FG Receipt #{receipt.pk}: {receipt.qty_received} × {receipt.product_size} | {receipt.packaging_ref}',
                        'FinishedGoodsReceipt', receipt.pk)
-            messages.success(request, f'Receipt #{receipt.pk} accepted. {receipt.qty_received} × {receipt.product_size} added to store.')
+            balance_now = _fg_balance(receipt.material_type, receipt.product_size)
+            messages.success(request, f'Receipt #{receipt.pk} accepted. {receipt.qty_received} × {receipt.product_size} added to store. Finished store {receipt.material_type} {receipt.product_size} balance now: {balance_now} sacks.')
 
         elif action == 'reject':
             if not note:
@@ -119,7 +120,7 @@ def acknowledge_receipt(request, receipt_id):
     return redirect('finished_store:list')
 
 
-@role_required('store_officer')
+@role_required('store_officer', md_read='finished store officer')
 @store_type_required('finished')
 def issue_fg(request):
     """FG issuance for company-channel only. Requires management handshake."""
@@ -160,7 +161,7 @@ def issue_fg(request):
                     log_action(request, user, 'finished_store', 'INITIATE_ISSUE_FG',
                                f'Initiated issuance of {qty_issued} × {product_size} to Company | Handshake Pending',
                                'FinishedGoodsIssuance', issuance.pk)
-                    messages.info(request, f'Company Handover #{issuance.pk} initiated. Awaiting approval from {approver.full_name}.')
+                    messages.info(request, f'Company Handover #{issuance.pk} initiated. Awaiting approval from {approver.full_name}. Finished store {material_type} 10kg balance is still {balance} sacks — stock deducts only when the approver confirms.')
                     return redirect('finished_store:list')
         except Exception as e:
             error = f'Error: {str(e)}'
@@ -173,6 +174,8 @@ def issue_fg(request):
         'current_user': user, 'error': error,
         'today': datetime.date.today().isoformat(), 'size_choices': PRODUCT_SIZE_CHOICES,
         'material_choices': MATERIAL_CHOICES, 'approvers': approvers,
+        'balance_maize': _fg_balance('maize', '10kg'),
+        'balance_wheat': _fg_balance('wheat', '10kg'),
     })
 
 
@@ -419,4 +422,221 @@ def list_records(request):
         'p_rec': p_rec, 'p_iss': p_iss, 'p_ret': p_ret,
         'f_from': f_from, 'f_to': f_to,
         'today_str': datetime.date.today().isoformat(),
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WAREHOUSE DELIVERIES (MD/GM request, Nov 2026)
+# Finished goods sent to warehouses in other states.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@role_required('store_officer', 'manager', 'md')
+def warehouses(request):
+    """Manageable list of warehouses. FG officer and MD can add or
+    deactivate; GM and MD see it read-only."""
+    user = get_current_user(request)
+    error = None
+    if request.method == 'POST':
+        if user.role not in ('store_officer', 'md'):
+            return redirect('finished_store:warehouses')
+        action = request.POST.get('action')
+        if action == 'add':
+            name = request.POST.get('name', '').strip()
+            state = request.POST.get('state', '').strip()
+            if not name:
+                error = 'Warehouse name is required.'
+            elif Warehouse.objects.filter(name__iexact=name).exists():
+                error = f'A warehouse called "{name}" already exists.'
+            else:
+                w = Warehouse.objects.create(name=name, state=state, created_by=user)
+                log_action(request, user, 'finished_store', 'ADD_WAREHOUSE',
+                           f'Added warehouse: {name}', 'Warehouse', w.pk)
+                messages.success(request, f'Warehouse "{name}" added.')
+                return redirect('finished_store:warehouses')
+        elif action == 'toggle':
+            w = get_object_or_404(Warehouse, pk=request.POST.get('warehouse_id'))
+            w.is_active = not w.is_active
+            w.save(update_fields=['is_active'])
+            log_action(request, user, 'finished_store', 'TOGGLE_WAREHOUSE',
+                       f'{"Activated" if w.is_active else "Deactivated"} warehouse: {w.name}',
+                       'Warehouse', w.pk)
+            return redirect('finished_store:warehouses')
+    return render(request, 'finished_store/warehouses.html', {
+        'current_user': user, 'error': error,
+        'warehouses': Warehouse.objects.all().order_by('name'),
+    })
+
+
+@role_required('store_officer', md_read='finished store officer')
+@store_type_required('finished')
+def record_delivery(request):
+    """Finished Goods Officer records a delivery to a warehouse.
+
+    Date is automatic and locked (today). The goods leave the store
+    through a linked FinishedGoodsIssuance (channel 'warehouse'), so
+    stock is deducted exactly like any other issuance — only once the
+    receiver confirms.
+    """
+    from sales.views import valid_phone
+    from procurement.models import MATERIAL_CHOICES
+    user = get_current_user(request)
+    error = None
+    if request.method == 'POST':
+        try:
+            warehouse_id = request.POST.get('warehouse')
+            delivery_name = request.POST.get('delivery_name', '').strip()
+            supply_to = request.POST.get('supply_to', '').strip()
+            supply_to_phone = request.POST.get('supply_to_phone', '').strip()
+            quantity = int(request.POST.get('quantity', 0))
+            material_type = request.POST.get('material_type', 'maize')
+            notes = request.POST.get('notes', '').strip()
+            warehouse = Warehouse.objects.filter(pk=warehouse_id, is_active=True).first()
+            if not warehouse:
+                error = 'Choose an active warehouse.'
+            elif not delivery_name or not supply_to:
+                error = 'Delivery name and the name of the person receiving the goods are required.'
+            elif not valid_phone(supply_to_phone):
+                error = 'Enter a valid phone number for the receiver (e.g. 08031234567 or +2348031234567).'
+            elif quantity <= 0:
+                error = 'Quantity must be above zero.'
+            elif material_type not in dict(MATERIAL_CHOICES):
+                error = 'Choose maize or wheat.'
+            else:
+                balance = _fg_balance(material_type, '10kg')
+                if quantity > balance:
+                    error = f'Not enough stock. Current {material_type.upper()} 10kg balance: {balance} sacks.'
+                else:
+                    from django.db import transaction
+                    with transaction.atomic():
+                        issuance = FinishedGoodsIssuance.objects.create(
+                            date=datetime.date.today(),
+                            material_type=material_type,
+                            product_size='10kg',
+                            qty_issued=quantity,
+                            channel='warehouse',
+                            buyer_name=supply_to,
+                            issued_by=user,
+                            notes=notes,
+                            status='pending',
+                            is_locked=False,
+                        )
+                        delivery = WarehouseDelivery.objects.create(
+                            warehouse=warehouse,
+                            delivery_name=delivery_name,
+                            supply_to=supply_to,
+                            supply_to_phone=supply_to_phone,
+                            quantity=quantity,
+                            material_type=material_type,
+                            product_size='10kg',
+                            date=datetime.date.today(),
+                            recorded_by=user,
+                            issuance=issuance,
+                            notes=notes,
+                        )
+                    log_action(request, user, 'finished_store', 'RECORD_WAREHOUSE_DELIVERY',
+                               f'Recorded delivery "{delivery_name}": {quantity} x {material_type} 10kg to {warehouse.name} for {supply_to}',
+                               'WarehouseDelivery', delivery.pk)
+                    messages.success(request, f'Delivery "{delivery_name}" recorded. Waiting for the receiver to confirm. Finished store {material_type} 10kg balance is still {balance} sacks — stock deducts only when the delivery is confirmed.')
+                    return redirect('finished_store:deliveries_report')
+        except Exception as e:
+            error = f'Error saving delivery: {e}'
+    return render(request, 'finished_store/delivery_form.html', {
+        'current_user': user, 'error': error,
+        'today': datetime.date.today().isoformat(),
+        'warehouses': Warehouse.objects.filter(is_active=True).order_by('name'),
+        'material_choices': MATERIAL_CHOICES,
+        'balance_maize': _fg_balance('maize', '10kg'),
+        'balance_wheat': _fg_balance('wheat', '10kg'),
+    })
+
+
+@role_required('store_officer', 'manager', 'md')
+def deliveries_report(request):
+    """Delivery report, filterable by warehouse and date.
+
+    The FG officer records and confirms; GM and MD view read-only.
+    """
+    user = get_current_user(request)
+    f_warehouse = request.GET.get('warehouse', '')
+    f_from = request.GET.get('date_from', '')
+    f_to = request.GET.get('date_to', '')
+    deliveries = WarehouseDelivery.objects.select_related('warehouse', 'recorded_by').all()
+    if f_warehouse:
+        deliveries = deliveries.filter(warehouse_id=f_warehouse)
+    if f_from:
+        deliveries = deliveries.filter(date__gte=f_from)
+    if f_to:
+        deliveries = deliveries.filter(date__lte=f_to)
+    deliveries = deliveries.order_by('-date', '-created_at')
+    per_warehouse = deliveries.values('warehouse__name').annotate(
+        count=Count('id'), qty=Sum('quantity'),
+    ).order_by('warehouse__name')
+    total_qty = deliveries.aggregate(t=Sum('quantity'))['t'] or 0
+    return render(request, 'finished_store/deliveries_report.html', {
+        'current_user': user,
+        'deliveries': deliveries,
+        'per_warehouse': per_warehouse,
+        'total_qty': total_qty,
+        'warehouses': Warehouse.objects.filter(is_active=True).order_by('name'),
+        'f_warehouse': f_warehouse, 'f_from': f_from, 'f_to': f_to,
+    })
+
+
+@role_required('store_officer')
+@store_type_required('finished')
+def confirm_delivery(request, pk):
+    """Record the receiver's confirmation for a delivery.
+
+    This is the receiver-confirmation step, mirroring the existing
+    issuance handshake (acknowledge_issuance): the officer records
+    that the named receiver confirmed receipt, or reported a
+    difference. Confirming accepts the linked issuance, which is what
+    deducts the goods from finished-store stock.
+    """
+    from django.utils import timezone
+    user = get_current_user(request)
+    delivery = get_object_or_404(WarehouseDelivery, pk=pk, status='pending')
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        confirmer = request.POST.get('confirmed_by_name', '').strip() or delivery.supply_to
+        note = request.POST.get('confirm_note', '').strip()
+        if action == 'confirm':
+            delivery.status = 'accepted'
+            delivery.confirmed_by_name = confirmer
+            delivery.confirmed_at = timezone.now()
+            delivery.confirm_note = note
+            delivery.save(update_fields=['status', 'confirmed_by_name', 'confirmed_at', 'confirm_note'])
+            if delivery.issuance:
+                delivery.issuance.status = 'accepted'
+                delivery.issuance.save(update_fields=['status'])
+            log_action(request, user, 'finished_store', 'CONFIRM_WAREHOUSE_DELIVERY',
+                       f'Receiver {confirmer} confirmed delivery "{delivery.delivery_name}" ({delivery.quantity} x {delivery.material_type})',
+                       'WarehouseDelivery', delivery.pk)
+            balance_now = _fg_balance(delivery.material_type, delivery.product_size)
+            messages.success(request, f'Delivery "{delivery.delivery_name}" confirmed as received. Finished store {delivery.material_type} {delivery.product_size} balance now: {balance_now} sacks.')
+        elif action == 'difference':
+            if not note:
+                messages.error(request, 'Describe the difference the receiver reported.')
+                return redirect('finished_store:deliveries_report')
+            delivery.status = 'rejected'
+            delivery.confirmed_by_name = confirmer
+            delivery.confirmed_at = timezone.now()
+            delivery.confirm_note = note
+            delivery.save(update_fields=['status', 'confirmed_by_name', 'confirmed_at', 'confirm_note'])
+            if delivery.issuance:
+                delivery.issuance.status = 'rejected'
+                delivery.issuance.save(update_fields=['status'])
+            log_action(request, user, 'finished_store', 'WAREHOUSE_DELIVERY_DIFFERENCE',
+                       f'Receiver {confirmer} reported a difference on delivery "{delivery.delivery_name}": {note}',
+                       'WarehouseDelivery', delivery.pk)
+            messages.warning(request, 'Difference recorded. The delivery is flagged for review.')
+        return redirect('finished_store:deliveries_report')
+    return render(request, 'finished_store/deliveries_report.html', {
+        'current_user': user,
+        'deliveries': WarehouseDelivery.objects.filter(status='pending').order_by('-date'),
+        'per_warehouse': [],
+        'total_qty': 0,
+        'warehouses': Warehouse.objects.filter(is_active=True).order_by('name'),
+        'f_warehouse': '', 'f_from': '', 'f_to': '',
+        'confirm_delivery': delivery,
     })

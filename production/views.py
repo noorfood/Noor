@@ -547,3 +547,25 @@ def acknowledge_transfer(request, issuance_id):
             messages.warning(request, f'Transfer #{issuance.pk} rejected. Bags returned to store.')
     
     return redirect('production:dashboard')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LEGACY CREATION GATE (deploy-ready continuation)
+# Milling and packaging creation used to write to the legacy MillingBatch /
+# PackagingBatch lane, bypassing the rebuilt bag_stock ledger that reports
+# and the rebuilt reports read. Those two creation routes now redirect to
+# the rebuilt operations screens, which record the same work in bag_stock.
+# The original view functions remain in this file, unrouted, so legacy
+# records stay readable via list/dashboard. Other legacy routes are NOT
+# redirected here: clean_store, finished_store and procurement creation
+# feed functions the rebuild screens do not yet cover, and closing them
+# needs a migration decision, not a URL change.
+# ─────────────────────────────────────────────────────────────────────────────
+def legacy_milling_redirect(request):
+    messages.info(request, 'Milling is now recorded in the rebuilt production workspace.')
+    return redirect('operations:milling')
+
+
+def legacy_packaging_redirect(request):
+    messages.info(request, 'Packaging is now recorded in the rebuilt production workspace.')
+    return redirect('operations:packaging')

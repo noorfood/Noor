@@ -1,0 +1,92 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Weekly Summary — Noor Foods{% endblock %}{% block nav_weekly %}active{% endblock %}{% block breadcrumb %}Weekly Summary{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">WEEKLY SUMMARY</div><h1>Week of {{ week_start|date:'j F Y' }} to {{ week_end|date:'j F Y' }}</h1></div><div><a class="button button-secondary" href="{% url 'reports:weekly_summary' %}?week={{ prev_week_end|date:'Y-m-d' }}">← Previous week</a>{% if not is_current_week %} <a class="button button-secondary" href="{% url 'reports:weekly_summary' %}?week={{ next_week_end|date:'Y-m-d' }}">Next week →</a>{% endif %}</div></div>
+<p>Plain summary of the week ending Saturday. The week runs Sunday to Saturday — review it on Friday (the week so far) or Saturday (the full week). No profit or loss figures — only records of sales, money, deliveries, stock and staff activity.</p>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES AND CASH</span><h2>Sales and cash received</h2></div></div>
+<div class="record-list">
+<div class="record-row"><span>Direct sales recorded this week</span><strong>{{ sales_count }}</strong></div>
+<div class="record-row"><span>Total value of sales recorded</span><strong>₦{{ sales_total|floatformat:0 }}</strong></div>
+<div class="record-row"><span>Cash and transfers received this week</span><strong>₦{{ cash_received|floatformat:0 }}</strong></div>
+</div></section>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">OWED TO THE COMPANY</span><h2>Outstanding balances — ₦{{ outstanding_total|floatformat:0 }}</h2></div><a class="button button-secondary" href="{% url 'sales:outstanding_balances' %}">Open outstanding balances</a></div>
+{% if owing %}
+<div class="table-scroll"><table>
+<thead><tr><th>Customer</th><th>Date collected</th><th class="number">Balance (₦)</th></tr></thead>
+<tbody>
+{% for s in owing %}
+<tr><td><strong><a href="{% url 'sales:outstanding_customer' s.pk %}">{{ s.buyer_name }}</a></strong><span>{{ s.customer_location }}{% if s.customer_phone %} · {{ s.customer_phone }}{% endif %}</span></td><td>{{ s.date }}</td><td class="number"><strong>{{ s.balance|floatformat:0 }}</strong></td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">Nobody owes money.</p>
+{% endif %}
+</section>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">DELIVERIES</span><h2>Deliveries per warehouse — {{ deliveries_total }} sacks</h2></div><a class="button button-secondary" href="{% url 'finished_store:deliveries_report' %}">Open deliveries report</a></div>
+{% if per_warehouse %}
+<div class="table-scroll"><table>
+<thead><tr><th>Warehouse</th><th class="number">Deliveries</th><th class="number">Sacks</th></tr></thead>
+<tbody>
+{% for row in per_warehouse %}
+<tr><td><strong>{{ row.warehouse__name }}</strong></td><td class="number">{{ row.count }}</td><td class="number">{{ row.qty }}</td></tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">No warehouse deliveries this week.</p>
+{% endif %}
+</section>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STOCK</span><h2>Key stock movements this week</h2></div></div>
+<div class="record-list">
+{% for label, value in movements %}
+<div class="record-row"><span>{{ label }}</span><strong>{{ value }}</strong></div>
+{% endfor %}
+</div></section>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAFF PERFORMANCE</span><h2>What each person did this week</h2></div></div>
+<p class="panel-intro">What staff sold, milled, packaged and received this week. Only staff with work recorded this week are listed.</p>
+{% if performance %}
+<div class="table-scroll"><table>
+<thead><tr><th>Staff</th><th class="number">Sales</th><th class="number">Cash received (₦)</th><th class="number">Bags milled</th><th class="number">Sacks packaged</th><th class="number">Raw bags received</th><th class="number">Deliveries</th></tr></thead>
+<tbody>
+{% for p in performance %}
+<tr>
+<td><strong>{{ p.person.full_name }}</strong><span>{{ p.person.get_role_display }}</span></td>
+<td class="number">{% if p.sales_count %}{{ p.sales_count }} sale{{ p.sales_count|pluralize }} · ₦{{ p.sales_value|floatformat:0 }}{% else %}—{% endif %}</td>
+<td class="number">{% if p.cash %}₦{{ p.cash|floatformat:0 }}{% else %}—{% endif %}</td>
+<td class="number">{% if p.milled %}{{ p.milled }}{% else %}—{% endif %}</td>
+<td class="number">{% if p.packaged %}{{ p.packaged }}{% else %}—{% endif %}</td>
+<td class="number">{% if p.raw_received %}{{ p.raw_received }}{% else %}—{% endif %}</td>
+<td class="number">{% if p.deliveries_count %}{{ p.deliveries_count }} · {{ p.deliveries_qty }} sacks{% else %}—{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<p class="simple-empty">No staff work recorded this week yet.</p>
+{% endif %}
+</section>
+
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STAFF</span><h2>Daily records this week</h2></div></div>
+<p class="panel-intro">A day counts as submitted when a staff member recorded any work — or pressed "No activity today". Days before today with no record are missing.</p>
+{% if missing_staff %}
+<div class="notice">{{ missing_staff|length }} staff member{{ missing_staff|length|pluralize }} missing daily records this week.</div>
+{% else %}
+<div class="notice">Everyone submitted their daily records this week.</div>
+{% endif %}
+<div class="table-scroll"><table>
+<thead><tr><th>Staff</th><th>Role</th><th class="number">Days submitted</th><th>Missing days</th></tr></thead>
+<tbody>
+{% for r in staff_rows %}
+<tr>
+<td><strong>{{ r.person.full_name }}</strong></td>
+<td>{{ r.person.get_role_display }}</td>
+<td class="number">{{ r.submitted }} of {{ day_labels|length }}</td>
+<td>{% if r.missing %}{% for d in r.missing %}{{ d|date:'D j M' }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}None{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+</section>
+{% endblock %}

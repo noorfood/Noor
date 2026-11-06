@@ -1,270 +1,75 @@
-{% extends 'base.html' %}
-{% block title %}Record Direct Sale — Noor Foods{% endblock %}
-{% block nav_comp_sales %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Direct Sale — Noor Foods{% endblock %}{% block nav_direct_sales %}active{% endblock %}{% block breadcrumb %}Record Direct Sale{% endblock %}
 {% block content %}
-
-<style>
-  .hero-card {
-    background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
-    color: white;
-    padding: 2.5rem;
-    border-radius: 20px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.2);
-    border: 1px solid rgba(255,255,255,0.1);
-  }
-  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #a5b4fc; margin-bottom: 0.5rem; display: block; }
-  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
-  .hero-sub { color: #c7d2fe; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 650px; }
-
-  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
-  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
-
-  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem; }
-
-  .form-group { margin-bottom: 1.5rem; }
-  .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
-  .form-control {
-    width: 100%; box-sizing: border-box; padding: 0.85rem 1.1rem; border: 2px solid #e2e8f0; border-radius: 12px;
-    font-size: 1rem; color: #1e293b; transition: all 0.2s; background: #f8fafc;
-  }
-  .form-control:focus { outline: none; border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 4px rgba(79,70,229,0.1); }
-  
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
-  @media (max-width: 600px) { .form-row, .form-row-3 { grid-template-columns: 1fr; } }
-
-  .btn-primary {
-    background: #4f46e5; color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px;
-    font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
-    display: inline-flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(79,70,229,0.3);
-  }
-  .btn-primary:hover { background: #3730a3; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79,70,229,0.4); }
-  .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
-  .btn-secondary:hover { color: #1e293b; }
-
-  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; margin-bottom: 2rem; }
-  .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
-  .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-
-  .error-box { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
-  
-  .calc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: center; }
-  .calc-label { font-size: 0.85rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-  .calc-value { font-size: 2rem; font-weight: 900; color: #0f172a; font-family: monospace; }
-</style>
-
-<div class="hero-card">
-  <div class="hero-header">
-    <div>
-      <span class="hero-label">🧾 Factory-Gate Operations</span>
-      <h1 class="hero-title">Record Direct Sale</h1>
-      <p class="hero-sub">Initiate a company sale with payment received. The Managing Director must confirm this transaction before it enters the final ledger.</p>
-    </div>
-  </div>
+<div class="page-heading"><div><div class="eyebrow">DIRECT SALES</div><h1>Record direct sale</h1></div></div>
+<div class="notice">MD confirmation is required before this sale enters the final ledger.</div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Sale details</h2></div>
+<form method="post">{% csrf_token %}
+<input type="hidden" name="date" value="{{ today }}">
+<div class="form-grid">
+<div class="field"><label>Date of collection</label><strong>{{ today }}</strong><span class="optional">Automatic — cannot be changed</span></div>
+<div class="field"><label for="id_buyer">Customer name</label><input type="text" id="id_buyer" name="buyer_name" required></div>
+<div class="field"><label for="id_phone">Customer phone number</label><input type="tel" id="id_phone" name="customer_phone" placeholder="08031234567" required></div>
+<div class="field"><label for="id_location">Customer location</label><input type="text" id="id_location" name="customer_location" placeholder="Town or area" required></div>
+<div class="field"><label for="id_material">Material type</label><select id="material_type" name="material_type" required onchange="calcTotal()">{% for val, label in material_choices %}<option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_size">Product size</label><select id="product_size" name="product_size" required onchange="calcTotal()"><option value="10kg" selected>10kg sack</option><option value="1kg">1kg piece</option></select></div>
+<div class="field"><label for="id_qty">Quantity</label><input type="number" id="qty_sold" name="qty_sold" min="1" required oninput="calcTotal()"></div>
+<div class="field"><label for="id_unit">Unit price</label><span id="display_unit_price">₦0.00</span><span>per unit</span></div>
 </div>
-
-{% if error %}
-<div class="error-box">
-  <span>⚠️</span> {{ error }}
+<div class="record-list">
+<div class="record-row"><span>Calculated sale value</span><strong>₦<span id="total_value">0.00</span></strong></div>
 </div>
-{% endif %}
-
-<div class="layout-grid">
-  <div class="card">
-    <form method="post">
-      {% csrf_token %}
-      
-      <!-- SECTION 1: SALE DETAILS -->
-      <h3 class="card-title">1. Sale Details</h3>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date of Sale</label>
-          <input type="date" name="date" value="{{ today }}" required class="form-control">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Customer Name</label>
-          <input type="text" name="buyer_name" placeholder="Walk-in buyer name" required class="form-control">
-        </div>
-      </div>
-
-      <div class="form-row-3">
-        <div class="form-group">
-          <label class="form-label">Material Type</label>
-          <select name="material_type" id="material_type" required class="form-control" onchange="calcTotal()">
-            {% for val, label in material_choices %}
-            <option value="{{ val }}" {% if val == 'maize' %}selected{% endif %}>{{ label|upper }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Product Size</label>
-          <select name="product_size" id="product_size" required class="form-control" onchange="calcTotal()">
-            <option value="10kg" selected>10kg Sack</option>
-            <option value="1kg">1kg Piece</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Quantity</label>
-          <input type="number" name="qty_sold" id="qty_sold" class="form-control" style="font-family: monospace;" min="1" placeholder="0" required oninput="calcTotal()">
-        </div>
-      </div>
-      
-      <!-- Auto-calculated unit price display (Read-Only) -->
-      <div style="margin-bottom: 1.5rem; text-align: right;">
-        <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Official System Price: </span>
-        <span id="display_unit_price" style="font-size: 1.1rem; font-weight: 800; color: #4f46e5; font-family: monospace;">₦0.00</span> <small>per unit</small>
-      </div>
-      
-      <div class="calc-box">
-        <div class="calc-label">Calculated Sale Value</div>
-        <div class="calc-value">₦<span id="total_value">0.00</span></div>
-      </div>
-
-      <!-- SECTION 2: PAYMENT RECEIVED -->
-      <h3 class="card-title">2. Payment Received</h3>
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Cash Received (₦)</label>
-          <input type="number" step="0.01" name="amount_received_cash" id="amount_cash" class="form-control" style="font-family: monospace; color: #059669;" placeholder="0.00" value="0" oninput="calcOut()">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Transfer Received (₦)</label>
-          <input type="number" step="0.01" name="amount_received_transfer" id="amount_transfer" class="form-control" style="font-family: monospace; color: #2563eb;" placeholder="0.00" value="0" oninput="calcOut()">
-        </div>
-      </div>
-      
-      <div style="display:flex; justify-content:flex-end; gap:2.5rem; margin-top:0.5rem; margin-bottom: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">
-        <div style="text-align:right;">
-          <div style="font-size:0.8rem; color:#64748b; font-weight:700; text-transform: uppercase;">Total Paid</div>
-          <div style="font-size:1.4rem; font-weight:800; color:#10b981; font-family: monospace;" id="total_paid">₦0.00</div>
-        </div>
-        <div style="text-align:right; padding-left: 2.5rem; border-left: 1px solid #e2e8f0;">
-          <div style="font-size:0.8rem; color:#64748b; font-weight:700; text-transform: uppercase;">Outstanding</div>
-          <div style="font-size:1.4rem; font-weight:800; color:#ef4444; font-family: monospace;" id="outstanding">₦0.00</div>
-        </div>
-      </div>
-
-      <!-- SECTION 3: NOTES -->
-      <h3 class="card-title">3. Final Details</h3>
-      <div class="form-group">
-        <label class="form-label">Notes / Context <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
-        <textarea name="notes" class="form-control" rows="2" placeholder="Any special context for the MD..."></textarea>
-      </div>
-
-      <div style="display:flex; align-items:center; justify-content: flex-end; gap:1.5rem; margin-top:2.5rem; padding-top:1.5rem; border-top:2px solid #f1f5f9;">
-        <a href="{% url 'sales:list_direct_sales' %}" class="btn-secondary">Cancel</a>
-        <button type="submit" class="btn-primary">
-          <span>📤</span> Submit for MD Confirmation
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <div>
-    <div class="sidebar-card" style="background: #f0fdf4; border-color: #bbf7d0;">
-      <h3 class="card-title" style="color: #15803d; border-color: #dcfce7; margin-bottom: 1rem;">📦 Current Inventory</h3>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-        <div style="background: white; padding: 0.75rem; border-radius: 10px; border: 1px solid #dcfce7;">
-          <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;">MAIZE</div>
-          <div style="font-size: 1.25rem; font-weight: 900; color: #15803d;">{{ holding_maize|floatformat:0 }}<span style="font-size:0.65rem; color:#166534">scks</span></div>
-          {% if pieces_maize > 0 %}
-          <div style="font-size: 0.85rem; font-weight: 800; color: #166534; font-family: monospace; border-top:1px dashed #dcfce7; padding-top:4px; margin-top:4px;">{{ pieces_maize }}<span style="font-size:0.6rem;"> pcs (1kg)</span></div>
-          {% endif %}
-        </div>
-        <div style="background: white; padding: 0.75rem; border-radius: 10px; border: 1px solid #dcfce7;">
-          <div style="font-size: 0.65rem; font-weight: 800; color: #166534; text-transform: uppercase;">WHEAT</div>
-          <div style="font-size: 1.25rem; font-weight: 900; color: #15803d;">{{ holding_wheat|floatformat:0 }}<span style="font-size:0.65rem; color:#166534">scks</span></div>
-          {% if pieces_wheat > 0 %}
-          <div style="font-size: 0.85rem; font-weight: 800; color: #166534; font-family: monospace; border-top:1px dashed #dcfce7; padding-top:4px; margin-top:4px;">{{ pieces_wheat }}<span style="font-size:0.6rem;"> pcs (1kg)</span></div>
-          {% endif %}
-        </div>
-      </div>
-      <p style="font-size: 0.7rem; color: #166534; margin-top: 0.75rem; font-style: italic;">Stock available in factory-gate pool.</p>
-    </div>
-
-    <div class="sidebar-card">
-      <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
-      
-      <div class="info-item">
-        <div class="info-icon">⚖️</div>
-        <div><strong>Reconciliation Queue:</strong> This sale will enter a 'pending' state and will not impact central financial ledgers until approved.</div>
-      </div>
-      
-      <div class="info-item">
-        <div class="info-icon">👨‍💼</div>
-        <div><strong>Internal Audit:</strong> The MD acts as the final gatekeeper for factory-gate sales to ensure pricing rules are followed.</div>
-      </div>
-      
-      <div class="info-item">
-        <div class="info-icon">🧾</div>
-        <div><strong>Automated Invoicing:</strong> A receipt can be generated from the Direct Sales Registry once this is submitted.</div>
-      </div>
-
-      <div style="background: #eef2ff; color: #4338ca; padding: 1.25rem; border-radius: 12px; font-size: 0.9rem; margin-top: 2rem; border: 1px solid #c7d2fe;">
-        💡 <strong>Did You Know:</strong> Any transaction with partial payment will be flagged 'incomplete' even after MD approval, until the debt is cleared.
-      </div>
-    </div>
-  </div>
+<div class="form-heading"><h2>Payment</h2></div>
+<div class="form-grid">
+<div class="field field-wide"><label>Payment type</label>
+<label><input type="radio" name="payment_type" value="full" checked onchange="calcOut()"> Full payment — customer pays everything now</label>
+<label><input type="radio" name="payment_type" value="partial" onchange="calcOut()"> Partial payment — customer pays part now, the rest stays outstanding</label>
 </div>
-
+<div class="field"><label for="id_cash">Cash received now (₦)</label><input type="number" step="0.01" min="0" id="amount_cash" name="amount_received_cash" value="0" oninput="calcOut()"></div>
+<div class="field"><label for="id_transfer">Transfer received now (₦)</label><input type="number" step="0.01" min="0" id="amount_transfer" name="amount_received_transfer" value="0" oninput="calcOut()"></div>
+<div class="field"><label for="id_paid">Total paid now</label><span id="total_paid">₦0.00</span></div>
+<div class="field"><label for="id_out">Balance remaining</label><span id="outstanding">₦0.00</span></div>
+<div class="field field-wide"><span id="payment_hint"></span></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="2"></textarea></div>
+</div>
+<div class="form-actions"><button class="button button-primary" type="submit">Submit for MD confirmation</button><a class="button button-secondary" href="{% url 'sales:list_direct_sales' %}">Cancel</a></div>
+</form></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STOCK</span><h2>Current inventory</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize</span></div><span class="metric-value">{{ holding_maize|floatformat:0 }} sacks</span>{% if pieces_maize > 0 %}<span class="metric-label">{{ pieces_maize }} pieces (1kg)</span>{% endif %}</div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat</span></div><span class="metric-value">{{ holding_wheat|floatformat:0 }} sacks</span>{% if pieces_wheat > 0 %}<span class="metric-label">{{ pieces_wheat }} pieces (1kg)</span>{% endif %}</div>
+</div></section>
 <script>
-  // Dynamic prices injected from the backend PriceConfig
-  const PRICE_MAP = {{ price_map_json|safe }};
-
-  function formatMoney(num) {
-    if(!num || isNaN(num)) return "0.00";
-    return Number(num).toLocaleString('en-NG', {minimumFractionDigits:2, maximumFractionDigits:2});
+const PRICE_MAP = {{ price_map_json|safe }};
+function formatMoney(num){if(!num||isNaN(num))return "0.00";return Number(num).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function calcTotal(){
+  const mat=document.getElementById('material_type').value;
+  const size=document.getElementById('product_size').value;
+  const qty=parseFloat(document.getElementById('qty_sold').value)||0;
+  const unitPrice=PRICE_MAP[mat+"_"+size]||0;
+  document.getElementById('display_unit_price').textContent='₦'+formatMoney(unitPrice);
+  document.getElementById('total_value').textContent=formatMoney(qty*unitPrice);
+  calcOut();
+}
+function calcOut(){
+  const mat=document.getElementById('material_type').value;
+  const size=document.getElementById('product_size').value;
+  const qty=parseFloat(document.getElementById('qty_sold').value)||0;
+  const unitPrice=PRICE_MAP[mat+"_"+size]||0;
+  const totalVal=qty*unitPrice;
+  const paid=(parseFloat(document.getElementById('amount_cash').value)||0)+(parseFloat(document.getElementById('amount_transfer').value)||0);
+  document.getElementById('total_paid').textContent='₦'+formatMoney(paid);
+  const diff=totalVal-paid;
+  document.getElementById('outstanding').textContent='₦'+formatMoney(diff>0?diff:0);
+  const ptype=document.querySelector('input[name="payment_type"]:checked').value;
+  const hint=document.getElementById('payment_hint');
+  if(ptype==='full'){
+    hint.textContent = paid===totalVal && totalVal>0 ? 'Full payment: balance will be ₦0.' : 'Full payment: the amount paid now must equal the total amount.';
+  } else {
+    hint.textContent = (paid>0 && paid<totalVal) ? 'Partial payment: ₦'+formatMoney(diff)+' will stay outstanding for this customer.' : 'Partial payment: enter an amount above zero and below the total amount.';
   }
-
-  function calcTotal() {
-    const mat = document.getElementById('material_type').value;
-    const size = document.getElementById('product_size').value;
-    const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
-    
-    // Look up the official unit price
-    const unitPrice = PRICE_MAP[mat + "_" + size] || 0;
-    
-    // Update unit price display
-    document.getElementById('display_unit_price').textContent = '₦' + formatMoney(unitPrice);
-    
-    // Calculate and update total expected value
-    const total = qty * unitPrice;
-    document.getElementById('total_value').textContent = formatMoney(total);
-    calcOut();
-  }
-
-  function calcOut() {
-    const mat = document.getElementById('material_type').value;
-    const size = document.getElementById('product_size').value;
-    const qty = parseFloat(document.getElementById('qty_sold').value) || 0;
-    const unitPrice = PRICE_MAP[mat + "_" + size] || 0;
-    
-    const totalVal = qty * unitPrice;
-    
-    const cash = parseFloat(document.getElementById('amount_cash').value) || 0;
-    const trans = parseFloat(document.getElementById('amount_transfer').value) || 0;
-    const paid = cash + trans;
-    
-    document.getElementById('total_paid').textContent = '₦' + formatMoney(paid);
-    
-    const diff = totalVal - paid;
-    if(diff > 0) {
-      document.getElementById('outstanding').textContent = '₦' + formatMoney(diff);
-      document.getElementById('outstanding').style.color = '#ef4444'; // Red
-    } else {
-      document.getElementById('outstanding').textContent = '₦0.00';
-      document.getElementById('outstanding').style.color = '#10b981'; // Green
-    }
-  }
-
-  // Initialize display on load
-  window.onload = function() {
-      calcTotal();
-  };
+}
+window.addEventListener('load',calcTotal);
 </script>
 {% endblock %}

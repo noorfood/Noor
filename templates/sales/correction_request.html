@@ -1,0 +1,19 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Request Sales Correction — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Request Sales Correction{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">CORRECTIONS</div><h1>Request a sales correction</h1></div></div>
+<div class="notice">Request by the recorder. Decision only by an independent MD. Approval does not edit the original amount.</div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Correction request</h2></div>
+<form method="post">{% csrf_token %}
+<input type="hidden" name="request_key" value="{{ request_key }}">
+<div class="form-grid">
+<div class="field"><label for="id_result">Sales result to correct</label><select name="sales_result_id" id="id_result" required>
+<option value="">Select a result</option>
+{% for r in results %}<option value="{{ r.pk }}">#{{ r.pk }} · {{ r.sales_person.name }} · {{ r.date }} · {{ r.material_type }} · {{ r.qty_sold }} sacks · ₦{{ r.net_due_to_company }}</option>{% endfor %}
+</select></div>
+<div class="field field-wide"><label for="id_reason">Reason</label><textarea name="reason" id="id_reason" rows="3" required></textarea></div>
+</div>
+<div class="form-actions"><button class="button button-primary" type="submit">Submit request</button><a class="button button-secondary" href="{% url 'sales:list_sales_corrections' %}">Back to corrections</a></div>
+</form></section>
+{% endblock %}

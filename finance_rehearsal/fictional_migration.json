@@ -1,0 +1,27 @@
+{
+  "source_snapshot_id": "fictional-source",
+  "target_snapshot_id": "fictional-target",
+  "mapping_version": "example-v1",
+  "tables": [
+    {
+      "source_table": "example",
+      "mapping_reference": "example-map",
+      "source_count": 4,
+      "target_count": 3,
+      "excluded_count": 1,
+      "unresolved_count": 0,
+      "exclusion_approval_reference": "fictional-approval",
+      "controls": [
+        {
+          "unit": "NGN",
+          "source_reference": "source-report",
+          "target_reference": "target-report",
+          "source_total": "10.00",
+          "target_total": "7.00",
+          "excluded_total": "3.00",
+          "unresolved_total": "0.00"
+        }
+      ]
+    }
+  ]
+}

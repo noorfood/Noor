@@ -1,66 +1,9 @@
-{% extends 'base.html' %}
-{% block title %}Commission Rules — Noor Foods{% endblock %}
-{% block nav_pr_comm %}active{% endblock %}
-
-{% block content %}
-<div class="page-hero" style="margin-bottom: 0; border-radius: 16px 16px 0 0;">
-    <div>
-        <span class="hero-badge">💸 Unified Team Incentives</span>
-        <h1 class="hero-title">Commission Rules</h1>
-        <p class="hero-subtitle">MD-defined unified commission percentages for the entire sales team. These are automatically applied during sales recording.</p>
-    </div>
-</div>
-
-<div class="action-bar-modern" style="border-radius: 0 0 16px 16px; border-top: none; padding: 0.75rem 1.5rem; background: var(--slate-50);">
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{% url 'pricing:list' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Pricing Strategy</a>
-        <a href="{% url 'pricing:commissions' %}" class="btn-modern" style="background: var(--navy); color: #fff; padding: 0.5rem 1rem; font-size: 0.85rem;">Commission Rules</a>
-        <a href="{% url 'pricing:targets' %}" class="btn-modern" style="background: transparent; color: var(--slate-600); padding: 0.5rem 1rem; font-size: 0.85rem;">Sales Targets</a>
-    </div>
-</div>
-
-<div style="margin-top: 2.5rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-        <h4 style="margin:0; font-weight:800; color:var(--navy); font-size: 1.25rem;">💸 Unified Team Incentives</h4>
-        <a href="{% url 'pricing:new_commission' %}" class="btn-modern btn-modern-primary" style="background:var(--indigo); border-color:var(--indigo);">+ Set Team Rate</a>
-    </div>
-    
-    <div class="table-wrapper">
-        <table class="premium-table">
-            <thead>
-                <tr>
-                    <th>Channel</th>
-                    <th>Material</th>
-                    <th>Package Size</th>
-                    <th style="text-align: right;">Commission %</th>
-                    <th>Effective From</th>
-                    <th>Notes / Set By</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in configs %}
-                <tr>
-                    <td><span class="badge-soft {% if c.channel == 'promoter' %}badge-soft-info{% else %}badge-soft-warning{% endif %}">{{ c.get_channel_display }}</span></td>
-                    <td><strong style="color:var(--slate-800);">{{ c.get_material_type_display|upper }}</strong></td>
-                    <td style="font-weight:700; color:var(--slate-900);">{{ c.product_size }}</td>
-                    <td style="text-align: right; font-family: monospace; font-size: 1.25rem; font-weight: 800; color: var(--indigo);">{{ c.commission_pct|floatformat:1 }}%</td>
-                    <td style="font-size:0.9rem; color:var(--slate-600); font-weight:700;">{{ c.effective_from|date:"M d, Y" }}</td>
-                    <td>
-                        <div style="font-size:0.85rem; color:var(--slate-700); font-weight:600;">{{ c.notes|default:"Standard commission rule." }}</div>
-                        <div style="font-size:0.75rem; color:var(--slate-500); margin-top:4px;">By {{ c.created_by.full_name }}</div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align:center; padding:3rem; color:var(--slate-400);">No commission rules configured. <a href="{% url 'pricing:new_commission' %}" style="color:var(--indigo); font-weight:700;">Set the first rule</a>.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="alert alert-info" style="margin-top:2rem;">
-    ℹ️ Commission % is deducted from the gross sale total. The Sales Manager records only the <strong>net payable</strong> amount from each team member. Commission earnings belong to the Sales Person (Promoter or Driver).
-</div>
+{% extends 'rebuild/base.html' %}{% block title %}Commission Rules{% endblock %}{% block nav_pricing %}active{% endblock %}{% block breadcrumb %}Commission rules{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">PRICES &amp; COSTS</div><h1>Commission rules</h1></div></div>
+<div class="operation-actions"><a class="button button-secondary" href="{% url 'pricing:list' %}">Pricing</a><a class="button button-secondary" href="{% url 'pricing:commissions' %}">Commissions</a><a class="button button-secondary" href="{% url 'pricing:targets' %}">Targets</a><a class="button button-secondary" href="{% url 'pricing:expenses' %}">Expenses</a><a class="button button-secondary" href="{% url 'pricing:packaging_costs' %}">Costs</a></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">COMMISSIONS</span><h2>Commission rules</h2></div><a class="button button-primary" href="{% url 'pricing:new_commission' %}">Set team rate</a></div>
+<div class="table-scroll"><table><thead><tr><th>Channel</th><th>Material</th><th>Package size</th><th class="number">Commission %</th><th>Effective from</th><th>Notes</th><th>Set by</th></tr></thead><tbody>
+{% for c in configs %}<tr><td><span class="status-pill">{{ c.get_channel_display }}</span></td><td><strong>{{ c.get_material_type_display|upper }}</strong></td><td>{{ c.product_size }}</td><td class="number">{{ c.commission_pct|floatformat:1 }}%</td><td>{{ c.effective_from|date:"M d, Y" }}</td><td>{{ c.notes|default:"—" }}</td><td>{{ c.created_by.full_name }}</td></tr>
+{% empty %}<tr><td colspan="7" class="empty-state">No commission rules configured.</td></tr>{% endfor %}
+</tbody></table></div></section>
 {% endblock %}

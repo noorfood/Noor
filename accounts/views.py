@@ -3,6 +3,20 @@ from django.contrib import messages
 from accounts.models import User
 from accounts.mixins import get_current_user, role_required
 from audit.utils import log_action
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.middleware.csrf import rotate_token
+from django.views.decorators.http import require_POST
+from accounts.session_security import session_fingerprint
+
+def password_problem(password, user):
+    try:
+        validate_password(password, user=user)
+    except ValidationError as exc:
+        return " ".join(exc.messages)
+    return None
+
 
 
 def login_view(request):
@@ -14,12 +28,16 @@ def login_view(request):
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         try:
-            user = User.objects.get(username=username, status__in=['active', 'suspended'])
-            if user.status == 'suspended':
-                error = 'Your account has been suspended. Please contact management.'
-            elif not user.can_login:
-                error = 'Sales promoters and drivers do not have system login access. Contact your Sales Manager.'
-            elif user.check_password(password):
+            user = User.objects.get(username=username, status='active')
+            if user.can_login and user.check_password(password):
+                # Upgrade the legacy unsalted hash after a successful login.
+                import re
+                if re.fullmatch(r'[0-9a-f]{64}', user.password_hash or ''):
+                    user.set_password(password)
+                    user.save(update_fields=['password_hash', 'plain_password'])
+                request.session.flush()
+                rotate_token(request)
+                request.session['password_fingerprint'] = session_fingerprint(user)
                 request.session['user_id'] = user.pk
                 request.session['user_role'] = user.role
                 request.session['user_name'] = user.full_name
@@ -37,6 +55,7 @@ def login_view(request):
     return render(request, 'accounts/login.html', {'error': error})
 
 
+@require_POST
 def logout_view(request):
     user = get_current_user(request)
     if user:
@@ -49,18 +68,25 @@ def dashboard_redirect(request):
     if not request.session.get('user_id'):
         return redirect('login')
 
-    role = request.session.get('user_role')
-    store_type = request.session.get('store_type', '')
+    user = get_current_user(request)
+    if not user:
+        request.session.flush()
+        return redirect('login')
+    role = user.role
+    store_type = user.store_type or ''
+    request.session['user_role'] = role
+    request.session['store_type'] = store_type
+    request.session['user_name'] = user.full_name
 
     if role == 'store_officer':
         if store_type == 'finished':
-            return redirect('/finished-store/list/')
+            return redirect('operations:finished_home')
         else:
-            return redirect('/procurement/dashboard/')
+            return redirect('operations:home')
 
     role_dashboards = {
-        'production_officer': '/production/dashboard/',
-        'sales_manager': '/sales/dashboard/',
+        'production_officer': '/work/',
+        'sales_manager': '/work/sales-goods/',
         'manager': '/reports/dashboard/',
         'md': '/reports/dashboard/',
     }
@@ -96,6 +122,10 @@ def staff_register(request):
             error = "Please fill in all required fields."
         elif password != confirm_password:
             error = "Passwords do not match."
+        elif role not in dict(User.ROLE_CHOICES) or (role == "store_officer" and store_type not in dict(User.STORE_TYPE_CHOICES)):
+            error = "Select a valid role and store assignment."
+        elif len(full_name)>200 or len(username)>150:
+            error = "Name or username is too long."
         elif User.objects.filter(username=username).exists():
             error = f"Username '{username}' is already taken."
         else:
@@ -112,14 +142,15 @@ def staff_register(request):
                 sales_user_type=sales_user_type,
                 created_by=user,
                 status='active',
-                plain_password=password
             )
-            new_staff.set_password(password)
-            new_staff.save()
-
-            log_action(request, user, 'accounts', 'REGISTER_STAFF', f'Registered new staff: {username} ({role})')
-            messages.success(request, f"Staff '{full_name}' registered successfully.")
-            return redirect('accounts:staff_list')
+            error = password_problem(password, new_staff)
+            if not error:
+                with transaction.atomic():
+                    new_staff.set_password(password)
+                    new_staff.save()
+                    log_action(request, user, 'accounts', 'REGISTER_STAFF', f'Registered new staff: {username} ({role})')
+                messages.success(request, f"Staff '{full_name}' registered successfully.")
+                return redirect('accounts:staff_list')
 
     return render(request, 'accounts/staff_register.html', {
         'current_user': user,
@@ -144,10 +175,15 @@ def staff_edit(request, pk):
 
         if not full_name or not role:
             error = "Full Name and Role are required."
+        elif role not in dict(User.ROLE_CHOICES) or (role == "store_officer" and store_type not in dict(User.STORE_TYPE_CHOICES)):
+            error = "Select a valid role and store assignment."
+        elif len(full_name)>200:
+            error = "Name is too long."
         else:
             old_role = staff.role
             staff.full_name = full_name
             staff.role = role
+            staff.store_type = store_type if role == 'store_officer' else None
             staff.sales_user_type = sales_user_type if role == 'sales_user' else None
             staff.notes = notes
             staff.save()
@@ -174,59 +210,13 @@ def staff_edit(request, pk):
 
 @role_required('md')
 def md_impersonate(request, target_id):
-    """MD clicks a button to impersonate a staff member."""
-    actual_user = get_current_user(request)
-    if not actual_user or getattr(request, 'md_actual_user', actual_user).role != 'md':
-        return redirect('dashboard')
-        
-    target_user = get_object_or_404(User, pk=target_id)
-    if target_user.role == 'md':
-        messages.error(request, "Cannot impersonate another MD.")
-        return redirect('dashboard')
-        
-    # Set impersonation session variables
-    request.session['impersonate_id'] = target_user.pk
-    request.session['user_id'] = target_user.pk
-    request.session['user_role'] = target_user.role
-    request.session['user_name'] = target_user.full_name
-    request.session['store_type'] = target_user.store_type or ''
-    
-    # Properly access md_actual_user attached by get_current_user
-    md_user = getattr(request, 'md_actual_user', actual_user)
-    if md_user:
-        log_action(request, md_user, 'accounts', 'IMPERSONATE_START', f'MD impersonating {target_user.full_name}')
-    
-    messages.success(request, f"You are now impersonating {target_user.full_name}. You see exactly what they see.")
-    return redirect('dashboard')
+    from django.http import HttpResponseForbidden
+    return HttpResponseForbidden('Impersonation is unavailable.')
 
 
 def md_stop_impersonating(request):
-    """Revert session back to the actual MD user."""
-    actual_id = request.session.get('actual_user_id')
-    if not actual_id:
-        return redirect('logout')
-        
-    try:
-        md_user = User.objects.get(pk=actual_id)
-        # Restore session
-        request.session['user_id'] = md_user.pk
-        request.session['user_role'] = md_user.role
-        request.session['user_name'] = md_user.full_name
-        request.session['store_type'] = md_user.store_type or ''
-        
-        target_id = request.session.pop('impersonate_id', None)
-        if target_id:
-            try:
-                t = User.objects.get(pk=target_id)
-                log_action(request, md_user, 'accounts', 'IMPERSONATE_STOP', f'MD stopped impersonating {t.full_name}')
-            except: pass
-            
-        messages.success(request, "Impersonation ended. You are back to the MD dashboard.")
-    except User.DoesNotExist:
-        return redirect('logout')
-        
-    return redirect('dashboard')
-
+    from django.http import HttpResponseForbidden
+    return HttpResponseForbidden('Impersonation is unavailable.')
 
 
 
@@ -245,12 +235,14 @@ def staff_reset_password(request, pk):
         elif password != confirm_password:
             error = "Passwords do not match."
         else:
-            staff.plain_password = password
-            staff.set_password(password)
-            staff.save()
-            log_action(request, user, 'accounts', 'RESET_PASSWORD', f'Reset password for user: {staff.username}')
-            messages.success(request, f"Password reset for '{staff.full_name}'.")
-            return redirect('accounts:staff_list')
+            error = password_problem(password, staff)
+            if not error:
+                with transaction.atomic():
+                    staff.set_password(password)
+                    staff.save(update_fields=['password_hash', 'plain_password'])
+                    log_action(request, user, 'accounts', 'RESET_PASSWORD', f'Reset password for user: {staff.username}')
+                messages.success(request, f"Password reset for '{staff.full_name}'.")
+                return redirect('accounts:staff_list')
 
     return render(request, 'accounts/staff_reset_password.html', {
         'current_user': user, 'staff': staff, 'error': error
@@ -291,23 +283,6 @@ def staff_action(request, pk):
 
 @role_required('md')
 def staff_delete(request, pk):
-    """Permanently delete a staff member and all their logins."""
-    user = get_current_user(request)
-    staff = get_object_or_404(User, pk=pk)
-    
-    if request.method == 'POST':
-        if staff.pk == user.pk:
-            messages.error(request, "You cannot delete yourself.")
-            return redirect('accounts:staff_list')
-            
-        username = staff.username
-        full_name = staff.full_name
-        
-        try:
-            staff.delete()
-            log_action(request, user, 'accounts', 'STAFF_DELETE', f'Permanently deleted user: {username}')
-            messages.success(request, f"Staff '{full_name}' was permanently deleted and their login removed.")
-        except Exception as e:
-            messages.error(request, f"Could not delete {full_name}. They might be tied to existing records. Error: {str(e)}")
-            
-    return redirect('accounts:staff_list')
+    from django.http import HttpResponseForbidden
+    return HttpResponseForbidden('Permanent deletion is unavailable.')
+

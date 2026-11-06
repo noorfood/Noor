@@ -1,0 +1,46 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Oversight — Noor Foods{% endblock %}{% block nav_oversight %}active{% endblock %}{% block breadcrumb %}Oversight{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">MANAGEMENT · MD ONLY</div><h1>Oversight</h1></div></div>
+<p>Everything you oversee as MD, in one place. Procurement records are read-only here — the Procurement Officer does the recording. Receipt-cost approval stays with you.</p>
+{% if pending_sales %}
+<div class="notice">{{ pending_sales }} direct sale{{ pending_sales|pluralize }} waiting for your confirmation.</div>
+{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">HOLDINGS · WHO HAS WHAT</span><h2>What is in each person's hands</h2></div></div>
+<div class="table-scroll"><table class="holdings-table">
+<thead><tr><th>Who</th><th>What</th><th>Balance</th><th></th></tr></thead>
+<tbody>
+{% for h in holdings %}
+<tr><td><strong>{{ h.who }}</strong></td><td>{{ h.what }}</td><td>{{ h.detail }}</td><td>{% if h.link_args %}<a class="button button-secondary" href="{% url h.link %}?sm={{ h.link_args.sm }}">Open</a>{% else %}<a class="button button-secondary" href="{% url h.link %}">Open</a>{% endif %}</td></tr>
+{% empty %}
+<tr><td colspan="4" class="empty-state">Nothing is in anyone's hands right now.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PROCUREMENT · READ-ONLY</span><h2>Procurement records</h2></div></div>
+<div class="quick-links">
+<a href="{% url 'procurement:dashboard' %}"><span>Procurement — raw material store and balances</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'procurement:list' %}"><span>Procurement records — raw materials received and issued</span><span aria-hidden="true">→</span></a>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MONEY</span><h2>Money</h2></div></div>
+<div class="quick-links">
+<a href="{% url 'commerce:money_home' %}"><span>Money handovers — money passed between people, with receipts</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:ledger' %}"><span>MD ledger — money records in detail</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:list_sm_payments' %}"><span>Sales payments — money sent in by Sales Managers</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:sm_report' %}"><span>Sales manager report — one manager's stock, sales and money to send</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:list_gm_remittances' %}"><span>GM remittances — money the GM sent to the company</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:outstanding' %}"><span>Sales Manager outstanding — what each Sales Manager still owes the company</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'sales:outstanding_balances' %}"><span>Outstanding balances — {{ outstanding_count }} customer{{ outstanding_count|pluralize }} owing ₦{{ outstanding_total|floatformat:0 }}</span><span aria-hidden="true">→</span></a>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PEOPLE AND PRICES</span><h2>Staff and prices</h2></div></div>
+<div class="quick-links">
+<a href="{% url 'accounts:staff_list' %}"><span>Staff — manage staff accounts</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'pricing:list' %}"><span>Prices &amp; costs — selling prices and cost settings</span><span aria-hidden="true">→</span></a>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">OVERVIEW</span><h2>Company overview</h2></div></div>
+<div class="quick-links">
+<a href="{% url 'reports:md_insights' %}"><span>MD insights — stock and activity overview</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:flow' %}"><span>Company flow — how materials moved through the company</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:store' %}"><span>Stock report — raw, clean and finished stock</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:production' %}"><span>Production report — milling and packaging</span><span aria-hidden="true">→</span></a>
+</div></section>
+{% endblock %}

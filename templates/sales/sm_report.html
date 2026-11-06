@@ -1,0 +1,95 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Sales Manager Report — Noor Foods{% endblock %}{% block nav_home %}active{% endblock %}{% block breadcrumb %}Sales Manager Report{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">SALES MANAGER REPORT</div><h1>{% if sm %}{{ sm.full_name }} — my report{% else %}Sales manager report{% endif %}</h1></div><div><div>{{ "now"|date:"l, d F Y" }}</div><div>{{ current_user.full_name }}</div></div></div>
+{% if current_user.role != 'sales_manager' %}
+<section class="panel form-panel"><div class="form-heading"><h2>Choose a sales manager</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_sm">Sales manager</label><select id="id_sm" name="sm">{% for s in all_sms %}<option value="{{ s.pk }}" {% if sm and s.pk == sm.pk %}selected{% endif %}>{{ s.full_name }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Show report</button></div></form></section>
+{% else %}
+<section class="panel form-panel"><div class="form-heading"><h2>Period</h2></div>
+<form method="get"><div class="form-grid">
+<div class="field"><label for="id_from">Date from</label><input type="date" id="id_from" name="date_from" value="{{ f_from }}"></div>
+<div class="field"><label for="id_to">Date to</label><input type="date" id="id_to" name="date_to" value="{{ f_to }}"></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Apply filter</button>{% include 'partials/date_toggles.html' %}</div></form></section>
+{% endif %}
+{% if not sm %}
+<div class="simple-empty">No active sales manager found.</div>
+{% else %}
+{% if f_from or f_to %}<div class="notice">Activity window: {{ f_from|default:"Beginning" }} to {{ f_to|default:"Today" }}.</div>{% endif %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags with me</span></div><span class="metric-value">{{ maize_holding }} bags</span><span class="metric-label">Current stock in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags with me</span></div><span class="metric-value">{{ wheat_holding }} bags</span><span class="metric-label">Current stock in hand</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Money to send to the company</span></div><span class="metric-value">₦{{ money_outstanding|floatformat:0 }}</span><span class="metric-label">Collected minus sent and confirmed</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Cash in hand from sales</span></div><span class="metric-value">₦{{ cash_in_hand|floatformat:0 }}</span><span class="metric-label">From the team, not yet sent</span></div>
+</div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">MONEY</span><h2>Money collected and sent</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>What</th><th class="number">Amount (₦)</th></tr></thead>
+<tbody>
+<tr><td class="cell-main"><strong>Money collected from the team</strong><span>Sales results and remittances</span></td><td class="number">{{ money_from_team|floatformat:0 }}</td></tr>
+<tr><td class="cell-main"><strong>Money sent and confirmed</strong><span>Confirmed by the GM</span></td><td class="number">{{ money_paid|floatformat:0 }}</td></tr>
+<tr><td><strong>Money sent, waiting for GM confirmation</strong></td><td class="number">{{ money_pending|floatformat:0 }}</td></tr>
+<tr><td><strong>Money still to send to the company</strong></td><td class="number"><strong>{{ money_outstanding|floatformat:0 }}</strong></td></tr>
+</tbody></table></div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">COLLECTIONS</span><h2>Bags received from the store</h2></div><a class="button button-secondary" href="{% url 'sales:list_collections' %}">View all</a></div>
+<div class="record-list">
+{% for c in collections %}
+<div class="record-row"><div><strong>{{ c.material_type|upper }} — {{ c.qty_sacks }} bags</strong><span>{{ c.date }} · Recorded by {{ c.store_officer.full_name }}</span></div><div>{% if c.status == 'pending' %}<span class="status-pill">Waiting for confirmation</span>{% elif c.status == 'accepted' %}<span class="status-pill">Accepted</span>{% else %}<span class="status-pill">Rejected</span>{% endif %}{% if c.total_value %} <strong>₦{{ c.total_value|floatformat:0 }}</strong>{% endif %}</div></div>
+{% empty %}<div class="simple-empty">No collections for this period.</div>{% endfor %}
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">SALES</span><h2>Sales transactions</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Buyer</th><th>Material</th><th class="number">Sacks</th><th class="number">Total (₦)</th><th></th></tr></thead>
+<tbody>
+{% for s in reported_sales %}
+<tr><td>{{ s.date }}</td><td><strong>{{ s.buyer }}</strong></td><td><span class="status-pill">{{ s.material|upper }}</span></td><td class="number">{{ s.packs }}</td><td class="number">{{ s.total|floatformat:0 }}</td><td><a class="button button-secondary" href="{% url 'commerce:detail' s.pk %}">View</a></td></tr>
+{% empty %}
+<tr><td colspan="6" class="empty-state">No sales reported for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% if team_results %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TEAM SALES</span><h2>What the team sold</h2></div></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>Salesperson</th><th>Material</th><th class="number">Sold</th><th class="number">Returned</th><th class="number">Money returned (₦)</th></tr></thead>
+<tbody>
+{% for r in team_results %}
+<tr><td>{{ r.date }}</td><td><strong>{{ r.sales_person.name }}</strong></td><td><span class="status-pill">{{ r.material_type|upper }}</span></td><td class="number">{{ r.qty_sold }} sacks{% if r.qty_pieces_sold %} + {{ r.qty_pieces_sold }} pieces{% endif %}</td><td class="number">{{ r.qty_returned }} sacks</td><td class="number">{{ r.amount_returned|floatformat:0 }}</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+{% if team %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">TEAM</span><h2>Who has what on the team</h2></div><a class="button button-secondary" href="{% url 'sales:sp_performance' %}">Team performance</a></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Salesperson</th><th class="number">Given (sacks)</th><th class="number">Sold (sacks)</th><th class="number">Still with them</th></tr></thead>
+<tbody>
+{% for row in team %}
+<tr><td class="cell-main"><strong>{{ row.sp.name }}</strong><span>{{ row.sp.get_channel_display }}</span></td><td class="number">{{ row.given }}</td><td class="number">{{ row.sold|floatformat:1 }}</td><td class="number"><strong>{{ row.in_hand|floatformat:1 }}</strong></td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">PAYMENTS</span><h2>Money sent to the company</h2></div>{% if current_user.role == 'sales_manager' %}<a class="button button-primary" href="{% url 'sales:record_sm_payment' %}">Record payment</a>{% endif %}</div>
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th class="number">Cash (₦)</th><th class="number">Transfer (₦)</th><th class="number">Total (₦)</th><th>Status</th></tr></thead>
+<tbody>
+{% for p in payments %}
+<tr><td>{{ p.date }}</td><td class="number">{{ p.amount_cash|floatformat:0 }}</td><td class="number">{{ p.amount_transfer|floatformat:0 }}</td><td class="number"><strong>{{ p.total|floatformat:0 }}</strong></td><td>{% if p.status == 'confirmed' %}<span class="status-pill">Confirmed</span>{% elif p.status == 'pending_gm' %}<span class="status-pill">Waiting for GM</span>{% else %}<span class="status-pill">Rejected</span>{% endif %}</td></tr>
+{% empty %}
+<tr><td colspan="5" class="empty-state">No payments recorded for this period.</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% if handovers %}
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">HANDOVERS</span><h2>Money handovers</h2></div><a class="button button-secondary" href="{% url 'commerce:money_home' %}">All handovers</a></div>
+<div class="table-scroll"><table>
+<thead><tr><th>Date</th><th>To</th><th class="number">Amount (₦)</th><th>Status</th></tr></thead>
+<tbody>
+{% for h in handovers %}
+<tr><td>{{ h.date }}</td><td><strong>{{ h.recipient.full_name }}</strong></td><td class="number">{{ h.amount|floatformat:0 }}</td><td>{{ h.get_status_display }}</td></tr>
+{% endfor %}
+</tbody></table></div></section>
+{% endif %}
+{% endif %}
+{% endblock %}

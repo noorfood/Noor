@@ -1,0 +1,38 @@
+{% extends 'rebuild/base.html' %}{% block title %}Home{% endblock %}{% block nav_home %}active{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">{{ today|date:'l, j F Y' }}</div><h1>Home</h1></div></div>
+<p>Hello {{ current_user.full_name }}. Here is what needs your attention today.</p>
+<section aria-labelledby="attention-title"><div class="section-heading"><h2 id="attention-title">Needs attention</h2><span>Current</span></div>
+<div class="metric-grid">
+{% if current_user.role == 'md' and pending_sales %}
+<a class="metric-card" href="{% url 'sales:list_direct_sales' %}"><div class="metric-top"><span class="metric-icon icon-blue" aria-hidden="true">↗</span><span class="metric-arrow" aria-hidden="true">↗</span></div><strong class="metric-value">{{ pending_sales }}</strong><span class="metric-label">Direct sales to confirm</span></a>
+{% endif %}
+{% if current_user.role == 'manager' and pending_payments %}
+<a class="metric-card" href="{% url 'sales:list_sm_payments' %}"><div class="metric-top"><span class="metric-icon icon-yellow" aria-hidden="true">₦</span><span class="metric-arrow" aria-hidden="true">↗</span></div><strong class="metric-value">{{ pending_payments }}</strong><span class="metric-label">Sales payments to confirm</span></a>
+{% endif %}
+{% if my_money_reviews %}
+<a class="metric-card" href="{% url 'commerce:money_home' %}"><div class="metric-top"><span class="metric-icon icon-blue" aria-hidden="true">₦</span><span class="metric-arrow" aria-hidden="true">↗</span></div><strong class="metric-value">{{ my_money_reviews }}</strong><span class="metric-label">Money handovers awaiting you</span></a>
+{% endif %}
+{% if outstanding_count %}
+<a class="metric-card" href="{% url 'sales:outstanding_balances' %}"><div class="metric-top"><span class="metric-icon icon-yellow" aria-hidden="true">◷</span><span class="metric-arrow" aria-hidden="true">↗</span></div><strong class="metric-value">₦{{ outstanding_total|floatformat:0 }}</strong><span class="metric-label">{{ outstanding_count }} customer{{ outstanding_count|pluralize }} still owing</span></a>
+{% endif %}
+{% if not pending_sales and not pending_payments and not my_money_reviews and not outstanding_count %}
+<p class="simple-empty">Nothing needs your attention right now.</p>
+{% endif %}
+</div></section>
+<section aria-labelledby="week-title"><div class="section-heading"><h2 id="week-title">This week so far</h2><span><a class="text-link" href="{% url 'reports:weekly_summary' %}">Weekly summary →</a></span></div>
+<div class="metric-grid">
+<a class="metric-card" href="{% url 'sales:list_direct_sales' %}"><div class="metric-top"><span class="metric-icon icon-blue" aria-hidden="true">₦</span></div><strong class="metric-value">{{ sales_week_count }}</strong><span class="metric-label">Direct sales recorded</span></a>
+<a class="metric-card" href="{% url 'sales:list_direct_sales' %}"><div class="metric-top"><span class="metric-icon icon-blue" aria-hidden="true">₦</span></div><strong class="metric-value">₦{{ cash_week|floatformat:0 }}</strong><span class="metric-label">Cash received</span></a>
+<a class="metric-card" href="{% url 'finished_store:deliveries_report' %}"><div class="metric-top"><span class="metric-icon icon-yellow" aria-hidden="true">▣</span></div><strong class="metric-value">{{ deliveries_week }}</strong><span class="metric-label">Warehouse deliveries</span></a>
+</div></section>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">GO TO</span><h2>What do you want to do?</h2></div></div>
+<div class="quick-links">
+{% if current_user.role == 'manager' %}<a href="{% url 'sales:record_direct_sale' %}"><span>Record a direct sale</span><span aria-hidden="true">→</span></a>{% endif %}
+<a href="{% url 'sales:outstanding_balances' %}"><span>See who still owes money</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'finished_store:deliveries_report' %}"><span>See warehouse deliveries</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:weekly_summary' %}"><span>Read the weekly summary</span><span aria-hidden="true">→</span></a>
+<a href="{% url 'reports:index' %}"><span>All reports</span><span aria-hidden="true">→</span></a>
+{% if current_user.role == 'md' %}<a href="{% url 'reports:oversight' %}"><span>Oversight — procurement, money, staff and prices</span><span aria-hidden="true">→</span></a>{% endif %}
+</div></section>
+{% endblock %}

@@ -1,140 +1,23 @@
-{% extends 'base.html' %}
-{% block title %}Record Bran Sale — Noor Foods{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Record Bran Sale — Noor Foods{% endblock %}{% block nav_bran_sale %}active{% endblock %}{% block breadcrumb %}Record Bran Sale{% endblock %}
 {% block content %}
-
-<style>
-  .hero-card {
-    background: linear-gradient(135deg, #166534 0%, #14532d 100%);
-    color: white;
-    padding: 2.5rem;
-    border-radius: 20px;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 10px 30px rgba(22, 101, 52, 0.2);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-  .hero-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
-  .hero-label { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 700; color: #86efac; margin-bottom: 0.5rem; display: block; }
-  .hero-title { font-size: 2rem; font-weight: 800; margin: 0; }
-  .hero-sub { color: #bbf7d0; font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; max-width: 650px; }
-
-  .layout-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; align-items: start; }
-  @media (max-width: 900px) { .layout-grid { grid-template-columns: 1fr; } }
-
-  .card { background: #fff; border-radius: 16px; padding: 2.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; }
-  .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.5rem; display: flex; align-items: center; gap: 0.75rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.75rem; }
-
-  .form-group { margin-bottom: 1.5rem; }
-  .form-label { display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
-  .form-control {
-    width: 100%; box-sizing: border-box; padding: 0.85rem 1.1rem; border: 2px solid #e2e8f0; border-radius: 12px;
-    font-size: 1rem; color: #1e293b; transition: all 0.2s; background: #f8fafc;
-  }
-  .form-control:focus { outline: none; border-color: #16a34a; background: #fff; box-shadow: 0 0 0 4px rgba(22,163,74,0.1); }
-  
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
-  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
-
-  .btn-primary {
-    background: #16a34a; color: white; border: none; padding: 1rem 2.5rem; border-radius: 12px;
-    font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.3s;
-    display: inline-flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 12px rgba(22,163,74,0.3);
-  }
-  .btn-primary:hover { background: #15803d; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(22,163,74,0.4); }
-  .btn-secondary { color: #64748b; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 1rem; transition: color 0.2s; }
-  .btn-secondary:hover { color: #1e293b; }
-
-  .sidebar-card { background: #f8fafc; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; }
-  .info-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; font-size: 0.95rem; line-height: 1.5; color: #475569; }
-  .info-icon { flex-shrink: 0; width: 32px; height: 32px; background: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-
-  .error-box { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
-</style>
-
-<div class="hero-card">
-  <div class="hero-header">
-    <div>
-      <span class="hero-label">🌾 Byproduct Management</span>
-      <h1 class="hero-title">Record Bran (Waste) Sale</h1>
-      <p class="hero-sub">Byproduct sales recorded by Management. This revenue is tracked entirely separate from the primary Company Retail Operations.</p>
-    </div>
-  </div>
+<div class="page-heading"><div><div class="eyebrow">BRAN SALE</div><h1>Record bran sale</h1></div></div>
+{% if error %}<div class="form-errors" role="alert">{{ error }}</div>{% endif %}
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bran on hand</span></div><span class="metric-value">{{ balance_maize }} sacks</span><span class="metric-label">Received from milling minus sold</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bran on hand</span></div><span class="metric-value">{{ balance_wheat }} sacks</span><span class="metric-label">Received from milling minus sold</span></div>
 </div>
-
-{% if error %}
-<div class="error-box">
-  <span>⚠️</span> {{ error }}
+{% if current_user.role == 'store_officer' %}<div class="notice">Bran arrives from milling — <a href="{% url 'sales:record_bran_receipt' %}">record a bran receipt</a> first so the balance is right, then sell from it.</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Bran sale details</h2></div>
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date of sale</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_buyer">Buyer name</label><input type="text" id="id_buyer" name="buyer_name" required></div>
+<div class="field"><label for="id_material">Material source</label><select id="id_material" name="material_type" required>{% for val, label in material_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_qty">Quantity (sacks/bags)</label><input type="number" id="id_qty" name="qty" min="1" required></div>
+<div class="field"><label for="id_amount">Total amount paid (₦)</label><input type="number" id="id_amount" name="amount_paid" step="0.01" min="0.01" required></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="2"></textarea></div>
 </div>
-{% endif %}
-
-<div class="layout-grid">
-  <div class="card">
-    <h3 class="card-title">📝 Bran Sale Details</h3>
-    <form method="post">
-      {% csrf_token %}
-      
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date of Sale</label>
-          <input type="date" name="date" value="{{ today }}" required class="form-control">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Buyer Name</label>
-          <input type="text" name="buyer_name" placeholder="Walk-in Customer Name" required class="form-control">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Material Source</label>
-          <select name="material_type" required class="form-control">
-            {% for val, label in material_choices %}
-            <option value="{{ val }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Quantity (Sacks/Bags)</label>
-          <input type="number" name="qty" min="1" placeholder="e.g. 50" required class="form-control" style="font-family: monospace;">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top: 1rem;">
-        <label class="form-label">Total Amount Paid (₦) <span style="font-weight:400; color:#ef4444;">*</span></label>
-        <input type="number" name="amount_paid" step="0.01" min="0.01" placeholder="e.g. 45000" required class="form-control" style="font-size: 1.4rem; font-family: monospace; color: #059669;">
-      </div>
-
-      <div class="form-group" style="margin-top: 1.5rem;">
-        <label class="form-label">Notes <span style="font-weight:400;text-transform:none;opacity:0.6;">(Optional)</span></label>
-        <textarea name="notes" class="form-control" rows="2" placeholder="Any remarks about this bran sale..."></textarea>
-      </div>
-
-      <div style="display:flex; align-items:center; justify-content: flex-end; gap:1.5rem; margin-top:2.5rem; padding-top:1.5rem; border-top:2px solid #f1f5f9;">
-        <a href="{% url 'reports:dashboard' %}" class="btn-secondary">Cancel</a>
-        <button type="submit" class="btn-primary">
-          <span>💾</span> Record Bran Sale
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <div class="sidebar-card">
-    <h3 class="card-title" style="margin-bottom: 1.25rem;">ℹ️ Workflow Policy</h3>
-    
-    <div class="info-item">
-      <div class="info-icon">💰</div>
-      <div><strong>Revenue Ledger:</strong> All bran sales revenue immediately hits the central financial ledger and does not require MD approval.</div>
-    </div>
-    
-    <div class="info-item">
-      <div class="info-icon">📊</div>
-      <div><strong>Yield Tracking:</strong> Bran sold here is separated from Standard Flour sales, ensuring manufacturing loss metrics remain accurate.</div>
-    </div>
-    
-    <div class="info-item">
-      <div class="info-icon">🛒</div>
-      <div><strong>Primary Goods:</strong> For standard product sales, please use the "Record Company Sale" link on your dashboard.</div>
-    </div>
-  </div>
-</div>
-
+<div class="form-actions">{% if current_user.role == 'md' %}<span class="notice">You are viewing as MD. Recording is done by the raw store officer.</span>{% else %}<button class="button button-primary" type="submit">Record bran sale</button>{% endif %}<a class="button button-secondary" href="{% url 'procurement:dashboard' %}">Cancel</a></div>
+</form></section>
 {% endblock %}

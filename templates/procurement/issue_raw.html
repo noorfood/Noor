@@ -1,104 +1,23 @@
-{% extends 'base.html' %}
-{% block title %}Issue Raw to Cleaner{% endblock %}
-{% block nav_proc_issue %}active{% endblock %}
+{% extends 'rebuild/base.html' %}
+{% block title %}Issue Raw to Cleaner — Noor Foods{% endblock %}{% block nav_receive %}active{% endblock %}{% block breadcrumb %}Issue Raw to Cleaner{% endblock %}
 {% block content %}
-<style>
-    .form-label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-600); margin-bottom: 0.5rem; }
-    .form-input {
-        width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1px solid var(--slate-200);
-        background: var(--slate-50); font-size: 0.95rem; font-weight: 600; color: var(--slate-900);
-        transition: all 0.2s;
-    }
-    .form-input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); background: #fff; }
-</style>
-
-<div class="page-hero">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; width: 100%;">
-        <div>
-            <span class="hero-badge" style="background: rgba(59, 130, 246, 0.1); color: var(--blue);">📤 Outbound</span>
-            <h1 class="hero-title">Raw Material Issuance</h1>
-            <p class="hero-subtitle">Issue grain from the raw store to the cleaning department.</p>
-        </div>
-        <a href="/procurement/list/" class="btn-modern" style="background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);">View Records</a>
-    </div>
-</div>
-
-<div class="balance-grid" style="margin-bottom: 2rem;">
-    <div class="card" style="padding: 1.25rem;">
-        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Current Maize Balance</div>
-        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_maize }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    </div>
-    <div class="card" style="padding: 1.25rem;">
-        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); margin-bottom: 0.5rem;">Current Wheat Balance</div>
-        <div style="font-size: 1.75rem; font-weight: 800; color: var(--navy);">{{ balance_wheat }} <small style="font-size: 0.8rem; color: var(--slate-400);">Bags</small></div>
-    </div>
-</div>
-
-{% if error %}<div class="alert alert-error" style="margin-bottom:2rem;">⚠️ {{ error }}</div>{% endif %}
-
-<div class="layout-grid responsive-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; align-items: start;">
-    <div class="card" style="padding:2rem;">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-                <div>
-                    <label class="form-label">Issuance Date*</label>
-                    <input type="date" name="date" value="{{ today }}" required class="form-input">
-                </div>
-                <div>
-                    <label class="form-label">Select Material*</label>
-                    <select name="material_type" required class="form-input">
-                        <option value="">— Select Material —</option>
-                        <option value="maize">MAIZE (Yellow/White Corn)</option>
-                        <option value="wheat">WHEAT (Grain)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="layout-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1.5rem; margin-bottom:1.5rem;">
-                <div>
-                    <label class="form-label">Quantity (100kg Bags)*</label>
-                    <input type="number" name="num_bags_issued" min="1" placeholder="e.g. 50" required class="form-input">
-                </div>
-                <div>
-                    <label class="form-label">Send To (Cleaner Name)*</label>
-                    <input type="text" name="issued_to" placeholder="Department / Individual Name" required class="form-input">
-                </div>
-            </div>
-
-            <div style="margin-bottom:2rem;">
-                <label class="form-label">Additional Notes</label>
-                <textarea name="notes" rows="3" placeholder="Any specific details about this issuance..." class="form-input"></textarea>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:1rem; padding-top:1.5rem; border-top:1px solid var(--slate-100);">
-                <button type="submit" class="btn-modern btn-modern-primary" style="background: var(--blue); border-color: var(--blue); padding: 0.75rem 1.5rem;">
-                    Confirm & Save Issuance
-                </button>
-                <span style="color:var(--slate-500); font-size:0.85rem; font-weight: 600;">⚠️ Records are locked immediately after saving.</span>
-            </div>
-        </form>
-    </div>
-
-    <div class="card" style="padding: 1.5rem; background: var(--slate-50); border: 1px solid var(--slate-200);">
-        <h3 style="margin: 0 0 1.5rem 0; font-size: 1.1rem; color: var(--navy); font-weight: 800;">Identity & Security</h3>
-        
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Recording Officer</label>
-            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700;">{{ current_user.full_name }}</span>
-        </div>
-        
-        <div style="margin-bottom: 1rem;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase;">Role</label>
-            <span style="font-size: 1rem; color: var(--slate-800); font-weight: 700; text-transform: capitalize;">{{ current_user.role }}</span>
-        </div>
-        
-        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1.5rem 0;">
-        
-        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6; font-weight: 500;">
-            By saving this form, you confirm that the physical grain has been verified and handed over to the cleaning department. This action is permanently logged in the audit trail.
-        </p>
-    </div>
-</div>
+<div class="page-heading"><div><div class="eyebrow">RAW MATERIALS</div><h1>Issue raw material to cleaner</h1></div><div><a class="button button-secondary" href="{% url 'procurement:list' %}">View records</a></div></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">STORE</span><h2>Store balances</h2></div></div>
+<div class="metric-grid">
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Maize bags</span></div><span class="metric-value">{{ balance_maize }}</span></div>
+<div class="metric-card"><div class="metric-top"><span class="metric-label">Wheat bags</span></div><span class="metric-value">{{ balance_wheat }}</span></div>
+</div></section>
+<section class="panel form-panel"><div class="form-heading"><h2>Issue details</h2></div>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post">{% csrf_token %}
+<div class="form-grid">
+<div class="field"><label for="id_date">Date</label><input type="date" id="id_date" name="date" value="{{ today }}" required></div>
+<div class="field"><label for="id_material">Material</label><select id="id_material" name="material_type" required>
+<option value="maize">Maize</option>
+<option value="wheat">Wheat</option>
+</select></div>
+<div class="field"><label for="id_bags">Number of 100 kg bags</label><input type="number" id="id_bags" name="num_bags_issued" min="1" required></div>
+<div class="field"><label for="id_to">Send to</label><input type="text" id="id_to" name="issued_to" required></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3"></textarea></div>
+</div><div class="form-actions">{% if current_user.role == 'md' %}<span class="notice">You are viewing as MD. Recording is done by the raw store officer or the GM.</span>{% else %}<button class="button button-primary" type="submit">Issue bags</button>{% endif %}<a class="button button-quiet" href="{% url 'procurement:list' %}">Cancel</a></div></form></section>
 {% endblock %}

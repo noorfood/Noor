@@ -1,109 +1,16 @@
-{% extends 'base.html' %}
-{% block title %}Edit Staff | {{ staff.full_name }}{% endblock %}
-{% block nav_md_staff %}active{% endblock %}
-{% block content %}
-<div class="page-hero">
-    <div>
-        <span class="hero-badge">🛡️ Administration / Personnel</span>
-        <h1 class="hero-title">Edit Staff Profile</h1>
-        <p class="hero-subtitle">Updating details and access permissions for: <strong style="color:#fff;">{{ staff.username }}</strong></p>
-    </div>
-</div>
+{% extends 'rebuild/base.html' %}{% block title %}Edit Staff{% endblock %}{% block nav_staff %}active{% endblock %}{% block breadcrumb %}Edit staff{% endblock %}
+{% block content %}<div class="page-heading"><div><div class="eyebrow">STAFF</div><h1>Edit staff</h1></div></div>
 
-{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-
-<div class="layout-grid">
-    <div class="card">
-    <form method="POST">
-        {% csrf_token %}
-        <div class="form-section-title">Personal Details</div>
-        <div class="form-row">
-            <label for="full_name">Full Name*</label>
-            <input type="text" id="full_name" name="full_name" value="{{ staff.full_name }}" required>
-        </div>
-
-        <div class="form-section-title">Role Configuration</div>
-        <div class="form-row-two">
-            <div class="form-row">
-                <label for="role">System Role*</label>
-                <select id="role" name="role" required onchange="toggleSalesType()">
-                    {% for val, label in roles %}
-                    {% if staff.role == val %}
-                    <option value="{{ val }}" selected>{{ label }}</option>
-                    {% else %}
-                    <option value="{{ val }}">{{ label }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-                <div class="form-hint">Changing this alters their access instantly.</div>
-            </div>
-
-
-            {% if staff.role != 'store_officer' %}
-            <div class="form-row" id="store_type_container" style="display:none;">
-            {% else %}
-            <div class="form-row" id="store_type_container">
-            {% endif %}
-                <label for="store_type">Store Assigned*</label>
-                {% if staff.role == 'store_officer' %}
-                <select id="store_type" name="store_type" required>
-                {% else %}
-                <select id="store_type" name="store_type">
-                {% endif %}
-                    <option value="">-- Select Store --</option>
-                    <option value="raw" {% if staff.store_type == 'raw' %}selected{% endif %}>Raw Material Store</option>
-                    <option value="finished" {% if staff.store_type == 'finished' %}selected{% endif %}>Finished Goods Store</option>
-                </select>
-                <div class="form-hint">Which store does this officer manage?</div>
-            </div>
-            </div>
-
-            <div class="form-section-title">Administrative Notes</div>
-            <div class="form-row">
-                <label for="notes">Internal Notes</label>
-                <textarea id="notes" name="notes" rows="4">{{ staff.notes }}</textarea>
-                <div class="form-hint">Visible only to Management. Use this for employment history, incidents, or role
-                    changes.</div>
-            </div>
-
-            <div class="form-actions mt-24">
-                <button type="submit" class="btn-modern btn-modern-primary">Save Changes</button>
-                <a href="{% url 'accounts:staff_list' %}" class="btn-modern"
-                    style="background: var(--slate-200); color: var(--slate-800); margin-left: 12px;">Cancel</a>
-            </div>
-        </form>
-    </div>
-    
-    <div class="sidebar-card">
-        <h3 style="margin-top:0; font-size:0.95rem; font-weight:800; color:var(--navy);">Audit Trail</h3>
-        <p style="font-size:0.85rem; color:var(--slate-600); line-height:1.6;">
-            Registered by: <strong>{{ staff.created_by.full_name|default:"System" }}</strong><br>
-            Current Status: 
-            {% if staff.status == 'active' %}<span class="badge-soft badge-soft-success">Active</span>
-            {% elif staff.status == 'suspended' %}<span class="badge-soft badge-soft-warning">Suspended</span>
-            {% else %}<span class="badge-soft badge-soft-danger">Dismissed</span>{% endif %}
-        </p>
-        <hr style="border:0; border-top:1px solid var(--slate-200); margin:1rem 0;">
-        <p style="font-size:0.8rem; color:var(--slate-500); margin:0;">
-            Role changes take effect immediately on the user's next page load. Modifying store assignments will reroute their dashboards appropriately.
-        </p>
-    </div>
-</div>
-
-<script>
-    function toggleSalesType() {
-        var role = document.getElementById('role').value;
-        var storeContainer = document.getElementById('store_type_container');
-        var storeSelect = document.getElementById('store_type');
-
-        if (role === 'store_officer') {
-            storeContainer.style.display = 'block';
-            storeSelect.required = true;
-        } else {
-            storeContainer.style.display = 'none';
-            storeSelect.required = false;
-            storeSelect.value = '';
-        }
-    }
-</script>
+{% if error %}<div class="field-error" role="alert">{{ error }}</div>{% endif %}
+<section class="panel form-panel"><div class="form-heading"><h2>Details</h2></div><form method="post" novalidate>{% csrf_token %}<div class="form-grid">
+<div class="field"><label for="id_full_name">Full name *</label><input type="text" id="id_full_name" name="full_name" value="{{ staff.full_name }}" required></div>
+<div class="field"><label>Username</label><span>{{ staff.username }}</span></div>
+<div class="field"><label for="id_role">Role *</label><select id="id_role" name="role" required>{% for val, label in roles %}<option value="{{ val }}" {% if staff.role == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+<div class="field"><label for="id_store">Store assigned</label><select id="id_store" name="store_type"><option value="">—</option><option value="raw" {% if staff.store_type == 'raw' %}selected{% endif %}>Raw Material Store</option><option value="finished" {% if staff.store_type == 'finished' %}selected{% endif %}>Finished Goods Store</option></select></div>
+<div class="field field-wide"><label for="id_notes">Notes <span class="optional">Optional</span></label><textarea id="id_notes" name="notes" rows="3">{{ staff.notes }}</textarea></div>
+</div><div class="form-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-quiet" href="{% url 'accounts:staff_list' %}">Back to staff</a></div></form></section>
+<section class="panel" style="margin-top:20px"><div class="panel-header"><h2>Record</h2></div><div class="record-list">
+<div class="record-row"><div><strong>Status</strong></div><span class="status-pill">{{ staff.status|title }}</span></div>
+<div class="record-row"><div><strong>Created by</strong></div><span>{{ staff.created_by.full_name|default:"System" }}</span></div>
+</div></section>
 {% endblock %}

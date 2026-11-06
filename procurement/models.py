@@ -19,7 +19,7 @@ class RawMaterialReceipt(models.Model):
     material_type = models.CharField(max_length=10, choices=MATERIAL_CHOICES)
     supplier = models.CharField(max_length=200)
     num_bags = models.PositiveIntegerField()
-    approx_weight_kg = models.DecimalField(max_digits=10, decimal_places=2, help_text='Approximate total weight in kg')
+    approx_weight_kg = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Optional measured or estimated total weight in kg')
     reference_no = models.CharField(max_length=100, blank=True)
     received_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='raw_receipts')
     notes = models.TextField(blank=True)

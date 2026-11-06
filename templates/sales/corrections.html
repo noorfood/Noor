@@ -1,0 +1,13 @@
+{% extends 'rebuild/base.html' %}
+{% block title %}Sales Corrections — Noor Foods{% endblock %}{% block nav_commerce %}active{% endblock %}{% block breadcrumb %}Sales Corrections{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">CORRECTIONS</div><h1>Sales corrections</h1></div></div>
+<div class="notice">A corrected sales result stays in history. It is excluded from live holding, performance and reconciliation totals. The recorder then enters a replacement result through the normal flow.</div>
+<div class="form-actions"><a class="button button-primary" href="{% url 'sales:request_sales_correction' %}">Request a correction</a></div>
+<section class="panel"><div class="panel-header"><div><span class="panel-kicker">REQUESTS</span><h2>Correction requests</h2></div></div>
+<div class="record-list">
+{% for c in corrections %}
+<div class="record-row"><div><strong>Request #{{ c.pk }} · Result #{{ c.sales_result_id }} · {{ c.sales_result.sales_person.name }} · {{ c.sales_result.material_type }} · {{ c.sales_result.qty_sold }} sacks</strong><span>{{ c.reason }}</span></div><div><span class="status-pill">{{ c.status }}</span> <a class="button button-secondary" href="{% url 'sales:sales_correction_detail' c.pk %}">Open</a></div></div>
+{% empty %}<div class="simple-empty">No correction requests.</div>{% endfor %}
+</div></section>
+{% endblock %}

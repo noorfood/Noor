@@ -114,12 +114,20 @@ class SalesRecord(models.Model):
 
     @property
     def total_paid(self):
-        """Sum of all SalesPayments + legacy direct fields."""
+        """Sum of all SalesPayments + legacy direct fields.
+
+        When the payments were prefetched (as the sales report does),
+        sum from the cache instead of asking the database once per row.
+        """
+        legacy = float(self.amount_received_cash) + float(self.amount_received_transfer)
+        cache = getattr(self, '_prefetched_objects_cache', {})
+        if 'payments' in cache:
+            return float(sum(float(p.amount_cash) + float(p.amount_transfer)
+                             for p in cache['payments'])) + legacy
         from django.db.models import Sum
         payment_total = self.payments.aggregate(
             t=Sum('amount_cash') + Sum('amount_transfer')
         )['t'] or 0
-        legacy = float(self.amount_received_cash) + float(self.amount_received_transfer)
         return float(payment_total) + legacy
 
     @property
@@ -400,6 +408,12 @@ class SalesResult(models.Model):
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_locked = models.BooleanField(default=True)
+    # Set only by an approved SalesCorrectionRequest (see sales/services.py).
+    # A corrected record stays in history but is excluded from live holding,
+    # performance and reconciliation totals, so a replacement record can be
+    # entered without double-counting. Amounts are never edited in place.
+    is_corrected = models.BooleanField(default=False)
+    correction_note = models.TextField(blank=True)
 
     class Meta:
         db_table = 'sales_result'
@@ -528,6 +542,19 @@ class DirectSalePayment(models.Model):
     amount_received_transfer = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     buyer_name = models.CharField(max_length=200, blank=True, help_text='Name of the customer')
 
+    # Partial payment (MD/GM request, Nov 2026): how the customer paid, and
+    # what they still owe. balance is the source of truth and is updated
+    # whenever a follow-up payment is recorded. Existing sales migrate as
+    # fully paid (payment_type='full', balance=0).
+    PAYMENT_TYPE_CHOICES = [
+        ('full', 'Full payment'),
+        ('partial', 'Partial payment'),
+    ]
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES, default='full')
+    customer_phone = models.CharField(max_length=20, blank=True, help_text='Customer phone number')
+    customer_location = models.CharField(max_length=200, blank=True, help_text='Where the customer is based')
+    balance = models.DecimalField(max_digits=14, decimal_places=2, default=0, help_text='Amount still owed by the customer')
+
     # Who recorded this sale
     recorded_by = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name='direct_sales_recorded',
@@ -558,15 +585,63 @@ class DirectSalePayment(models.Model):
 
     @property
     def total_received(self):
-        return float(self.amount_received_cash) + float(self.amount_received_transfer)
+        """Cash + transfer + follow-up payments.
+
+        When the follow-up payments were prefetched (as the sales report
+        does), sum from the cache instead of asking the database once
+        per row.
+        """
+        cache = getattr(self, '_prefetched_objects_cache', {})
+        if 'follow_up_payments' in cache:
+            follow = sum(float(p.amount) for p in cache['follow_up_payments'])
+            return (float(self.amount_received_cash)
+                    + float(self.amount_received_transfer) + follow)
+        from django.db.models import Sum
+        follow = self.follow_up_payments.aggregate(t=Sum('amount'))['t'] or 0
+        return float(self.amount_received_cash) + float(self.amount_received_transfer) + float(follow)
 
     @property
     def outstanding(self):
-        return max(0.0, float(self.total_sale_value) - self.total_received)
+        # Stored balance is the source of truth; kept in sync by the
+        # follow-up payment view. Never negative.
+        return max(0.0, float(self.balance))
 
     def __str__(self):
         return (f"DirectSale #{self.pk} | {self.material_type.upper()} × {self.qty_sold} "
                 f"| ₦{self.total_sale_value:,.0f} | {self.status.upper()} | {self.date}")
+
+
+class DirectSaleFollowUpPayment(models.Model):
+    """A later payment against a partially-paid direct sale, recorded by the GM.
+
+    Every payment is saved with its date, amount, method and who recorded it.
+    The linked sale's balance is reduced by the same amount in the same
+    transaction; when the balance reaches zero the debt is cleared.
+    """
+    sale = models.ForeignKey(
+        DirectSalePayment, on_delete=models.PROTECT,
+        related_name='follow_up_payments',
+    )
+    date = models.DateField(help_text='Date the payment was received')
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    method = models.CharField(
+        max_length=10,
+        choices=[('cash', 'Cash'), ('transfer', 'Transfer')],
+    )
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.PROTECT,
+        related_name='direct_sale_follow_up_payments',
+        limit_choices_to={'role': 'manager'},
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'sales_direct_sale_follow_up_payment'
+        ordering = ['date', 'created_at']
+
+    def __str__(self):
+        return f"DirectSale #{self.sale_id} follow-up ₦{self.amount:,.0f} ({self.method}) | {self.date}"
 
 
 class GMRemittance(models.Model):
@@ -615,3 +690,41 @@ class GMRemittance(models.Model):
     def __str__(self):
         return (f"GM Remittance #{self.pk} | ₦{self.total:,.0f} | "
                 f"{self.status.upper()} | {self.date}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SalesCorrectionRequest — correction of a SalesResult, following the
+# commerce money-correction pattern: request by the recorder, decision by an
+# independent MD, history kept. Approval does NOT edit amounts; it marks the
+# original corrected (excluded from live totals) and the recorder then enters
+# a replacement SalesResult through the normal flow.
+# ─────────────────────────────────────────────────────────────────────────────
+class SalesCorrectionRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    request_key = models.UUIDField(unique=True)
+    sales_result = models.ForeignKey(
+        SalesResult, on_delete=models.PROTECT, related_name='correction_requests'
+    )
+    requested_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='sales_correction_requests'
+    )
+    reason = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    decision_note = models.TextField(blank=True)
+    decided_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='sales_correction_decisions',
+        null=True, blank=True,
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'sales_correction_request'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"SalesCorrection #{self.pk} | Result #{self.sales_result_id} | {self.status}"
